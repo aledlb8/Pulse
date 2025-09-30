@@ -2,7 +2,7 @@
   <img src="https://github.com/user-attachments/assets/03b5894d-6281-4459-82d3-0b8b1f025d25" alt="pulse" width="200">
 </p>
 ﻿<h1 align="center">Pulse</h1>
-<p align="center">Modular Paper server core for Minecraft 1.21+, powered by Kotlin.</p>
+<p align="center">Modular Paper & Folia server core for Minecraft 1.21+, powered by Kotlin.</p>
 <p align="center">
   <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.2.20-7F52FF?logo=kotlin&logoColor=white" />
   <img alt="Build" src="https://img.shields.io/badge/Gradle-Shadow-green?logo=gradle&logoColor=white" />
@@ -10,7 +10,7 @@
 </p>
 
 ## Overview
-Pulse unifies ranks, permissions, economy, chat, shops, tags, and placeholders into one lightweight core for Paper servers. Every subsystem is modular, asynchronous, and backed by Exposed + HikariCP storage.
+Pulse unifies ranks, permissions, economy, chat, shops, tags, punishments and placeholders into one lightweight core for Paper and Folia servers. Every subsystem is modular, asynchronous, and backed by Exposed + HikariCP storage.
 
 ## Key Features
 - Unified manager layer for core gameplay systems

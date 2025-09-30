@@ -16,6 +16,11 @@ class CoinCommand(private val economyManager: EconomyManager) : BaseCommand() {
     override val usage = "/coin <balance|add|remove|set|pay|top> [args...]"
 
     override fun execute(sender: CommandSender, args: Array<out String>) {
+        if (!economyManager.isEnabled()) {
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("general.error", "error" to "Economy system is disabled (Vault not found)"))
+            return
+        }
+
         if (args.isEmpty()) {
             // Show balance for player, or help for console
             if (sender is Player) {

@@ -20,9 +20,16 @@ class ShopManager(
     private val categories = mutableMapOf<String, ShopCategory>()
 
     fun initialize() {
+        if (!economyManager.isEnabled()) {
+            Logger.warn("Shop system disabled (Economy requires Vault)")
+            return
+        }
+
         loadShopConfig()
         Logger.success("Shop system initialized with ${shopItems.size} items")
     }
+
+    fun isEnabled(): Boolean = economyManager.isEnabled()
 
     private fun loadShopConfig() {
         val configManager = Pulse.getPlugin().configManager

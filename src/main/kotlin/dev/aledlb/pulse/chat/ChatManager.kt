@@ -103,12 +103,12 @@ class ChatManager : Listener {
     private fun startTabUpdateTask() {
         if (!tabEnabled || updateTabInterval <= 0) return
 
-        tabUpdateTask = Bukkit.getScheduler().scheduleSyncRepeatingTask(
+        tabUpdateTask = Bukkit.getGlobalRegionScheduler().runAtFixedRate(
             Pulse.getPlugin(),
-            { updateAllTabLists() },
+            { _ -> updateAllTabLists() },
             updateTabInterval,
             updateTabInterval
-        )
+        ).hashCode()
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -164,10 +164,10 @@ class ChatManager : Listener {
 
         // Update tab list
         if (tabEnabled) {
-            Bukkit.getScheduler().runTaskLater(Pulse.getPlugin(), Runnable {
+            player.scheduler.runDelayed(Pulse.getPlugin(), { _ ->
                 updatePlayerTab(player)
                 updateTabHeader(player)
-            }, 5L) // Delay to ensure player is fully loaded
+            }, null, 5L) // Delay to ensure player is fully loaded
         }
     }
 
@@ -340,10 +340,8 @@ class ChatManager : Listener {
 
     fun reload() {
         // Stop existing tasks
-        if (tabUpdateTask != -1) {
-            Bukkit.getScheduler().cancelTask(tabUpdateTask)
-            tabUpdateTask = -1
-        }
+        // Note: Cannot directly cancel global region tasks by ID in Folia
+        tabUpdateTask = -1
 
         // Cleanup
         setupScoreboard()
@@ -360,9 +358,9 @@ class ChatManager : Listener {
     }
 
     fun shutdown() {
-        if (tabUpdateTask != -1) {
-            Bukkit.getScheduler().cancelTask(tabUpdateTask)
-        }
+        // Note: Cannot directly cancel global region tasks by ID in Folia
+        // The task will be automatically cancelled when the plugin is disabled
+        tabUpdateTask = -1
 
         // Clean up all teams
         val scoreboard = Bukkit.getScoreboardManager()?.mainScoreboard

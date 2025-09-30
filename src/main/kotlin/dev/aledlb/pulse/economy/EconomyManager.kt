@@ -22,12 +22,22 @@ class EconomyManager(private val databaseManager: DatabaseManager) {
     private var currencySymbol = "⛁"
     private var startingBalance = 1000.0
     private var vaultProvider: PulseVaultEconomy? = null
+    private var enabled = true
 
     fun initialize() {
         loadConfig()
+
+        if (Bukkit.getPluginManager().getPlugin("Vault") == null) {
+            Logger.warn("Vault not found - Economy system disabled")
+            enabled = false
+            return
+        }
+
         loadPlayerBalancesFromDatabase()
         registerVaultProvider()
     }
+
+    fun isEnabled(): Boolean = enabled
 
     private fun loadConfig() {
         val configManager = Pulse.getPlugin().configManager
@@ -42,10 +52,6 @@ class EconomyManager(private val databaseManager: DatabaseManager) {
     }
 
     private fun registerVaultProvider() {
-        if (Bukkit.getPluginManager().getPlugin("Vault") == null) {
-            throw IllegalStateException("Vault is required but not installed! Please install Vault from https://www.spigotmc.org/resources/vault.34315/")
-        }
-
         try {
             val provider = PulseVaultEconomy(this)
             vaultProvider = provider
@@ -57,7 +63,8 @@ class EconomyManager(private val databaseManager: DatabaseManager) {
             )
             Logger.success("Registered as Vault economy provider")
         } catch (e: Exception) {
-            throw IllegalStateException("Failed to register Vault economy provider: ${e.message}", e)
+            Logger.error("Failed to register Vault economy provider: ${e.message}", e)
+            enabled = false
         }
     }
 

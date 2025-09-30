@@ -26,15 +26,15 @@ class PunishmentService {
                 db.setActivePunishment(target, "BAN", null, punishmentId)
 
                 // Kick player if online
-                Bukkit.getScheduler().runTask(Pulse.getPlugin(), Runnable {
-                    val player = Bukkit.getPlayer(target)
+                val player = Bukkit.getPlayer(target)
+                player?.scheduler?.run(Pulse.getPlugin(), { _ ->
                     val kickMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
                         "punishment.ban-screen",
                         "reason" to reason,
                         "punisher" to punisherName
                     )
-                    player?.kick(Component.text(kickMsg))
-                })
+                    player.kick(Component.text(kickMsg))
+                }, null)
 
                 if (broadcast && Pulse.getPlugin().punishmentManager.shouldBroadcastBans()) {
                     val broadcastMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
@@ -58,16 +58,16 @@ class PunishmentService {
                 val punishmentId = db.savePunishment(target, "TEMPBAN", reason, punisher, punisherName, duration, null)
                 db.setActivePunishment(target, "BAN", expires, punishmentId)
 
-                Bukkit.getScheduler().runTask(Pulse.getPlugin(), Runnable {
-                    val player = Bukkit.getPlayer(target)
+                val player = Bukkit.getPlayer(target)
+                player?.scheduler?.run(Pulse.getPlugin(), { _ ->
                     val kickMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
                         "punishment.tempban-screen",
                         "reason" to reason,
                         "duration" to formatDuration(duration),
                         "punisher" to punisherName
                     )
-                    player?.kick(Component.text(kickMsg))
-                })
+                    player.kick(Component.text(kickMsg))
+                }, null)
 
                 if (broadcast && Pulse.getPlugin().punishmentManager.shouldBroadcastBans()) {
                     val broadcastMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
@@ -91,16 +91,18 @@ class PunishmentService {
                 val punishmentId = db.savePunishment(target, "IPBAN", reason, punisher, punisherName, null, ip)
                 db.setActivePunishment(target, "BAN", null, punishmentId)
 
-                Bukkit.getScheduler().runTask(Pulse.getPlugin(), Runnable {
+                Bukkit.getGlobalRegionScheduler().run(Pulse.getPlugin(), { _ ->
                     Bukkit.getIPBans().add(ip)
-                    val player = Bukkit.getPlayer(target)
+                })
+                val player = Bukkit.getPlayer(target)
+                player?.scheduler?.run(Pulse.getPlugin(), { _ ->
                     val kickMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
                         "punishment.ipban-screen",
                         "reason" to reason,
                         "punisher" to punisherName
                     )
-                    player?.kick(Component.text(kickMsg))
-                })
+                    player.kick(Component.text(kickMsg))
+                }, null)
 
                 if (broadcast && Pulse.getPlugin().punishmentManager.shouldBroadcastBans()) {
                     val broadcastMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
@@ -124,17 +126,19 @@ class PunishmentService {
                 val punishmentId = db.savePunishment(target, "TEMPIPBAN", reason, punisher, punisherName, duration, ip)
                 db.setActivePunishment(target, "BAN", expires, punishmentId)
 
-                Bukkit.getScheduler().runTask(Pulse.getPlugin(), Runnable {
+                Bukkit.getGlobalRegionScheduler().run(Pulse.getPlugin(), { _ ->
                     Bukkit.getIPBans().add(ip)
-                    val player = Bukkit.getPlayer(target)
+                })
+                val player = Bukkit.getPlayer(target)
+                player?.scheduler?.run(Pulse.getPlugin(), { _ ->
                     val kickMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
                         "punishment.tempipban-screen",
                         "reason" to reason,
                         "duration" to formatDuration(duration),
                         "punisher" to punisherName
                     )
-                    player?.kick(Component.text(kickMsg))
-                })
+                    player.kick(Component.text(kickMsg))
+                }, null)
 
                 if (broadcast && Pulse.getPlugin().punishmentManager.shouldBroadcastBans()) {
                     val broadcastMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
@@ -164,7 +168,7 @@ class PunishmentService {
                     val punishments = db.getPlayerPunishments(target)
                     val punishment = punishments.find { it.id == active.punishmentId }
                     if (punishment?.ip != null) {
-                        Bukkit.getScheduler().runTask(Pulse.getPlugin(), Runnable {
+                        Bukkit.getGlobalRegionScheduler().run(Pulse.getPlugin(), { _ ->
                             Bukkit.getIPBans().remove(punishment.ip)
                         })
                     }
@@ -188,8 +192,8 @@ class PunishmentService {
                 val punishmentId = db.savePunishment(target, "MUTE", reason, punisher, punisherName, duration, null)
                 db.setActivePunishment(target, "MUTE", expires, punishmentId)
 
-                Bukkit.getScheduler().runTask(Pulse.getPlugin(), Runnable {
-                    val player = Bukkit.getPlayer(target)
+                val player = Bukkit.getPlayer(target)
+                player?.scheduler?.run(Pulse.getPlugin(), { _ ->
                     val durationText = duration?.let { formatDuration(it) } ?: "Permanent"
                     val muteMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
                         "punishment.mute-screen",
@@ -197,8 +201,8 @@ class PunishmentService {
                         "duration" to durationText,
                         "punisher" to punisherName
                     )
-                    player?.sendMessage(Component.text(muteMsg))
-                })
+                    player.sendMessage(Component.text(muteMsg))
+                }, null)
 
                 if (broadcast && Pulse.getPlugin().punishmentManager.shouldBroadcastMutes()) {
                     val broadcastMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
@@ -223,11 +227,11 @@ class PunishmentService {
                     db.deactivatePunishment(active.punishmentId, removedBy)
                     db.removeActivePunishment(target, "MUTE")
 
-                    Bukkit.getScheduler().runTask(Pulse.getPlugin(), Runnable {
-                        val player = Bukkit.getPlayer(target)
+                    val player = Bukkit.getPlayer(target)
+                    player?.scheduler?.run(Pulse.getPlugin(), { _ ->
                         val unmuteMsg = Pulse.getPlugin().messagesManager.getMessage("punishment.unmute-screen")
-                        player?.sendMessage(Component.text(unmuteMsg))
-                    })
+                        player.sendMessage(Component.text(unmuteMsg))
+                    }, null)
                     true
                 } else {
                     false
@@ -276,15 +280,15 @@ class PunishmentService {
                 val db = Pulse.getPlugin().databaseManager
                 db.savePunishment(target, "WARN", reason, punisher, punisherName, null, null)
 
-                Bukkit.getScheduler().runTask(Pulse.getPlugin(), Runnable {
-                    val player = Bukkit.getPlayer(target)
+                val player = Bukkit.getPlayer(target)
+                player?.scheduler?.run(Pulse.getPlugin(), { _ ->
                     val warnMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
                         "punishment.warn-screen",
                         "reason" to reason,
                         "punisher" to punisherName
                     )
-                    player?.sendMessage(Component.text(warnMsg))
-                })
+                    player.sendMessage(Component.text(warnMsg))
+                }, null)
 
                 if (broadcast && Pulse.getPlugin().punishmentManager.shouldBroadcastWarns()) {
                     val broadcastMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
@@ -330,14 +334,14 @@ class PunishmentService {
                 val db = Pulse.getPlugin().databaseManager
                 db.savePunishment(target.uniqueId, "KICK", reason, punisher, punisherName, null, null)
 
-                Bukkit.getScheduler().runTask(Pulse.getPlugin(), Runnable {
+                target.scheduler.run(Pulse.getPlugin(), { _ ->
                     val kickMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
                         "punishment.kick-screen",
                         "reason" to reason,
                         "punisher" to punisherName
                     )
                     target.kick(Component.text(kickMsg))
-                })
+                }, null)
 
                 if (broadcast && Pulse.getPlugin().punishmentManager.shouldBroadcastKicks()) {
                     val broadcastMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(

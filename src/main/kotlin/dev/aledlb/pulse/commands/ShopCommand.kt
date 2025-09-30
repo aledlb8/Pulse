@@ -16,6 +16,11 @@ class ShopCommand(
     override val usage = "/shop [category|reload]"
 
     override fun execute(sender: CommandSender, args: Array<out String>) {
+        if (!shopManager.isEnabled()) {
+            sendMessage(sender, "§cShop is disabled (Economy system requires Vault)")
+            return
+        }
+
         if (args.isEmpty()) {
             val player = requirePlayer(sender) ?: return
             shopGUI.openMainShop(player)
