@@ -1,0 +1,50 @@
+# Ranks Configuration
+
+default: "member"
+
+# Rank definitions
+definitions:
+  member:
+    prefix: "&7[Member]&r "
+    suffix: ""
+    permissions: []
+    parents: []
+    weight: 0
+
+  vip:
+    prefix: "&a[VIP]&r "
+    suffix: ""
+    permissions:
+      - "pulse.vip"
+    parents: []
+    weight: 10
+
+  premium:
+    prefix: "&b[Premium]&r "
+    suffix: ""
+    permissions:
+      - "pulse.premium"
+    parents:
+      - "vip"
+    weight: 20
+
+  mod:
+    prefix: "&9[Mod]&r "
+    suffix: ""
+    permissions:
+      - "pulse.mod"
+      - "pulse.kick"
+      - "pulse.mute"
+    parents:
+      - "premium"
+    weight: 50
+
+  admin:
+    prefix: "&c[Admin]&r "
+    suffix: ""
+    permissions:
+      - "pulse.admin"
+      - "pulse.ban"
+    parents:
+      - "mod"
+    weight: 100

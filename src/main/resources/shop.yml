@@ -1,0 +1,146 @@
+# Shop Configuration
+
+# Shop categories
+categories:
+  items:
+    display-name: "Minecraft Items"
+    icon: "CHEST"
+
+  cosmetics:
+    display-name: "Cosmetics & Perks"
+    icon: "NETHER_STAR"
+
+# Shop items
+items:
+  # Purchasable Ranks
+  vip_rank:
+    category: "cosmetics"
+    material: "EMERALD"
+    name: "§aVIP Rank"
+    description:
+      - "Unlock VIP privileges!"
+      - "Access to VIP commands"
+      - "Special chat prefix"
+      - "Priority support"
+    price: 5000
+    rank: "vip"
+    enabled: true
+
+  premium_rank:
+    category: "cosmetics"
+    material: "DIAMOND"
+    name: "§bPremium Rank"
+    description:
+      - "Premium membership benefits"
+      - "All VIP features"
+      - "Exclusive commands"
+      - "Premium-only areas"
+    price: 10000
+    rank: "premium"
+    permission: "pulse.shop.premium"
+    enabled: true
+
+  # Minecraft Items
+  diamond_pickaxe:
+    category: "items"
+    material: "DIAMOND_PICKAXE"
+    name: "§bDiamond Pickaxe"
+    description:
+      - "A shiny diamond pickaxe"
+      - "Perfect for mining!"
+    price: 500
+    amount: 1
+    enabled: true
+
+  golden_apple:
+    category: "items"
+    material: "GOLDEN_APPLE"
+    name: "§6Golden Apple"
+    description:
+      - "Restore your health"
+      - "Perfect for emergencies"
+    price: 100
+    amount: 5
+    enabled: true
+
+  iron_sword:
+    category: "items"
+    material: "IRON_SWORD"
+    name: "§7Iron Sword"
+    description:
+      - "Sharp iron sword"
+      - "Ready for combat"
+    price: 150
+    amount: 1
+    enabled: true
+
+  ender_pearl:
+    category: "items"
+    material: "ENDER_PEARL"
+    name: "§dEnder Pearl"
+    description:
+      - "Teleport instantly"
+      - "Pack of 16"
+    price: 300
+    amount: 16
+    enabled: true
+
+  money_boost:
+    category: "cosmetics"
+    material: "GOLD_INGOT"
+    name: "§eMoneymaker Boost"
+    description:
+      - "Gives you extra coins!"
+      - "One-time purchase"
+    price: 1000
+    command: "coin add {player} 500"
+    enabled: true
+
+  # Purchasable Tags
+  diamond_collector_tag:
+    category: "cosmetics"
+    material: "DIAMOND"
+    name: "§bDiamond Collector Tag"
+    description:
+      - "Show off your wealth!"
+      - "§b[♦ Collector ♦] prefix"
+      - "Permanent tag unlock"
+    price: 2500
+    tag: "diamond_collector"
+    enabled: true
+
+  builder_tag:
+    category: "cosmetics"
+    material: "BRICKS"
+    name: "§eBuilder Tag"
+    description:
+      - "Master of construction"
+      - "§e[⚒ Builder ⚒] prefix"
+      - "Show your building skills"
+    price: 1500
+    tag: "builder"
+    enabled: true
+
+  explorer_tag:
+    category: "cosmetics"
+    material: "COMPASS"
+    name: "§2Explorer Tag"
+    description:
+      - "Adventure awaits!"
+      - "§2[🗺 Explorer 🗺] prefix"
+      - "For the wanderers"
+    price: 1000
+    tag: "explorer"
+    enabled: true
+
+  pvp_master_tag:
+    category: "cosmetics"
+    material: "NETHERITE_SWORD"
+    name: "§cPvP Master Tag"
+    description:
+      - "Dominate in combat!"
+      - "§c[⚔ PvP Master ⚔] prefix"
+      - "Strike fear into enemies"
+    price: 5000
+    tag: "pvp_master"
+    enabled: true

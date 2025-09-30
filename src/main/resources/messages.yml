@@ -1,0 +1,136 @@
+# ========================================
+#        PULSE MESSAGES CONFIGURATION
+# ========================================
+#
+# Available Placeholders:
+# {player} - Player name
+# {amount} - Monetary/numeric amount
+# {balance} - Current balance
+# {rank} - Rank name
+# {permission} - Permission string
+# {tag} - Tag ID/name
+# {subcommand} - Command subcommand
+# {error} - Error message
+# {item} - Item name
+# {price} - Item price
+# {category} - Category name
+# {count} - Generic counter
+# {parent} - Parent rank
+
+prefix: "§d[§5Pulse§d]§r "
+
+# ==================== GENERAL ====================
+general:
+  no-permission: "&cYou don't have permission to do that!"
+  player-not-found: "&cPlayer not found!"
+  player-not-online: "&cPlayer §e{player}§c is not online!"
+  invalid-command: "&cInvalid command usage!"
+  command-disabled: "&cThis command is currently disabled!"
+  unknown-subcommand: "&cUnknown subcommand: {subcommand}"
+
+# ==================== PUNISHMENT ====================
+punishment:
+  banned: "&cYou have been banned from the server!"
+  kicked: "&cYou have been kicked from the server!"
+  muted: "&cYou are currently muted!"
+
+# ==================== ECONOMY ====================
+economy:
+  insufficient-funds: "&cYou don't have enough {currency}!"
+  transaction-complete: "&aTransaction completed!"
+  invalid-amount: "&cInvalid amount: §e{amount}"
+  amount-must-be-positive: "&cAmount must be positive!"
+  amount-cannot-be-negative: "&cAmount cannot be negative!"
+  cannot-pay-yourself: "&cYou cannot pay yourself!"
+  not-enough-coins: "&cYou don't have enough coins!"
+  transaction-failed: "&cTransaction failed!"
+
+# ==================== COIN COMMAND ====================
+coin:
+  balance-self: "&aYour balance: §e{balance}"
+  balance-other: "&e{player}§a's balance: §e{balance}"
+  add-success: "&aAdded §e{amount}§a to §e{player}§a's account!"
+  add-notification: "&aYou received §e{amount}§a!"
+  remove-success: "&aRemoved §e{amount}§a from §e{player}§a's account!"
+  remove-notification: "&c{amount}§c was removed from your account!"
+  set-success: "&aSet §e{player}§a's balance to §e{amount}§a!"
+  set-notification: "&aYour balance has been set to §e{amount}§a!"
+  pay-success-sender: "&aYou paid §e{amount}§a to §e{player}§a!"
+  pay-success-receiver: "&aYou received §e{amount}§a from §e{player}§a!"
+  new-balance: "&7New balance: §e{balance}"
+
+# ==================== RANK COMMAND ====================
+rank:
+  create-success: "&aSuccessfully created rank §e{rank}§a!"
+  delete-success: "&aSuccessfully deleted rank §e{rank}§a!"
+  set-success: "&aSet §e{player}§a's rank to §e{rank}§a!"
+  set-notification: "&aYour rank has been set to §e{rank}§a!"
+  remove-success: "&aRemoved rank §e{rank}§a from §e{player}§a!"
+  remove-notification: "&cYour rank §e{rank}§c has been removed!"
+  rank-already-exists: "&cRank §e{rank}§c already exists!"
+  rank-not-exist: "&cRank §e{rank}§c doesn't exist!"
+  rank-cannot-delete: "&cRank §e{rank}§c cannot be deleted!"
+  player-doesnt-have-rank: "&c{player} doesn't have the rank §e{rank}§c!"
+  addperm-success: "&aAdded permission §e{permission}§a to rank §e{rank}§a!"
+  removeperm-success: "&aRemoved permission §e{permission}§a from rank §e{rank}§a!"
+  addparent-success: "&aAdded parent §e{parent}§a to rank §e{rank}§a!"
+  addparent-circular: "&cFailed to add parent! This would create a circular inheritance."
+  removeparent-success: "&aRemoved parent §e{parent}§a from rank §e{rank}§a!"
+  reload-success: "&aRank system reloaded successfully!"
+
+# ==================== PERMISSION COMMAND ====================
+permission:
+  add-success: "&aAdded permission §e{permission}§a to §e{player}§a!"
+  add-notification: "&aYou have been granted permission: §e{permission}"
+  remove-success: "&aRemoved permission §e{permission}§a from §e{player}§a!"
+  remove-notification: "&cYour permission has been removed: §e{permission}"
+  deny-success: "&aDenied permission §e{permission}§a for §e{player}§a!"
+  deny-notification: "&cYou have been denied permission: §e{permission}"
+  undeny-success: "&aUndenied permission §e{permission}§a for §e{player}§a!"
+  undeny-notification: "&aPermission denial removed: §e{permission}"
+  check-has: "&e{player}§f §ahas §fthe permission §e{permission}§f!"
+  check-not-has: "&e{player}§f §cdoes not have §fthe permission §e{permission}§f!"
+
+# ==================== TAG COMMAND ====================
+tag:
+  activate-success: "&aActivated tag: {tag}"
+  deactivate-success: "&aDeactivated tag: {tag}"
+  give-success: "&aGave tag {tag} §ato §e{player}§a!"
+  give-notification: "&aYou received a new tag: {tag}§a!"
+  remove-success: "&aRemoved tag {tag} §afrom §e{player}§a!"
+  remove-notification: "&cYour tag {tag} §cwas removed!"
+  create-success: "&aCreated tag: §e{tag}"
+  edit-success: "&aUpdated tag §e{tag}§a!"
+  delete-success: "&aDeleted tag: §e{tag}"
+  reload-success: "&aReloaded tag system!"
+  tag-not-exist: "&cTag '§e{tag}§c' doesn't exist!"
+  tag-already-exists: "&cA tag with ID '§e{tag}§c' already exists!"
+  activate-failed: "&cYou don't own the tag '§e{tag}§c' or it's already active!"
+  deactivate-failed: "&cTag '§e{tag}§c' is not currently active!"
+  player-already-has-tag: "&c{player} already has this tag!"
+  player-doesnt-have-tag: "&c{player} doesn't have this tag!"
+  no-tags-available: "&cNo tags available!"
+  no-owned-tags: "&cNo owned tags!"
+  no-active-tags: "&cNo active tags!"
+
+# ==================== SHOP COMMAND ====================
+shop:
+  category-empty: "&cThis category is empty!"
+  purchase-success: "&aSuccessfully purchased §e{item}§a!"
+  new-balance: "&7New balance: §e{balance}"
+  insufficient-funds: "&cYou don't have enough coins!"
+  insufficient-funds-detail: "&7Required: §e{price} &7| Your balance: §e{balance}"
+  already-owned: "&cYou already own this item!"
+  no-permission: "&cYou don't have permission to purchase this item!"
+  item-not-found: "&cThis item is no longer available!"
+  item-disabled: "&cThis item is currently disabled!"
+  purchase-failed: "&cPurchase failed! Please try again later."
+  category-not-found: "&cCategory §e{category}§c not found!"
+  reload-success: "&aShop configuration reloaded successfully!"
+
+# ==================== PULSE COMMAND ====================
+pulse:
+  reload-started: "&eReloading Pulse configuration..."
+  reload-success: "&aConfiguration reloaded successfully!"
+  reload-managers-refreshed: "&7All managers have been refreshed."
+  reload-failed: "&cFailed to reload configuration: {error}"

@@ -1,0 +1,111 @@
+# Tags Configuration
+# Custom tags that players can earn, buy, and display
+
+# Tag definitions
+definitions:
+  # Basic tags
+  newbie:
+    name: "Newbie"
+    prefix: "&7[Newbie]&r "
+    suffix: ""
+    description:
+      - "A fresh face to the server!"
+      - "Welcome to the community"
+    material: "SPRUCE_SAPLING"
+    price: 0
+    enabled: true
+    purchasable: false
+
+  veteran:
+    name: "Veteran"
+    prefix: "&6[Veteran]&r "
+    suffix: ""
+    description:
+      - "A seasoned player"
+      - "Has been around for a while"
+    material: "GOLDEN_SWORD"
+    price: 0
+    enabled: true
+    purchasable: false
+
+  # Purchasable tags
+  diamond_collector:
+    name: "Diamond Collector"
+    prefix: "&b[♦ Collector ♦]&r "
+    suffix: ""
+    description:
+      - "For the diamond enthusiasts!"
+      - "Show off your wealth"
+      - "&7Purchase from the shop"
+    material: "DIAMOND"
+    price: 2500
+    enabled: true
+    purchasable: true
+
+  builder:
+    name: "Builder"
+    prefix: "&e[⚒ Builder ⚒]&r "
+    suffix: ""
+    description:
+      - "Master of construction"
+      - "Create amazing builds"
+      - "&7Purchase from the shop"
+    material: "BRICKS"
+    price: 1500
+    enabled: true
+    purchasable: true
+
+  explorer:
+    name: "Explorer"
+    prefix: "&2[🗺 Explorer 🗺]&r "
+    suffix: ""
+    description:
+      - "Adventure awaits!"
+      - "Discover new lands"
+      - "&7Purchase from the shop"
+    material: "COMPASS"
+    price: 1000
+    enabled: true
+    purchasable: true
+
+  pvp_master:
+    name: "PvP Master"
+    prefix: "&c[⚔ PvP Master ⚔]&r "
+    suffix: ""
+    description:
+      - "Dominate in combat!"
+      - "Strike fear into enemies"
+      - "&7Purchase from the shop"
+    material: "NETHERITE_SWORD"
+    price: 5000
+    enabled: true
+    purchasable: true
+
+  # Special event tags
+  halloween_2024:
+    name: "Halloween 2024"
+    prefix: "&6[🎃 Halloween 🎃]&r "
+    suffix: ""
+    description:
+      - "Limited Halloween event tag"
+      - "Spooky season exclusive!"
+      - "&cLimited time only"
+    material: "JACK_O_LANTERN"
+    price: 0
+    enabled: true
+    purchasable: false
+
+  # VIP exclusive tags
+  vip_exclusive:
+    name: "VIP Exclusive"
+    prefix: "&5[★ VIP ★] "
+    suffix: ""
+    description:
+      - "Exclusive to VIP members"
+      - "Premium membership perk"
+      - "&7Requires VIP rank"
+    material: "NETHER_STAR"
+    price: 0
+    permission: "pulse.vip"
+    enabled: true
+    purchasable: false

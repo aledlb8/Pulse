@@ -1,0 +1,23 @@
+# Database Configuration
+
+type: "SQLITE" # MYSQL, POSTGRESQL, SQLITE
+
+# SQLite settings (for local development)
+sqlite:
+  file: "pulse.db"
+
+# MySQL/PostgreSQL settings
+mysql:
+  host: "localhost"
+  port: 3306
+  database: "pulse"
+  username: "pulse"
+  password: "password"
+
+# Connection pool settings
+pool:
+  maximum-pool-size: 10
+  minimum-idle: 2
+  connection-timeout: 30000
+  idle-timeout: 600000
+  max-lifetime: 1800000

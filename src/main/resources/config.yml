@@ -1,0 +1,72 @@
+# Pulse Core Configuration
+# Professional server core configuration
+
+# Debug mode
+debug: false
+
+# Server display name
+server-name: "My Server"
+
+# Network settings
+network:
+  enabled: false
+  server-id: "server1"
+  redis:
+    host: "localhost"
+    port: 6379
+    password: ""
+    database: 0
+
+# Currency settings
+currency:
+  name: "Coins"
+  symbol: "⛁"
+  starting-balance: 1000
+
+# Chat formatting system
+chat:
+  # Enable chat formatting
+  enabled: true
+
+  # Chat format
+  # Placeholders: {prefix}, {tags}, {player}, {suffix}, {message}, {rank}, {world}
+  format: "{prefix}{tags}{player}{suffix}: {message}"
+
+  # Enable rank colors in chat
+  enable-rank-colors: true
+
+  # Allow players to use color codes in chat (&a, &b, etc.)
+  enable-chat-colors: false
+  chat-color-permission: "pulse.chat.color"
+
+  # Tab list settings
+  tab:
+    enabled: true
+    # Tab format for player names
+    # Placeholders: {prefix}, {tags}, {player}, {suffix}, {rank}, {world}
+    format: "{prefix}{tags}{player}{suffix}"
+
+    # Tab header and footer
+    # Placeholders: {player}, {prefix}, {tags}, {suffix}, {rank}, {world}, {balance}, {online}, {max}
+    # Use \n for new lines
+    header: "&d&l◆ &5&lPULSE SERVER &d&l◆\n&7Welcome {player}!"
+    footer: "\n&7Rank: {rank} &8| &7Balance: {balance}\n&7Online: &a{online}&7/&a{max}"
+
+    # Update interval in ticks (20 ticks = 1 second)
+    update-interval: 20
+
+  # Nametag settings (name above player head)
+  nametag:
+    enabled: true
+    # Nametag format
+    # Placeholders: {prefix}, {tags}, {player}, {suffix}, {rank}
+    format: "{prefix}{tags}{player}{suffix}"
+
+    # Distance at which nametags are visible
+    distance: 64.0
+
+# General settings
+settings:
+  save-interval: 300 # seconds
+  async-operations: true
+  cache-size: 1000

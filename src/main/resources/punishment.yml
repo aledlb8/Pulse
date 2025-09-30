@@ -1,0 +1,23 @@
+# Punishment System Configuration
+
+# Enable punishment system
+enabled: true
+
+# Broadcast punishments
+broadcast:
+  bans: true
+  kicks: true
+  mutes: false
+  warns: false
+
+# Automatic punishment escalation
+auto-escalation:
+  enabled: true
+  warn-limit: 3
+  mute-duration: 3600 # seconds
+  ban-duration: 86400 # seconds
+
+# Appeal system
+appeals:
+  enabled: true
+  website: "https://yourserver.com/appeals"

@@ -1,0 +1,166 @@
+name: Pulse
+version: '${version}'
+main: dev.aledlb.pulse.Pulse
+api-version: '1.21'
+load: STARTUP
+authors: [ aledlb ]
+description: Advanced server core plugin with modular architecture
+website: https://github.com/aledlb/pulse
+softdepend: [ PlaceholderAPI, Vault ]
+
+commands:
+  pulse:
+    description: Main pulse command
+    usage: /pulse <subcommand>
+    permission: pulse.admin
+  rank:
+    description: Manage player ranks
+    usage: /rank <subcommand>
+    permission: pulse.rank
+    aliases: [ranks]
+  permission:
+    description: Manage player permissions
+    usage: /permission <subcommand>
+    permission: pulse.permission
+    aliases: [perm, perms, permissions]
+  placeholder:
+    description: Manage and test placeholders
+    usage: /placeholder <subcommand>
+    permission: pulse.placeholder
+    aliases: [placeholders, ph]
+  coin:
+    description: Manage player coins
+    usage: /coin <subcommand>
+    permission: pulse.coin
+    aliases: [coins, money, balance, bal]
+  shop:
+    description: Open the server shop
+    usage: /shop [category]
+    permission: pulse.shop
+    aliases: [store, buy]
+  tag:
+    description: Manage player tags
+    usage: /tag <subcommand>
+    permission: pulse.tag
+    aliases: [tags]
+
+permissions:
+  pulse.*:
+    description: All pulse permissions
+    children:
+      pulse.admin: true
+      pulse.rank: true
+      pulse.permission: true
+      pulse.placeholder: true
+      pulse.coin: true
+      pulse.shop: true
+      pulse.tag: true
+      pulse.chat.color: true
+  pulse.admin:
+    description: Administrator access to pulse
+  pulse.rank:
+    description: Access to rank commands
+    children:
+      pulse.rank.create: true
+      pulse.rank.delete: true
+      pulse.rank.set: true
+      pulse.rank.info: true
+      pulse.rank.list: true
+      pulse.rank.permission: true
+      pulse.rank.reload: true
+  pulse.rank.create:
+    description: Create new ranks
+  pulse.rank.delete:
+    description: Delete existing ranks
+  pulse.rank.set:
+    description: Set player ranks
+  pulse.rank.info:
+    description: View rank information
+  pulse.rank.list:
+    description: List all ranks
+  pulse.rank.permission:
+    description: Manage rank permissions
+  pulse.rank.reload:
+    description: Reload rank system
+  pulse.permission:
+    description: Access to permission commands
+    children:
+      pulse.permission.add: true
+      pulse.permission.remove: true
+      pulse.permission.deny: true
+      pulse.permission.check: true
+      pulse.permission.list: true
+  pulse.permission.add:
+    description: Add permissions to players
+  pulse.permission.remove:
+    description: Remove permissions from players
+  pulse.permission.deny:
+    description: Deny permissions for players
+  pulse.permission.check:
+    description: Check player permissions
+  pulse.permission.list:
+    description: List player permissions
+  pulse.placeholder:
+    description: Access to placeholder commands
+    children:
+      pulse.placeholder.list: true
+      pulse.placeholder.test: true
+      pulse.placeholder.providers: true
+  pulse.placeholder.list:
+    description: List available placeholders
+  pulse.placeholder.test:
+    description: Test placeholders
+  pulse.placeholder.providers:
+    description: List placeholder providers
+  pulse.coin:
+    description: Access to coin commands
+    children:
+      pulse.coin.pay: true
+  pulse.coin.add:
+    description: Add coins to players
+  pulse.coin.remove:
+    description: Remove coins from players
+  pulse.coin.set:
+    description: Set player coin balances
+  pulse.coin.pay:
+    description: Pay other players
+  pulse.coin.top:
+    description: View balance leaderboard
+  pulse.coin.others:
+    description: Check other players' balances
+  pulse.shop:
+    description: Access to shop
+    children:
+      pulse.shop.use: true
+  pulse.shop.use:
+    description: Use the shop
+  pulse.shop.reload:
+    description: Reload shop configuration
+  pulse.shop.list:
+    description: List shop items
+  pulse.tag:
+    description: Access to tag commands
+    children:
+      pulse.tag.others: true
+      pulse.tag.give: true
+      pulse.tag.remove: true
+      pulse.tag.create: true
+      pulse.tag.edit: true
+      pulse.tag.delete: true
+      pulse.tag.reload: true
+  pulse.tag.others:
+    description: View other players' tags
+  pulse.tag.give:
+    description: Give tags to players
+  pulse.tag.remove:
+    description: Remove tags from players
+  pulse.tag.create:
+    description: Create new tags
+  pulse.tag.edit:
+    description: Edit existing tags
+  pulse.tag.delete:
+    description: Delete tags
+  pulse.tag.reload:
+    description: Reload tag system
+  pulse.chat.color:
+    description: Use color codes in chat messages
