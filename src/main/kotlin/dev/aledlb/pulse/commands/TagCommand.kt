@@ -8,6 +8,8 @@ import org.bukkit.entity.Player
 
 class TagCommand : BaseCommand() {
 
+    private val messagesManager get() = Pulse.getPlugin().messagesManager
+
     override val name = "tag"
     override val permission = "pulse.tag"
     override val description = "Manage player tags"
@@ -41,7 +43,7 @@ class TagCommand : BaseCommand() {
         val allTags = tagManager.getAllTags()
 
         if (allTags.isEmpty()) {
-            sendMessage(sender, "§cNo tags available!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("tag.no-tags-available"))
             return
         }
 
@@ -57,7 +59,7 @@ class TagCommand : BaseCommand() {
 
         val targetPlayer = if (args.size > 1 && sender.hasPermission("pulse.tag.others")) {
             Bukkit.getPlayer(args[1]) ?: run {
-                sendMessage(sender, "§cPlayer not found: ${args[1]}")
+                sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("general.player-not-online", "player" to args[1]))
                 return
             }
         } else {
@@ -68,8 +70,7 @@ class TagCommand : BaseCommand() {
         val playerData = tagManager.getPlayerTagData(targetPlayer)
 
         if (playerData.getOwnedTagsList().isEmpty()) {
-            val playerName = if (targetPlayer == player) "You" else targetPlayer.name
-            sendMessage(sender, "§c$playerName don't own any tags!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("tag.no-owned-tags"))
             return
         }
 
@@ -90,7 +91,7 @@ class TagCommand : BaseCommand() {
 
         val targetPlayer = if (args.size > 1 && sender.hasPermission("pulse.tag.others")) {
             Bukkit.getPlayer(args[1]) ?: run {
-                sendMessage(sender, "§cPlayer not found: ${args[1]}")
+                sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("general.player-not-online", "player" to args[1]))
                 return
             }
         } else {
@@ -101,8 +102,7 @@ class TagCommand : BaseCommand() {
         val activeTags = tagManager.getActiveTagsForPlayer(targetPlayer)
 
         if (activeTags.isEmpty()) {
-            val playerName = if (targetPlayer == player) "You" else targetPlayer.name
-            sendMessage(sender, "§c$playerName don't have any active tags!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("tag.no-active-tags"))
             return
         }
 
@@ -117,7 +117,7 @@ class TagCommand : BaseCommand() {
         val player = requirePlayer(sender) ?: return
 
         if (args.size < 2) {
-            sendMessage(sender, "§cUsage: /tag activate <tag_id>")
+            sendMessage(sender, messagesManager.invalidCommand())
             return
         }
 
@@ -125,15 +125,15 @@ class TagCommand : BaseCommand() {
         val tagManager = Pulse.getPlugin().tagManager
 
         if (tagManager.getTag(tagId) == null) {
-            sendMessage(sender, "§cTag '§e$tagId§c' doesn't exist!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("tag.tag-not-exist", "tag" to tagId))
             return
         }
 
         if (tagManager.activateTag(player, tagId)) {
             val tag = tagManager.getTag(tagId)!!
-            sendMessage(sender, "§aActivated tag: ${tag.name}")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("tag.activate-success", "tag" to tag.name))
         } else {
-            sendMessage(sender, "§cYou don't own the tag '§e$tagId§c' or it's already active!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("tag.activate-failed", "tag" to tagId))
         }
     }
 
@@ -141,7 +141,7 @@ class TagCommand : BaseCommand() {
         val player = requirePlayer(sender) ?: return
 
         if (args.size < 2) {
-            sendMessage(sender, "§cUsage: /tag deactivate <tag_id>")
+            sendMessage(sender, messagesManager.invalidCommand())
             return
         }
 
@@ -149,31 +149,31 @@ class TagCommand : BaseCommand() {
         val tagManager = Pulse.getPlugin().tagManager
 
         if (tagManager.getTag(tagId) == null) {
-            sendMessage(sender, "§cTag '§e$tagId§c' doesn't exist!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("tag.tag-not-exist", "tag" to tagId))
             return
         }
 
         if (tagManager.deactivateTag(player, tagId)) {
             val tag = tagManager.getTag(tagId)!!
-            sendMessage(sender, "§aDeactivated tag: ${tag.name}")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("tag.deactivate-success", "tag" to tag.name))
         } else {
-            sendMessage(sender, "§cTag '§e$tagId§c' is not currently active!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("tag.deactivate-failed", "tag" to tagId))
         }
     }
 
     private fun giveTag(sender: CommandSender, args: Array<out String>) {
         if (!sender.hasPermission("pulse.tag.give")) {
-            sendMessage(sender, "§cYou don't have permission to give tags!")
+            sendMessage(sender, messagesManager.noPermission())
             return
         }
 
         if (args.size < 3) {
-            sendMessage(sender, "§cUsage: /tag give <player> <tag_id>")
+            sendMessage(sender, messagesManager.invalidCommand())
             return
         }
 
         val targetPlayer = Bukkit.getPlayer(args[1]) ?: run {
-            sendMessage(sender, "§cPlayer not found: ${args[1]}")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("general.player-not-online", "player" to args[1]))
             return
         }
 
@@ -182,31 +182,31 @@ class TagCommand : BaseCommand() {
         val tag = tagManager.getTag(tagId)
 
         if (tag == null) {
-            sendMessage(sender, "§cTag '§e$tagId§c' doesn't exist!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("tag.tag-not-exist", "tag" to tagId))
             return
         }
 
         if (tagManager.giveTagToPlayer(targetPlayer, tagId)) {
-            sendMessage(sender, "§aGave tag ${tag.name} §ato §e${targetPlayer.name}§a!")
-            sendMessage(targetPlayer, "§aYou received a new tag: ${tag.name}§a!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("tag.give-success", "tag" to tag.name, "player" to targetPlayer.name))
+            sendMessage(targetPlayer, messagesManager.getFormattedMessageWithPrefix("tag.give-notification", "tag" to tag.name))
         } else {
-            sendMessage(sender, "§c${targetPlayer.name} already has this tag!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("tag.player-already-has-tag", "player" to targetPlayer.name))
         }
     }
 
     private fun removeTag(sender: CommandSender, args: Array<out String>) {
         if (!sender.hasPermission("pulse.tag.remove")) {
-            sendMessage(sender, "§cYou don't have permission to remove tags!")
+            sendMessage(sender, messagesManager.noPermission())
             return
         }
 
         if (args.size < 3) {
-            sendMessage(sender, "§cUsage: /tag remove <player> <tag_id>")
+            sendMessage(sender, messagesManager.invalidCommand())
             return
         }
 
         val targetPlayer = Bukkit.getPlayer(args[1]) ?: run {
-            sendMessage(sender, "§cPlayer not found: ${args[1]}")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("general.player-not-online", "player" to args[1]))
             return
         }
 
@@ -215,26 +215,26 @@ class TagCommand : BaseCommand() {
         val tag = tagManager.getTag(tagId)
 
         if (tag == null) {
-            sendMessage(sender, "§cTag '§e$tagId§c' doesn't exist!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("tag.tag-not-exist", "tag" to tagId))
             return
         }
 
         if (tagManager.removeTagFromPlayer(targetPlayer, tagId)) {
-            sendMessage(sender, "§aRemoved tag ${tag.name} §afrom §e${targetPlayer.name}§a!")
-            sendMessage(targetPlayer, "§cYour tag ${tag.name} §cwas removed!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("tag.remove-success", "tag" to tag.name, "player" to targetPlayer.name))
+            sendMessage(targetPlayer, messagesManager.getFormattedMessageWithPrefix("tag.remove-notification", "tag" to tag.name))
         } else {
-            sendMessage(sender, "§c${targetPlayer.name} doesn't have this tag!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("tag.player-doesnt-have-tag", "player" to targetPlayer.name))
         }
     }
 
     private fun createTag(sender: CommandSender, args: Array<out String>) {
         if (!sender.hasPermission("pulse.tag.create")) {
-            sendMessage(sender, "§cYou don't have permission to create tags!")
+            sendMessage(sender, messagesManager.noPermission())
             return
         }
 
         if (args.size < 3) {
-            sendMessage(sender, "§cUsage: /tag create <id> <name> [prefix] [suffix]")
+            sendMessage(sender, messagesManager.invalidCommand())
             sendMessage(sender, "§7Example: /tag create test \"Test Tag\" \"&a[Test] \" \"\"")
             return
         }
@@ -247,20 +247,20 @@ class TagCommand : BaseCommand() {
         val tagManager = Pulse.getPlugin().tagManager
 
         if (tagManager.createTag(id, name, prefix, suffix)) {
-            sendMessage(sender, "§aCreated tag: §e$id §7($name§7)")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("tag.create-success", "tag" to "$id §7($name§7)"))
         } else {
-            sendMessage(sender, "§cA tag with ID '§e$id§c' already exists!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("tag.tag-already-exists", "tag" to id))
         }
     }
 
     private fun editTag(sender: CommandSender, args: Array<out String>) {
         if (!sender.hasPermission("pulse.tag.edit")) {
-            sendMessage(sender, "§cYou don't have permission to edit tags!")
+            sendMessage(sender, messagesManager.noPermission())
             return
         }
 
         if (args.size < 4) {
-            sendMessage(sender, "§cUsage: /tag edit <id> <property> <value>")
+            sendMessage(sender, messagesManager.invalidCommand())
             sendMessage(sender, "§7Properties: name, prefix, suffix, price, purchasable, enabled")
             return
         }
@@ -272,7 +272,7 @@ class TagCommand : BaseCommand() {
         val tagManager = Pulse.getPlugin().tagManager
 
         if (tagManager.getTag(id) == null) {
-            sendMessage(sender, "§cTag '§e$id§c' doesn't exist!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("tag.tag-not-exist", "tag" to id))
             return
         }
 
@@ -308,26 +308,26 @@ class TagCommand : BaseCommand() {
                 }
             }
             else -> {
-                sendMessage(sender, "§cUnknown property: $property")
+                sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("general.unknown-subcommand", "subcommand" to property))
                 return
             }
         }
 
         if (success) {
-            sendMessage(sender, "§aUpdated tag '§e$id§a' property '$property' to: $value")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("tag.edit-success", "tag" to id))
         } else {
-            sendMessage(sender, "§cFailed to update tag!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("tag.edit-success", "tag" to id))
         }
     }
 
     private fun deleteTag(sender: CommandSender, args: Array<out String>) {
         if (!sender.hasPermission("pulse.tag.delete")) {
-            sendMessage(sender, "§cYou don't have permission to delete tags!")
+            sendMessage(sender, messagesManager.noPermission())
             return
         }
 
         if (args.size < 2) {
-            sendMessage(sender, "§cUsage: /tag delete <id>")
+            sendMessage(sender, messagesManager.invalidCommand())
             return
         }
 
@@ -336,20 +336,20 @@ class TagCommand : BaseCommand() {
         val tag = tagManager.getTag(id)
 
         if (tag == null) {
-            sendMessage(sender, "§cTag '§e$id§c' doesn't exist!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("tag.tag-not-exist", "tag" to id))
             return
         }
 
         if (tagManager.deleteTag(id)) {
-            sendMessage(sender, "§aDeleted tag: §e$id")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("tag.delete-success", "tag" to id))
         } else {
-            sendMessage(sender, "§cFailed to delete tag!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("tag.delete-success", "tag" to id))
         }
     }
 
     private fun tagInfo(sender: CommandSender, args: Array<out String>) {
         if (args.size < 2) {
-            sendMessage(sender, "§cUsage: /tag info <id>")
+            sendMessage(sender, messagesManager.invalidCommand())
             return
         }
 
@@ -358,7 +358,7 @@ class TagCommand : BaseCommand() {
         val tag = tagManager.getTag(id)
 
         if (tag == null) {
-            sendMessage(sender, "§cTag '§e$id§c' doesn't exist!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("tag.tag-not-exist", "tag" to id))
             return
         }
 
@@ -382,13 +382,13 @@ class TagCommand : BaseCommand() {
 
     private fun reloadTags(sender: CommandSender, args: Array<out String>) {
         if (!sender.hasPermission("pulse.tag.reload")) {
-            sendMessage(sender, "§cYou don't have permission to reload tags!")
+            sendMessage(sender, messagesManager.noPermission())
             return
         }
 
         val tagManager = Pulse.getPlugin().tagManager
         tagManager.reload()
-        sendMessage(sender, "§aReloaded tag system!")
+        sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("tag.reload-success"))
     }
 
     private fun showHelp(sender: CommandSender) {

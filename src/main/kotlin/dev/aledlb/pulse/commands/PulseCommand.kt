@@ -5,6 +5,8 @@ import org.bukkit.command.CommandSender
 
 class PulseCommand : BaseCommand() {
 
+    private val messagesManager get() = Pulse.getPlugin().messagesManager
+
     override val name = "pulse"
     override val permission = "pulse.admin"
     override val description = "Main Pulse command"
@@ -21,14 +23,14 @@ class PulseCommand : BaseCommand() {
             "info", "version" -> handleInfo(sender)
             "help" -> showHelp(sender)
             else -> {
-                sendMessage(sender, "§cUnknown subcommand: ${args[0]}")
+                sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("general.unknown-subcommand", "subcommand" to args[0]))
                 showHelp(sender)
             }
         }
     }
 
     private fun handleReload(sender: CommandSender) {
-        sendMessage(sender, "§eReloading Pulse configuration...")
+        sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("pulse.reload-started"))
 
         try {
             val plugin = Pulse.getPlugin()
@@ -51,10 +53,10 @@ class PulseCommand : BaseCommand() {
             plugin.messagesManager.reload()
             plugin.punishmentManager.reload()
 
-            sendMessage(sender, "§aConfiguration reloaded successfully!")
-            sendMessage(sender, "§7All managers have been refreshed.")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("pulse.reload-success"))
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("pulse.reload-managers-refreshed"))
         } catch (e: Exception) {
-            sendMessage(sender, "§cFailed to reload configuration: ${e.message}")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("pulse.reload-failed", "error" to (e.message ?: "Unknown error")))
             e.printStackTrace()
         }
     }

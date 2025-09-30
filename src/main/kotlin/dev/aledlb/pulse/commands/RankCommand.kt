@@ -12,6 +12,8 @@ class RankCommand(
     private val permissionManager: PermissionManager
 ) : BaseCommand() {
 
+    private val messagesManager get() = Pulse.getPlugin().messagesManager
+
     override val name = "rank"
     override val permission = "pulse.rank"
     override val description = "Manage player ranks"
@@ -37,7 +39,7 @@ class RankCommand(
             "reload" -> handleReload(sender)
             "help" -> showHelp(sender)
             else -> {
-                sendMessage(sender, "§cUnknown subcommand: ${args[0]}")
+                sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("general.unknown-subcommand", "subcommand" to args[0]))
                 showHelp(sender)
             }
         }
@@ -45,12 +47,12 @@ class RankCommand(
 
     private fun handleCreate(sender: CommandSender, args: Array<out String>) {
         if (!sender.hasPermission("pulse.rank.create")) {
-            sendMessage(sender, "§cYou don't have permission to create ranks!")
+            sendMessage(sender, messagesManager.noPermission())
             return
         }
 
         if (args.size < 5) {
-            sendMessage(sender, "§cUsage: /rank create <name> <prefix> <suffix> <weight>")
+            sendMessage(sender, messagesManager.invalidCommand())
             return
         }
 
@@ -58,45 +60,45 @@ class RankCommand(
         val prefix = args[2].replace("_", " ").replace("&", "§")
         val suffix = args[3].replace("_", " ").replace("&", "§")
         val weight = args[4].toIntOrNull() ?: run {
-            sendMessage(sender, "§cWeight must be a number!")
+            sendMessage(sender, messagesManager.invalidCommand())
             return
         }
 
         if (rankManager.createRank(name, prefix, suffix, weight)) {
-            sendMessage(sender, "§aSuccessfully created rank §e$name§a!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("rank.create-success", "rank" to name))
         } else {
-            sendMessage(sender, "§cRank §e$name§c already exists!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("rank.rank-already-exists", "rank" to name))
         }
     }
 
     private fun handleDelete(sender: CommandSender, args: Array<out String>) {
         if (!sender.hasPermission("pulse.rank.delete")) {
-            sendMessage(sender, "§cYou don't have permission to delete ranks!")
+            sendMessage(sender, messagesManager.noPermission())
             return
         }
 
         if (args.size < 2) {
-            sendMessage(sender, "§cUsage: /rank delete <name>")
+            sendMessage(sender, messagesManager.invalidCommand())
             return
         }
 
         val name = args[1]
         if (rankManager.deleteRank(name)) {
-            sendMessage(sender, "§aSuccessfully deleted rank §e$name§a!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("rank.delete-success", "rank" to name))
             permissionManager.updateAllOnlinePlayersPermissions()
         } else {
-            sendMessage(sender, "§cRank §e$name§c doesn't exist or cannot be deleted!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("rank.rank-not-exist", "rank" to name))
         }
     }
 
     private fun handleSet(sender: CommandSender, args: Array<out String>) {
         if (!sender.hasPermission("pulse.rank.set")) {
-            sendMessage(sender, "§cYou don't have permission to set ranks!")
+            sendMessage(sender, messagesManager.noPermission())
             return
         }
 
         if (args.size < 3) {
-            sendMessage(sender, "§cUsage: /rank set <player> <rank>")
+            sendMessage(sender, messagesManager.invalidCommand())
             return
         }
 
@@ -105,33 +107,33 @@ class RankCommand(
 
         val targetPlayer = Bukkit.getPlayer(playerName)
         if (targetPlayer == null) {
-            sendMessage(sender, "§cPlayer §e$playerName§c is not online!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("general.player-not-online", "player" to playerName))
             return
         }
 
         val rank = rankManager.getRank(rankName)
         if (rank == null) {
-            sendMessage(sender, "§cRank §e$rankName§c doesn't exist!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("rank.rank-not-exist", "rank" to rankName))
             return
         }
 
         if (permissionManager.setPlayerRank(targetPlayer, rankName)) {
-            sendMessage(sender, "§aSet §e${targetPlayer.name}§a's rank to §e${rank.name}§a!")
-            sendMessage(targetPlayer, "§aYour rank has been set to §e${rank.name}§a!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("rank.set-success", "player" to targetPlayer.name, "rank" to rank.name))
+            sendMessage(targetPlayer, messagesManager.getFormattedMessageWithPrefix("rank.set-notification", "rank" to rank.name))
             permissionManager.updatePlayerDisplayNames()
         } else {
-            sendMessage(sender, "§cFailed to set rank!")
+            sendMessage(sender, messagesManager.invalidCommand())
         }
     }
 
     private fun handleRemove(sender: CommandSender, args: Array<out String>) {
         if (!sender.hasPermission("pulse.rank.remove")) {
-            sendMessage(sender, "§cYou don't have permission to remove ranks from players!")
+            sendMessage(sender, messagesManager.noPermission())
             return
         }
 
         if (args.size < 3) {
-            sendMessage(sender, "§cUsage: /rank remove <player> <rank>")
+            sendMessage(sender, messagesManager.invalidCommand())
             return
         }
 
@@ -140,13 +142,13 @@ class RankCommand(
 
         val targetPlayer = Bukkit.getPlayer(playerName)
         if (targetPlayer == null) {
-            sendMessage(sender, "§cPlayer §e$playerName§c is not online!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("general.player-not-online", "player" to playerName))
             return
         }
 
         val playerData = rankManager.getPlayerData(targetPlayer)
         if (playerData.rank.lowercase() != rankName.lowercase()) {
-            sendMessage(sender, "§c${targetPlayer.name} doesn't have the rank §e$rankName§c!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("rank.player-doesnt-have-rank", "player" to targetPlayer.name, "rank" to rankName))
             return
         }
 
@@ -154,29 +156,29 @@ class RankCommand(
         val rank = rankManager.getRank(defaultRank)
 
         if (permissionManager.setPlayerRank(targetPlayer, defaultRank)) {
-            sendMessage(sender, "§aRemoved rank §e$rankName§a from §e${targetPlayer.name}§a!")
-            sendMessage(targetPlayer, "§cYour rank §e$rankName§c has been removed!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("rank.remove-success", "player" to targetPlayer.name, "rank" to rankName))
+            sendMessage(targetPlayer, messagesManager.getFormattedMessageWithPrefix("rank.remove-notification", "rank" to rankName))
             permissionManager.updatePlayerDisplayNames()
         } else {
-            sendMessage(sender, "§cFailed to remove rank!")
+            sendMessage(sender, messagesManager.invalidCommand())
         }
     }
 
     private fun handleInfo(sender: CommandSender, args: Array<out String>) {
         if (!sender.hasPermission("pulse.rank.info")) {
-            sendMessage(sender, "§cYou don't have permission to view rank info!")
+            sendMessage(sender, messagesManager.noPermission())
             return
         }
 
         if (args.size < 2) {
-            sendMessage(sender, "§cUsage: /rank info <rank>")
+            sendMessage(sender, messagesManager.invalidCommand())
             return
         }
 
         val rankName = args[1]
         val rank = rankManager.getRank(rankName)
         if (rank == null) {
-            sendMessage(sender, "§cRank §e$rankName§c doesn't exist!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("rank.rank-not-exist", "rank" to rankName))
             return
         }
 
@@ -214,13 +216,13 @@ class RankCommand(
 
     private fun handleList(sender: CommandSender) {
         if (!sender.hasPermission("pulse.rank.list")) {
-            sendMessage(sender, "§cYou don't have permission to list ranks!")
+            sendMessage(sender, messagesManager.noPermission())
             return
         }
 
         val ranks = rankManager.getRanksSorted()
         if (ranks.isEmpty()) {
-            sendMessage(sender, "§cNo ranks found!")
+            sendMessage(sender, messagesManager.invalidCommand())
             return
         }
 
@@ -240,12 +242,12 @@ class RankCommand(
 
     private fun handleAddPermission(sender: CommandSender, args: Array<out String>) {
         if (!sender.hasPermission("pulse.rank.permission")) {
-            sendMessage(sender, "§cYou don't have permission to manage rank permissions!")
+            sendMessage(sender, messagesManager.noPermission())
             return
         }
 
         if (args.size < 3) {
-            sendMessage(sender, "§cUsage: /rank addperm <rank> <permission>")
+            sendMessage(sender, messagesManager.invalidCommand())
             return
         }
 
@@ -253,21 +255,21 @@ class RankCommand(
         val permission = args[2]
 
         if (rankManager.addRankPermission(rankName, permission)) {
-            sendMessage(sender, "§aAdded permission §e$permission§a to rank §e$rankName§a!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("rank.addperm-success", "permission" to permission, "rank" to rankName))
             permissionManager.updateAllOnlinePlayersPermissions()
         } else {
-            sendMessage(sender, "§cRank §e$rankName§c doesn't exist!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("rank.rank-not-exist", "rank" to rankName))
         }
     }
 
     private fun handleRemovePermission(sender: CommandSender, args: Array<out String>) {
         if (!sender.hasPermission("pulse.rank.permission")) {
-            sendMessage(sender, "§cYou don't have permission to manage rank permissions!")
+            sendMessage(sender, messagesManager.noPermission())
             return
         }
 
         if (args.size < 3) {
-            sendMessage(sender, "§cUsage: /rank removeperm <rank> <permission>")
+            sendMessage(sender, messagesManager.invalidCommand())
             return
         }
 
@@ -275,21 +277,21 @@ class RankCommand(
         val permission = args[2]
 
         if (rankManager.removeRankPermission(rankName, permission)) {
-            sendMessage(sender, "§aRemoved permission §e$permission§a from rank §e$rankName§a!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("rank.removeperm-success", "permission" to permission, "rank" to rankName))
             permissionManager.updateAllOnlinePlayersPermissions()
         } else {
-            sendMessage(sender, "§cRank §e$rankName§c doesn't exist!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("rank.rank-not-exist", "rank" to rankName))
         }
     }
 
     private fun handleAddParent(sender: CommandSender, args: Array<out String>) {
         if (!sender.hasPermission("pulse.rank.parent")) {
-            sendMessage(sender, "§cYou don't have permission to manage rank parents!")
+            sendMessage(sender, messagesManager.noPermission())
             return
         }
 
         if (args.size < 3) {
-            sendMessage(sender, "§cUsage: /rank addparent <rank> <parent>")
+            sendMessage(sender, messagesManager.invalidCommand())
             return
         }
 
@@ -297,39 +299,39 @@ class RankCommand(
         val parentName = args[2]
 
         if (rankName.lowercase() == parentName.lowercase()) {
-            sendMessage(sender, "§cA rank cannot be its own parent!")
+            sendMessage(sender, messagesManager.invalidCommand())
             return
         }
 
         val rank = rankManager.getRank(rankName)
         if (rank == null) {
-            sendMessage(sender, "§cRank §e$rankName§c doesn't exist!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("rank.rank-not-exist", "rank" to rankName))
             return
         }
 
         val parent = rankManager.getRank(parentName)
         if (parent == null) {
-            sendMessage(sender, "§cParent rank §e$parentName§c doesn't exist!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("rank.rank-not-exist", "rank" to parentName))
             return
         }
 
         if (rankManager.addRankParent(rankName, parentName)) {
-            sendMessage(sender, "§aAdded parent §e${parent.name}§a to rank §e${rank.name}§a!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("rank.addparent-success", "parent" to parent.name, "rank" to rank.name))
             sendMessage(sender, "§7Rank §e${rank.name}§7 will now inherit permissions from §e${parent.name}§7.")
             permissionManager.updateAllOnlinePlayersPermissions()
         } else {
-            sendMessage(sender, "§cFailed to add parent! This would create a circular inheritance.")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("rank.addparent-circular"))
         }
     }
 
     private fun handleRemoveParent(sender: CommandSender, args: Array<out String>) {
         if (!sender.hasPermission("pulse.rank.parent")) {
-            sendMessage(sender, "§cYou don't have permission to manage rank parents!")
+            sendMessage(sender, messagesManager.noPermission())
             return
         }
 
         if (args.size < 3) {
-            sendMessage(sender, "§cUsage: /rank removeparent <rank> <parent>")
+            sendMessage(sender, messagesManager.invalidCommand())
             return
         }
 
@@ -338,26 +340,26 @@ class RankCommand(
 
         val rank = rankManager.getRank(rankName)
         if (rank == null) {
-            sendMessage(sender, "§cRank §e$rankName§c doesn't exist!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("rank.rank-not-exist", "rank" to rankName))
             return
         }
 
         if (rankManager.removeRankParent(rankName, parentName)) {
-            sendMessage(sender, "§aRemoved parent §e$parentName§a from rank §e${rank.name}§a!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("rank.removeparent-success", "parent" to parentName, "rank" to rank.name))
             permissionManager.updateAllOnlinePlayersPermissions()
         } else {
-            sendMessage(sender, "§cFailed to remove parent!")
+            sendMessage(sender, messagesManager.invalidCommand())
         }
     }
 
     private fun handleReload(sender: CommandSender) {
         if (!sender.hasPermission("pulse.rank.reload")) {
-            sendMessage(sender, "§cYou don't have permission to reload ranks!")
+            sendMessage(sender, messagesManager.noPermission())
             return
         }
 
         permissionManager.reloadPermissions()
-        sendMessage(sender, "§aRank system reloaded successfully!")
+        sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("rank.reload-success"))
     }
 
     private fun showHelp(sender: CommandSender) {

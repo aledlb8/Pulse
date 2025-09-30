@@ -8,6 +8,8 @@ import org.bukkit.entity.Player
 
 class CoinCommand(private val economyManager: EconomyManager) : BaseCommand() {
 
+    private val messagesManager get() = Pulse.getPlugin().messagesManager
+
     override val name = "coin"
     override val permission = "pulse.coin"
     override val description = "Manage player coins"
@@ -33,7 +35,7 @@ class CoinCommand(private val economyManager: EconomyManager) : BaseCommand() {
             "top", "baltop" -> handleTop(sender, args)
             "help" -> showHelp(sender)
             else -> {
-                sendMessage(sender, "§cUnknown subcommand: ${args[0]}")
+                sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("general.unknown-subcommand", "subcommand" to args[0]))
                 showHelp(sender)
             }
         }
@@ -44,7 +46,7 @@ class CoinCommand(private val economyManager: EconomyManager) : BaseCommand() {
             if (sender is Player) {
                 sender.name
             } else {
-                sendMessage(sender, "§cUsage: /coin balance <player>")
+                sendMessage(sender, messagesManager.invalidCommand())
                 return
             }
         }
@@ -53,14 +55,14 @@ class CoinCommand(private val economyManager: EconomyManager) : BaseCommand() {
             sender as? Player
         } else {
             if (!sender.hasPermission("pulse.coin.others")) {
-                sendMessage(sender, "§cYou don't have permission to check other players' balances!")
+                sendMessage(sender, messagesManager.noPermission())
                 return
             }
             Bukkit.getPlayer(targetName) ?: Bukkit.getOfflinePlayer(targetName)
         }
 
         if (targetPlayer == null) {
-            sendMessage(sender, "§cPlayer §e$targetName§c not found!")
+            sendMessage(sender, messagesManager.playerNotFound())
             return
         }
 
@@ -68,37 +70,37 @@ class CoinCommand(private val economyManager: EconomyManager) : BaseCommand() {
         val formattedBalance = economyManager.formatBalance(balance)
 
         if (sender.name.equals(targetName, true)) {
-            sendMessage(sender, "§aYour balance: §e$formattedBalance")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("coin.balance-self", "balance" to formattedBalance))
         } else {
-            sendMessage(sender, "§e${targetPlayer.name}§a's balance: §e$formattedBalance")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("coin.balance-other", "player" to targetPlayer.name!!, "balance" to formattedBalance))
         }
     }
 
     private fun handleAdd(sender: CommandSender, args: Array<out String>) {
         if (!sender.hasPermission("pulse.coin.add")) {
-            sendMessage(sender, "§cYou don't have permission to add coins!")
+            sendMessage(sender, messagesManager.noPermission())
             return
         }
 
         if (args.size < 3) {
-            sendMessage(sender, "§cUsage: /coin add <player> <amount>")
+            sendMessage(sender, messagesManager.invalidCommand())
             return
         }
 
         val targetName = args[1]
         val amount = args[2].toDoubleOrNull() ?: run {
-            sendMessage(sender, "§cInvalid amount: §e${args[2]}")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("economy.invalid-amount", "amount" to args[2]))
             return
         }
 
         if (amount <= 0) {
-            sendMessage(sender, "§cAmount must be positive!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("economy.amount-must-be-positive"))
             return
         }
 
         val targetPlayer = Bukkit.getPlayer(targetName) ?: Bukkit.getOfflinePlayer(targetName)
         if (targetPlayer.name == null) {
-            sendMessage(sender, "§cPlayer §e$targetName§c not found!")
+            sendMessage(sender, messagesManager.playerNotFound())
             return
         }
 
@@ -107,43 +109,43 @@ class CoinCommand(private val economyManager: EconomyManager) : BaseCommand() {
             val formattedAmount = economyManager.formatBalance(amount)
             val newBalance = economyManager.formatBalance(economyManager.getBalance(targetPlayer))
 
-            sendMessage(sender, "§aAdded §e$formattedAmount§a to §e${targetPlayer.name}§a's account!")
-            sendMessage(sender, "§7New balance: §e$newBalance")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("coin.add-success", "amount" to formattedAmount, "player" to targetPlayer.name!!))
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("coin.new-balance", "balance" to newBalance))
 
             // Notify the target player if they're online
             if (targetPlayer is Player && targetPlayer.isOnline) {
-                targetPlayer.sendMessage("§d[§5Pulse§d]§r §aYou received §e$formattedAmount§a!")
+                targetPlayer.sendMessage(messagesManager.getFormattedMessageWithPrefix("coin.add-notification", "amount" to formattedAmount))
             }
         } else {
-            sendMessage(sender, "§cFailed to add coins!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("economy.transaction-failed"))
         }
     }
 
     private fun handleRemove(sender: CommandSender, args: Array<out String>) {
         if (!sender.hasPermission("pulse.coin.remove")) {
-            sendMessage(sender, "§cYou don't have permission to remove coins!")
+            sendMessage(sender, messagesManager.noPermission())
             return
         }
 
         if (args.size < 3) {
-            sendMessage(sender, "§cUsage: /coin remove <player> <amount>")
+            sendMessage(sender, messagesManager.invalidCommand())
             return
         }
 
         val targetName = args[1]
         val amount = args[2].toDoubleOrNull() ?: run {
-            sendMessage(sender, "§cInvalid amount: §e${args[2]}")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("economy.invalid-amount", "amount" to args[2]))
             return
         }
 
         if (amount <= 0) {
-            sendMessage(sender, "§cAmount must be positive!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("economy.amount-must-be-positive"))
             return
         }
 
         val targetPlayer = Bukkit.getPlayer(targetName) ?: Bukkit.getOfflinePlayer(targetName)
         if (targetPlayer.name == null) {
-            sendMessage(sender, "§cPlayer §e$targetName§c not found!")
+            sendMessage(sender, messagesManager.playerNotFound())
             return
         }
 
@@ -152,43 +154,43 @@ class CoinCommand(private val economyManager: EconomyManager) : BaseCommand() {
             val formattedAmount = economyManager.formatBalance(amount)
             val newBalance = economyManager.formatBalance(economyManager.getBalance(targetPlayer))
 
-            sendMessage(sender, "§aRemoved §e$formattedAmount§a from §e${targetPlayer.name}§a's account!")
-            sendMessage(sender, "§7New balance: §e$newBalance")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("coin.remove-success", "amount" to formattedAmount, "player" to targetPlayer.name!!))
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("coin.new-balance", "balance" to newBalance))
 
             // Notify the target player if they're online
             if (targetPlayer is Player && targetPlayer.isOnline) {
-                targetPlayer.sendMessage("§d[§5Pulse§d]§r §c$formattedAmount§c was removed from your account!")
+                targetPlayer.sendMessage(messagesManager.getFormattedMessageWithPrefix("coin.remove-notification", "amount" to formattedAmount))
             }
         } else {
-            sendMessage(sender, "§cFailed to remove coins! (Insufficient funds)")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("economy.not-enough-coins"))
         }
     }
 
     private fun handleSet(sender: CommandSender, args: Array<out String>) {
         if (!sender.hasPermission("pulse.coin.set")) {
-            sendMessage(sender, "§cYou don't have permission to set coin balances!")
+            sendMessage(sender, messagesManager.noPermission())
             return
         }
 
         if (args.size < 3) {
-            sendMessage(sender, "§cUsage: /coin set <player> <amount>")
+            sendMessage(sender, messagesManager.invalidCommand())
             return
         }
 
         val targetName = args[1]
         val amount = args[2].toDoubleOrNull() ?: run {
-            sendMessage(sender, "§cInvalid amount: §e${args[2]}")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("economy.invalid-amount", "amount" to args[2]))
             return
         }
 
         if (amount < 0) {
-            sendMessage(sender, "§cAmount cannot be negative!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("economy.amount-cannot-be-negative"))
             return
         }
 
         val targetPlayer = Bukkit.getPlayer(targetName) ?: Bukkit.getOfflinePlayer(targetName)
         if (targetPlayer.name == null) {
-            sendMessage(sender, "§cPlayer §e$targetName§c not found!")
+            sendMessage(sender, messagesManager.playerNotFound())
             return
         }
 
@@ -196,14 +198,14 @@ class CoinCommand(private val economyManager: EconomyManager) : BaseCommand() {
         if (success) {
             val formattedAmount = economyManager.formatBalance(amount)
 
-            sendMessage(sender, "§aSet §e${targetPlayer.name}§a's balance to §e$formattedAmount§a!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("coin.set-success", "player" to targetPlayer.name!!, "amount" to formattedAmount))
 
             // Notify the target player if they're online
             if (targetPlayer is Player && targetPlayer.isOnline) {
-                targetPlayer.sendMessage("§d[§5Pulse§d]§r §aYour balance has been set to §e$formattedAmount§a!")
+                targetPlayer.sendMessage(messagesManager.getFormattedMessageWithPrefix("coin.set-notification", "amount" to formattedAmount))
             }
         } else {
-            sendMessage(sender, "§cFailed to set balance!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("economy.transaction-failed"))
         }
     }
 
@@ -211,33 +213,33 @@ class CoinCommand(private val economyManager: EconomyManager) : BaseCommand() {
         val player = requirePlayer(sender) ?: return
 
         if (!sender.hasPermission("pulse.coin.pay")) {
-            sendMessage(sender, "§cYou don't have permission to pay other players!")
+            sendMessage(sender, messagesManager.noPermission())
             return
         }
 
         if (args.size < 3) {
-            sendMessage(sender, "§cUsage: /coin pay <player> <amount>")
+            sendMessage(sender, messagesManager.invalidCommand())
             return
         }
 
         val targetName = args[1]
         val amount = args[2].toDoubleOrNull() ?: run {
-            sendMessage(sender, "§cInvalid amount: §e${args[2]}")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("economy.invalid-amount", "amount" to args[2]))
             return
         }
 
         if (amount <= 0) {
-            sendMessage(sender, "§cAmount must be positive!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("economy.amount-must-be-positive"))
             return
         }
 
         val targetPlayer = Bukkit.getPlayer(targetName) ?: run {
-            sendMessage(sender, "§cPlayer §e$targetName§c is not online!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("general.player-not-online", "player" to targetName))
             return
         }
 
         if (targetPlayer.uniqueId == player.uniqueId) {
-            sendMessage(sender, "§cYou cannot pay yourself!")
+            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("economy.cannot-pay-yourself"))
             return
         }
 
@@ -248,29 +250,29 @@ class CoinCommand(private val economyManager: EconomyManager) : BaseCommand() {
                 val senderBalance = economyManager.formatBalance(economyManager.getBalance(player))
                 val targetBalance = economyManager.formatBalance(economyManager.getBalance(targetPlayer))
 
-                sendMessage(sender, "§aYou paid §e$formattedAmount§a to §e${targetPlayer.name}§a!")
-                sendMessage(sender, "§7Your balance: §e$senderBalance")
+                sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("coin.pay-success-sender", "amount" to formattedAmount, "player" to targetPlayer.name))
+                sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("coin.new-balance", "balance" to senderBalance))
 
-                sendMessage(targetPlayer, "§aYou received §e$formattedAmount§a from §e${player.name}§a!")
-                sendMessage(targetPlayer, "§7Your balance: §e$targetBalance")
+                sendMessage(targetPlayer, messagesManager.getFormattedMessageWithPrefix("coin.pay-success-receiver", "amount" to formattedAmount, "player" to player.name))
+                sendMessage(targetPlayer, messagesManager.getFormattedMessageWithPrefix("coin.new-balance", "balance" to targetBalance))
             }
             EconomyManager.TransactionResult.INSUFFICIENT_FUNDS -> {
                 val yourBalance = economyManager.formatBalance(economyManager.getBalance(player))
-                sendMessage(sender, "§cYou don't have enough coins!")
-                sendMessage(sender, "§7Your balance: §e$yourBalance")
+                sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("economy.not-enough-coins"))
+                sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("coin.new-balance", "balance" to yourBalance))
             }
             EconomyManager.TransactionResult.INVALID_AMOUNT -> {
-                sendMessage(sender, "§cInvalid amount!")
+                sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("economy.invalid-amount", "amount" to amount.toString()))
             }
             EconomyManager.TransactionResult.FAILED -> {
-                sendMessage(sender, "§cTransaction failed!")
+                sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("economy.transaction-failed"))
             }
         }
     }
 
     private fun handleTop(sender: CommandSender, args: Array<out String>) {
         if (!sender.hasPermission("pulse.coin.top")) {
-            sendMessage(sender, "§cYou don't have permission to view the balance leaderboard!")
+            sendMessage(sender, messagesManager.noPermission())
             return
         }
 
