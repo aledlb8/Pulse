@@ -1,3 +1,6 @@
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/03b5894d-6281-4459-82d3-0b8b1f025d25" alt="pulse" width="200">
+</p>
 ﻿<h1 align="center">Pulse</h1>
 <p align="center">Modular Paper server core for Minecraft 1.21+, powered by Kotlin.</p>
 <p align="center">
