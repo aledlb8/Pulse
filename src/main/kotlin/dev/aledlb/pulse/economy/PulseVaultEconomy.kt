@@ -10,6 +10,7 @@ import java.util.*
  *
  * This allows other plugins to interact with Pulse's economy through Vault.
  */
+@Suppress("OVERRIDE_DEPRECATION")
 class PulseVaultEconomy(private val economyManager: EconomyManager) : Economy {
 
     override fun isEnabled(): Boolean = true
