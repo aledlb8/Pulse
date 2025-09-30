@@ -9,10 +9,13 @@ import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
+import org.bukkit.event.inventory.ClickType
 import org.bukkit.event.inventory.InventoryClickEvent
+import org.bukkit.event.inventory.InventoryCloseEvent
+import org.bukkit.event.inventory.InventoryDragEvent
+import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
-import org.bukkit.inventory.meta.ItemMeta
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
@@ -23,6 +26,7 @@ class GrantCommand(
 
     private val messagesManager get() = Pulse.getPlugin().messagesManager
     private val activeGuis = mutableMapOf<UUID, GuiSession>()
+    private val switchingMenu = mutableSetOf<UUID>()
 
     override val name = "grant"
     override val permission = "pulse.grant"
@@ -54,53 +58,64 @@ class GrantCommand(
         openMainMenu(sender, targetPlayer)
     }
 
+    // ----- GUI OPEN HELPERS -----
+
+    private fun openGuiSafely(viewer: Player, inv: Inventory, session: GuiSession) {
+        val uuid = viewer.uniqueId
+        switchingMenu.add(uuid)
+        // This call synchronously fires InventoryCloseEvent for the previous view.
+        viewer.openInventory(inv)
+        // After openInventory returns, it's safe to install the new session.
+        activeGuis[uuid] = session
+        switchingMenu.remove(uuid)
+    }
+
     private fun openMainMenu(viewer: Player, target: Player) {
         val inv = Bukkit.createInventory(null, 27, "§5§lGrant Ranks - ${target.name}")
 
-        // Create Give Rank button (slot 11 - left center)
-        val giveRankItem = ItemStack(Material.EMERALD)
-        val giveRankMeta = giveRankItem.itemMeta!!
-        giveRankMeta.setDisplayName("§a§lGive Rank")
-        giveRankMeta.lore = listOf(
-            "§7Click to select a rank",
-            "§7to give to this player"
-        )
-        giveRankItem.itemMeta = giveRankMeta
-        inv.setItem(11, giveRankItem)
+        // Give Rank button
+        inv.setItem(11, ItemStack(Material.EMERALD).apply {
+            itemMeta = itemMeta.apply {
+                setDisplayName("§a§lGive Rank")
+                lore = listOf(
+                    "§7Click to select a rank",
+                    "§7to give to this player"
+                )
+            }
+        })
 
-        // Create See Ranks button (slot 15 - right center)
-        val seeRanksItem = ItemStack(Material.BOOK)
-        val seeRanksMeta = seeRanksItem.itemMeta!!
-        seeRanksMeta.setDisplayName("§e§lSee Ranks")
+        // See Ranks button
         val playerData = rankManager.getPlayerData(target)
         val defaultRank = rankManager.getDefaultRank()
         val activeRanks = playerData.getRanks().filter { it.rankName.lowercase() != defaultRank.lowercase() }
-
-        val lore = mutableListOf<String>()
-        lore.add("§7Click to view and manage")
-        lore.add("§7current ranks")
-        lore.add("")
-
-        if (activeRanks.isEmpty()) {
-            lore.add("§7No additional ranks")
-        } else {
-            lore.add("§7Active Ranks: §e${activeRanks.size}")
-            val primaryRank = rankManager.getRank(playerData.rank)
-            if (primaryRank != null) {
-                lore.add("§7Primary: §e${primaryRank.name}")
+        val seeLore = buildList {
+            add("§7Click to view and manage")
+            add("§7current ranks")
+            add("")
+            if (activeRanks.isEmpty()) {
+                add("§7No additional ranks")
+            } else {
+                add("§7Active Ranks: §e${activeRanks.size}")
+                val primaryRank = rankManager.getRank(playerData.rank)
+                if (primaryRank != null) add("§7Primary: §e${primaryRank.name}")
             }
         }
 
-        seeRanksMeta.lore = lore
-        seeRanksItem.itemMeta = seeRanksMeta
-        inv.setItem(15, seeRanksItem)
+        inv.setItem(15, ItemStack(Material.BOOK).apply {
+            itemMeta = itemMeta.apply {
+                setDisplayName("§e§lSee Ranks")
+                lore = seeLore
+            }
+        })
 
-        activeGuis[viewer.uniqueId] = GuiSession(
-            type = GuiType.MAIN_MENU,
-            target = target.uniqueId
+        openGuiSafely(
+            viewer,
+            inv,
+            GuiSession(
+                type = GuiType.MAIN_MENU,
+                target = target.uniqueId
+            )
         )
-
-        viewer.openInventory(inv)
     }
 
     private fun openSeeRanksMenu(viewer: Player, target: Player) {
@@ -111,63 +126,51 @@ class GrantCommand(
         val activeRanks = playerData.getRanks().filter { it.rankName.lowercase() != defaultRank.lowercase() }
 
         if (activeRanks.isEmpty()) {
-            val noRankItem = ItemStack(Material.BARRIER)
-            val noRankMeta = noRankItem.itemMeta!!
-            noRankMeta.setDisplayName("§cNo Ranks")
-            noRankMeta.lore = listOf("§7This player has no additional ranks")
-            noRankItem.itemMeta = noRankMeta
-            inv.setItem(22, noRankItem)
+            inv.setItem(22, ItemStack(Material.BARRIER).apply {
+                itemMeta = itemMeta.apply {
+                    setDisplayName("§cNo Ranks")
+                    lore = listOf("§7This player has no additional ranks")
+                }
+            })
         } else {
             activeRanks.forEachIndexed { index, rankEntry ->
                 if (index >= 45) return@forEachIndexed // Max 45 ranks
-
                 val rank = rankManager.getRank(rankEntry.rankName) ?: return@forEachIndexed
                 val isPrimary = playerData.rank.lowercase() == rankEntry.rankName.lowercase()
 
-                val rankItem = ItemStack(if (isPrimary) Material.DIAMOND else Material.NAME_TAG)
-                val rankMeta = rankItem.itemMeta!!
-                rankMeta.setDisplayName("${rank.name}")
-
-                val lore = mutableListOf<String>()
-                lore.add("§7Weight: §e${rank.weight}")
-
-                if (isPrimary) {
-                    lore.add("§aPrimary Rank")
-                }
-
-                if (rankEntry.expiration != null) {
-                    val remaining = (rankEntry.expiration!! - System.currentTimeMillis())
-                    if (remaining > 0) {
-                        lore.add("§7Duration: §e${formatDuration(remaining)}")
-                    } else {
-                        lore.add("§cExpired")
+                inv.setItem(index, ItemStack(if (isPrimary) Material.DIAMOND else Material.NAME_TAG).apply {
+                    itemMeta = itemMeta.apply {
+                        setDisplayName("${rank.name}")
+                        val lore = mutableListOf<String>()
+                        lore.add("§7Weight: §e${rank.weight}")
+                        if (isPrimary) lore.add("§aPrimary Rank")
+                        if (rankEntry.expiration != null) {
+                            val remaining = (rankEntry.expiration!! - System.currentTimeMillis())
+                            if (remaining > 0) lore.add("§7Duration: §e${formatDuration(remaining)}") else lore.add("§cExpired")
+                        } else {
+                            lore.add("§7Duration: §aPermanent")
+                        }
+                        lore.add("")
+                        lore.add("§cClick to remove this rank")
+                        this.lore = lore
                     }
-                } else {
-                    lore.add("§7Duration: §aPermanent")
-                }
-
-                lore.add("")
-                lore.add("§cClick to remove this rank")
-
-                rankMeta.lore = lore
-                rankItem.itemMeta = rankMeta
-                inv.setItem(index, rankItem)
+                })
             }
         }
 
-        // Back button
-        val backItem = ItemStack(Material.ARROW)
-        val backMeta = backItem.itemMeta!!
-        backMeta.setDisplayName("§7« Back")
-        backItem.itemMeta = backMeta
-        inv.setItem(49, backItem)
+        // Back
+        inv.setItem(49, ItemStack(Material.ARROW).apply {
+            itemMeta = itemMeta.apply { setDisplayName("§7« Back") }
+        })
 
-        activeGuis[viewer.uniqueId] = GuiSession(
-            type = GuiType.SEE_RANKS,
-            target = target.uniqueId
+        openGuiSafely(
+            viewer,
+            inv,
+            GuiSession(
+                type = GuiType.SEE_RANKS,
+                target = target.uniqueId
+            )
         )
-
-        viewer.openInventory(inv)
     }
 
     private fun openGiveRankMenu(viewer: Player, target: Player) {
@@ -176,48 +179,46 @@ class GrantCommand(
         val inv = Bukkit.createInventory(null, 54, "§5§lSelect Rank - ${target.name}")
 
         ranks.forEachIndexed { index, rank ->
-            if (index >= 45) return@forEachIndexed // Max 45 ranks
-
-            val rankItem = ItemStack(Material.DIAMOND)
-            val rankMeta = rankItem.itemMeta!!
-            rankMeta.setDisplayName("${rank.name}")
-            rankMeta.lore = listOf(
-                "§7Weight: §e${rank.weight}",
-                "§7Permissions: §e${rank.permissions.size}",
-                "",
-                "§aClick to select this rank"
-            )
-            rankItem.itemMeta = rankMeta
-            inv.setItem(index, rankItem)
+            if (index >= 45) return@forEachIndexed
+            inv.setItem(index, ItemStack(Material.DIAMOND).apply {
+                itemMeta = itemMeta.apply {
+                    setDisplayName("${rank.name}")
+                    lore = listOf(
+                        "§7Weight: §e${rank.weight}",
+                        "§7Permissions: §e${rank.permissions.size}",
+                        "",
+                        "§aClick to select this rank"
+                    )
+                }
+            })
         }
 
-        // Back button
-        val backItem = ItemStack(Material.ARROW)
-        val backMeta = backItem.itemMeta!!
-        backMeta.setDisplayName("§7« Back")
-        backItem.itemMeta = backMeta
-        inv.setItem(49, backItem)
+        inv.setItem(49, ItemStack(Material.ARROW).apply {
+            itemMeta = itemMeta.apply { setDisplayName("§7« Back") }
+        })
 
-        activeGuis[viewer.uniqueId] = GuiSession(
-            type = GuiType.GIVE_RANK,
-            target = target.uniqueId
+        openGuiSafely(
+            viewer,
+            inv,
+            GuiSession(
+                type = GuiType.GIVE_RANK,
+                target = target.uniqueId
+            )
         )
-
-        viewer.openInventory(inv)
     }
 
     private fun openDurationMenu(viewer: Player, target: Player, selectedRank: String) {
         val inv = Bukkit.createInventory(null, 27, "§5§lSelect Duration")
 
-        // Permanent option
-        val permanentItem = ItemStack(Material.NETHER_STAR)
-        val permanentMeta = permanentItem.itemMeta!!
-        permanentMeta.setDisplayName("§a§lPermanent")
-        permanentMeta.lore = listOf("§7This rank will never expire")
-        permanentItem.itemMeta = permanentMeta
-        inv.setItem(10, permanentItem)
+        // Permanent
+        inv.setItem(10, ItemStack(Material.NETHER_STAR).apply {
+            itemMeta = itemMeta.apply {
+                setDisplayName("§a§lPermanent")
+                lore = listOf("§7This rank will never expire")
+            }
+        })
 
-        // Duration options
+        // Durations
         val durations = mapOf(
             12 to Pair("1 Hour", TimeUnit.HOURS.toMillis(1)),
             13 to Pair("1 Day", TimeUnit.DAYS.toMillis(1)),
@@ -225,106 +226,147 @@ class GrantCommand(
             15 to Pair("30 Days", TimeUnit.DAYS.toMillis(30)),
             16 to Pair("90 Days", TimeUnit.DAYS.toMillis(90))
         )
-
         durations.forEach { (slot, data) ->
-            val durationItem = ItemStack(Material.CLOCK)
-            val durationMeta = durationItem.itemMeta!!
-            durationMeta.setDisplayName("§e§l${data.first}")
-            durationMeta.lore = listOf("§7Rank will expire after this time")
-            durationItem.itemMeta = durationMeta
-            inv.setItem(slot, durationItem)
+            inv.setItem(slot, ItemStack(Material.CLOCK).apply {
+                itemMeta = itemMeta.apply {
+                    setDisplayName("§e§l${data.first}")
+                    lore = listOf("§7Rank will expire after this time")
+                }
+            })
         }
 
-        // Back button
-        val backItem = ItemStack(Material.ARROW)
-        val backMeta = backItem.itemMeta!!
-        backMeta.setDisplayName("§7« Back")
-        backItem.itemMeta = backMeta
-        inv.setItem(22, backItem)
+        // Back
+        inv.setItem(22, ItemStack(Material.ARROW).apply {
+            itemMeta = itemMeta.apply { setDisplayName("§7« Back") }
+        })
 
-        activeGuis[viewer.uniqueId] = GuiSession(
-            type = GuiType.DURATION,
-            target = target.uniqueId,
-            selectedRank = selectedRank
+        openGuiSafely(
+            viewer,
+            inv,
+            GuiSession(
+                type = GuiType.DURATION,
+                target = target.uniqueId,
+                selectedRank = selectedRank
+            )
         )
-
-        viewer.openInventory(inv)
     }
 
     private fun openConfirmationMenu(viewer: Player, target: Player, selectedRank: String, duration: Long?) {
         val inv = Bukkit.createInventory(null, 27, "§5§lConfirm Grant")
 
-        val rank = rankManager.getRank(selectedRank)
-        if (rank == null) {
+        val rank = rankManager.getRank(selectedRank) ?: run {
             viewer.closeInventory()
             return
         }
 
-        // Information display
-        val infoItem = ItemStack(Material.PAPER)
-        val infoMeta = infoItem.itemMeta!!
-        infoMeta.setDisplayName("§e§lGrant Summary")
         val durationText = if (duration == null) "§aPermanent" else "§e${formatDuration(duration)}"
-        infoMeta.lore = listOf(
-            "§7Player: §e${target.name}",
-            "§7Rank: ${rank.name}",
-            "§7Duration: $durationText"
+
+        // Summary
+        inv.setItem(13, ItemStack(Material.PAPER).apply {
+            itemMeta = itemMeta.apply {
+                setDisplayName("§e§lGrant Summary")
+                lore = listOf(
+                    "§7Player: §e${target.name}",
+                    "§7Rank: ${rank.name}",
+                    "§7Duration: $durationText"
+                )
+            }
+        })
+
+        // Confirm / Cancel
+        inv.setItem(11, ItemStack(Material.LIME_WOOL).apply {
+            itemMeta = itemMeta.apply {
+                setDisplayName("§a§lCONFIRM")
+                lore = listOf("§7Click to grant this rank")
+            }
+        })
+        inv.setItem(15, ItemStack(Material.RED_WOOL).apply {
+            itemMeta = itemMeta.apply {
+                setDisplayName("§c§lCANCEL")
+                lore = listOf("§7Click to cancel")
+            }
+        })
+
+        openGuiSafely(
+            viewer,
+            inv,
+            GuiSession(
+                type = GuiType.CONFIRMATION,
+                target = target.uniqueId,
+                selectedRank = selectedRank,
+                selectedDuration = duration
+            )
         )
-        infoItem.itemMeta = infoMeta
-        inv.setItem(13, infoItem)
-
-        // Confirm button
-        val confirmItem = ItemStack(Material.LIME_WOOL)
-        val confirmMeta = confirmItem.itemMeta!!
-        confirmMeta.setDisplayName("§a§lCONFIRM")
-        confirmMeta.lore = listOf("§7Click to grant this rank")
-        confirmItem.itemMeta = confirmMeta
-        inv.setItem(11, confirmItem)
-
-        // Cancel button
-        val cancelItem = ItemStack(Material.RED_WOOL)
-        val cancelMeta = cancelItem.itemMeta!!
-        cancelMeta.setDisplayName("§c§lCANCEL")
-        cancelMeta.lore = listOf("§7Click to cancel")
-        cancelItem.itemMeta = cancelMeta
-        inv.setItem(15, cancelItem)
-
-        activeGuis[viewer.uniqueId] = GuiSession(
-            type = GuiType.CONFIRMATION,
-            target = target.uniqueId,
-            selectedRank = selectedRank,
-            selectedDuration = duration
-        )
-
-        viewer.openInventory(inv)
     }
+
+    // ----- EVENTS -----
 
     @EventHandler
     fun onInventoryClick(event: InventoryClickEvent) {
         val player = event.whoClicked as? Player ?: return
         val session = activeGuis[player.uniqueId] ?: return
 
-        event.isCancelled = true
+        val topInv = event.view.topInventory
+        val clickedInv = event.clickedInventory ?: return
+        val clickedTop = clickedInv == topInv
 
-        val clickedItem = event.currentItem ?: return
-        if (clickedItem.type == Material.AIR) return
+        if (clickedTop) {
+            // Block interactions with the GUI itself
+            event.isCancelled = true
 
-        val target = Bukkit.getPlayer(session.target)
-        if (target == null) {
-            player.closeInventory()
-            player.sendMessage(messagesManager.getFormattedMessage("general.player-not-online", "player" to "target"))
-            activeGuis.remove(player.uniqueId)
-            return
-        }
+            val clickedItem = event.currentItem ?: return
+            if (clickedItem.type == Material.AIR) return
 
-        when (session.type) {
-            GuiType.MAIN_MENU -> handleMainMenuClick(player, target, event.slot)
-            GuiType.SEE_RANKS -> handleSeeRanksClick(player, target, event.slot, clickedItem)
-            GuiType.GIVE_RANK -> handleGiveRankClick(player, target, event.slot, clickedItem)
-            GuiType.DURATION -> handleDurationClick(player, target, event.slot, session)
-            GuiType.CONFIRMATION -> handleConfirmationClick(player, target, event.slot, session)
+            val target = Bukkit.getPlayer(session.target)
+            if (target == null) {
+                player.closeInventory()
+                player.sendMessage(messagesManager.getFormattedMessage("general.player-not-online", "player" to "target"))
+                activeGuis.remove(player.uniqueId)
+                return
+            }
+
+            when (session.type) {
+                GuiType.MAIN_MENU -> handleMainMenuClick(player, target, event.slot)
+                GuiType.SEE_RANKS -> handleSeeRanksClick(player, target, event.slot, clickedItem)
+                GuiType.GIVE_RANK -> handleGiveRankClick(player, target, event.slot, clickedItem)
+                GuiType.DURATION -> handleDurationClick(player, target, event.slot, session)
+                GuiType.CONFIRMATION -> handleConfirmationClick(player, target, event.slot, session)
+            }
+        } else {
+            // Player inventory: allow normal clicks, but block attempts to push into GUI
+            when (event.click) {
+                ClickType.SHIFT_LEFT, ClickType.SHIFT_RIGHT, ClickType.NUMBER_KEY -> event.isCancelled = true
+                else -> Unit
+            }
         }
     }
+
+    @EventHandler
+    fun onInventoryDrag(event: InventoryDragEvent) {
+        val player = event.whoClicked as? Player ?: return
+        if (activeGuis[player.uniqueId] == null) return
+        val topSize = event.view.topInventory.size
+        if (event.rawSlots.any { it < topSize }) {
+            event.isCancelled = true
+        }
+    }
+
+    @EventHandler
+    fun onInventoryClose(event: InventoryCloseEvent) {
+        val player = event.player as? Player ?: return
+        val uuid = player.uniqueId
+        if (uuid in switchingMenu) return
+        activeGuis.remove(uuid)
+    }
+
+    @EventHandler
+    fun onQuit(event: PlayerQuitEvent) {
+        val uuid = event.player.uniqueId
+        switchingMenu.remove(uuid)
+        activeGuis.remove(uuid)
+    }
+
+    // ----- CLICK HANDLERS -----
 
     private fun handleMainMenuClick(viewer: Player, target: Player, slot: Int) {
         when (slot) {
@@ -338,17 +380,24 @@ class GrantCommand(
             49 -> openMainMenu(viewer, target)
             in 0..44 -> {
                 if (item.type == Material.NAME_TAG || item.type == Material.DIAMOND) {
-                    // Remove rank - extract rank name from display name
                     val rankName = item.itemMeta?.displayName ?: return
-
                     if (rankManager.removePlayerRank(target, rankName)) {
                         permissionManager.updatePlayerPermissions(target)
                         permissionManager.updatePlayerDisplayNames()
 
-                        viewer.sendMessage(messagesManager.getFormattedMessage("rank.remove-success", "player" to target.name, "rank" to rankName))
-                        target.sendMessage(messagesManager.getFormattedMessage("rank.remove-notification", "rank" to rankName))
-
-                        // Refresh the GUI
+                        viewer.sendMessage(
+                            messagesManager.getFormattedMessage(
+                                "rank.remove-success",
+                                "player" to target.name,
+                                "rank" to rankName
+                            )
+                        )
+                        target.sendMessage(
+                            messagesManager.getFormattedMessage(
+                                "rank.remove-notification",
+                                "rank" to rankName
+                            )
+                        )
                         openSeeRanksMenu(viewer, target)
                     } else {
                         viewer.sendMessage(messagesManager.invalidCommand())
@@ -372,9 +421,8 @@ class GrantCommand(
 
     private fun handleDurationClick(viewer: Player, target: Player, slot: Int, session: GuiSession) {
         val selectedRank = session.selectedRank ?: return
-
         when (slot) {
-            10 -> openConfirmationMenu(viewer, target, selectedRank, null) // Permanent
+            10 -> openConfirmationMenu(viewer, target, selectedRank, null)
             12 -> openConfirmationMenu(viewer, target, selectedRank, TimeUnit.HOURS.toMillis(1))
             13 -> openConfirmationMenu(viewer, target, selectedRank, TimeUnit.DAYS.toMillis(1))
             14 -> openConfirmationMenu(viewer, target, selectedRank, TimeUnit.DAYS.toMillis(7))
@@ -388,18 +436,26 @@ class GrantCommand(
         val selectedRank = session.selectedRank ?: return
 
         when (slot) {
-            11 -> { // Confirm
+            11 -> {
                 val expiration = session.selectedDuration?.let { System.currentTimeMillis() + it }
-
                 if (rankManager.setPlayerRank(target, selectedRank, expiration)) {
                     permissionManager.updatePlayerPermissions(target)
                     permissionManager.updatePlayerDisplayNames()
 
                     val rank = rankManager.getRank(selectedRank)
-                    val durationText = if (expiration == null) "permanently" else "for ${formatDuration(session.selectedDuration)}"
-
-                    viewer.sendMessage(messagesManager.getFormattedMessage("rank.set-success", "player" to target.name, "rank" to rank?.name!!))
-                    target.sendMessage(messagesManager.getFormattedMessage("rank.set-notification", "rank" to rank.name))
+                    viewer.sendMessage(
+                        messagesManager.getFormattedMessage(
+                            "rank.set-success",
+                            "player" to target.name,
+                            "rank" to rank?.name!!
+                        )
+                    )
+                    target.sendMessage(
+                        messagesManager.getFormattedMessage(
+                            "rank.set-notification",
+                            "rank" to rank.name
+                        )
+                    )
 
                     viewer.closeInventory()
                     activeGuis.remove(viewer.uniqueId)
@@ -409,12 +465,14 @@ class GrantCommand(
                     activeGuis.remove(viewer.uniqueId)
                 }
             }
-            15 -> { // Cancel
+            15 -> {
                 viewer.closeInventory()
                 activeGuis.remove(viewer.uniqueId)
             }
         }
     }
+
+    // ----- UTILS -----
 
     private fun formatDuration(millis: Long): String {
         val seconds = millis / 1000
