@@ -1,13 +1,17 @@
-# Ranks Configuration
+# ============================================================
+# Pulse Ranks Configuration
+# ============================================================
 
 default: "member"
 
-# Rank definitions
+# ==================== RANK DEFINITIONS ====================
 definitions:
   member:
     prefix: "&7[Member]&r "
     suffix: ""
-    permissions: []
+    permissions:
+      - "pulse.shop.use"
+      - "pulse.coin.pay"
     parents: []
     weight: 0
 
@@ -15,36 +19,87 @@ definitions:
     prefix: "&a[VIP]&r "
     suffix: ""
     permissions:
-      - "pulse.vip"
-    parents: []
+      - "pulse.chat.color"
+      - "pulse.tag"
+    parents:
+      - "member"
     weight: 10
 
   premium:
     prefix: "&b[Premium]&r "
     suffix: ""
     permissions:
-      - "pulse.premium"
+      - "pulse.tag.others"
     parents:
       - "vip"
     weight: 20
+
+  helper:
+    prefix: "&e[Helper]&r "
+    suffix: ""
+    permissions:
+      - "pulse.coin.others"
+      - "pulse.permission.check"
+      - "pulse.permission.list"
+      - "pulse.rank.info"
+      - "pulse.rank.list"
+      - "pulse.gamemode.spectator"
+      - "pulse.punishment.kick"
+      - "pulse.punishment.warn"
+      - "pulse.punishment.warns"
+      - "pulse.punishment.freeze"
+    parents:
+      - "premium"
+    weight: 30
 
   mod:
     prefix: "&9[Mod]&r "
     suffix: ""
     permissions:
-      - "pulse.mod"
-      - "pulse.kick"
-      - "pulse.mute"
+      - "pulse.tag.give"
+      - "pulse.tag.remove"
+      - "pulse.coin.add"
+      - "pulse.coin.remove"
+      - "pulse.coin.set"
+      - "pulse.coin.top"
+      - "pulse.gamemode.survival"
+      - "pulse.gamemode.adventure"
+      - "pulse.punishment.mute"
+      - "pulse.punishment.unmute"
+      - "pulse.punishment.unwarn"
+      - "pulse.punishment.tempban"
+      - "pulse.punishment.unban"
     parents:
-      - "premium"
+      - "helper"
     weight: 50
 
   admin:
     prefix: "&c[Admin]&r "
     suffix: ""
     permissions:
-      - "pulse.admin"
-      - "pulse.ban"
+      - "pulse.rank"
+      - "pulse.permission"
+      - "pulse.shop.reload"
+      - "pulse.shop.list"
+      - "pulse.tag.create"
+      - "pulse.tag.edit"
+      - "pulse.tag.delete"
+      - "pulse.tag.reload"
+      - "pulse.gamemode.creative"
+      - "pulse.gamemode.others"
+      - "pulse.punishment.ban"
+      - "pulse.punishment.ipban"
+      - "pulse.punishment.tempipban"
     parents:
       - "mod"
     weight: 100
+
+  owner:
+    prefix: "&4[Owner]&r "
+    suffix: ""
+    permissions:
+      - "pulse.admin"
+      - "pulse.*"
+    parents:
+      - "admin"
+    weight: 1000

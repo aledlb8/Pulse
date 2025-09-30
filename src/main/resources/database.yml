@@ -1,12 +1,17 @@
-# Database Configuration
+# ============================================================
+# Pulse Database Configuration
+# ============================================================
 
-type: "SQLITE" # MYSQL, POSTGRESQL, SQLITE
+# Database type: SQLITE, MYSQL, or POSTGRESQL
+type: "SQLITE"
 
-# SQLite settings (for local development)
+# ==================== SQLITE ====================
+# Lightweight local database (recommended for single servers)
 sqlite:
   file: "pulse.db"
 
-# MySQL/PostgreSQL settings
+# ==================== MYSQL ====================
+# Production-ready database for single or multiple servers
 mysql:
   host: "localhost"
   port: 3306
@@ -14,10 +19,40 @@ mysql:
   username: "pulse"
   password: "password"
 
-# Connection pool settings
+# ==================== POSTGRESQL ====================
+# Advanced database with excellent performance
+postgresql:
+  host: "localhost"
+  port: 5432
+  database: "pulse"
+  username: "pulse"
+  password: "password"
+
+# ==================== CONNECTION POOL ====================
+# Pool settings for MySQL and PostgreSQL (does not apply to SQLite)
 pool:
+  # Maximum number of database connections
   maximum-pool-size: 10
+  # Minimum number of idle connections
   minimum-idle: 2
+  # Connection timeout in milliseconds (30 seconds)
   connection-timeout: 30000
+  # Idle timeout in milliseconds (10 minutes)
   idle-timeout: 600000
+  # Maximum connection lifetime in milliseconds (30 minutes)
   max-lifetime: 1800000
+
+# ==================== REDIS NETWORK SYNC ====================
+# Real-time data synchronization across multiple servers
+# Recommended for network setups (BungeeCord/Velocity)
+redis:
+  # Enable Redis sync (set to true for multi-server networks)
+  enabled: false
+  host: "localhost"
+  port: 6379
+  # Leave empty if no password
+  password: ""
+  # Use SSL/TLS encryption
+  use-ssl: false
+  # Pub/Sub channel for syncing data
+  channel: "pulse:sync"

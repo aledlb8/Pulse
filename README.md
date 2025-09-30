@@ -28,3 +28,121 @@ gradlew.bat shadowJar
 ./gradlew shadowJar
 ```
 The shaded jar is created at `build/libs/Pulse-1.0-all.jar`.
+
+## Permissions
+<details>
+<summary>Click to view all permissions</summary>
+
+### Root Permissions
+- `pulse.*` - All pulse permissions
+- `pulse.admin` - Administrator access to pulse
+- `pulse.chat.color` - Use color codes in chat messages
+
+### Rank Permissions
+- `pulse.rank` - Access to rank commands (includes all sub-permissions)
+- `pulse.rank.create` - Create new ranks
+- `pulse.rank.delete` - Delete existing ranks
+- `pulse.rank.set` - Set player ranks
+- `pulse.rank.info` - View rank information
+- `pulse.rank.list` - List all ranks
+- `pulse.rank.permission` - Manage rank permissions
+- `pulse.rank.reload` - Reload rank system
+
+### Permission Management
+- `pulse.permission` - Access to permission commands (includes all sub-permissions)
+- `pulse.permission.add` - Add permissions to players
+- `pulse.permission.remove` - Remove permissions from players
+- `pulse.permission.deny` - Deny permissions for players
+- `pulse.permission.check` - Check player permissions
+- `pulse.permission.list` - List player permissions
+
+### Placeholder Permissions
+- `pulse.placeholder` - Access to placeholder commands (includes all sub-permissions)
+- `pulse.placeholder.list` - List available placeholders
+- `pulse.placeholder.test` - Test placeholders
+- `pulse.placeholder.providers` - List placeholder providers
+
+### Economy Permissions
+- `pulse.coin` - Access to coin commands (includes pay permission)
+- `pulse.coin.add` - Add coins to players
+- `pulse.coin.remove` - Remove coins from players
+- `pulse.coin.set` - Set player coin balances
+- `pulse.coin.pay` - Pay other players
+- `pulse.coin.top` - View balance leaderboard
+- `pulse.coin.others` - Check other players' balances
+
+### Shop Permissions
+- `pulse.shop` - Access to shop (includes use permission)
+- `pulse.shop.use` - Use the shop
+- `pulse.shop.reload` - Reload shop configuration
+- `pulse.shop.list` - List shop items
+
+### Tag Permissions
+- `pulse.tag` - Access to tag commands (includes all sub-permissions)
+- `pulse.tag.others` - View other players' tags
+- `pulse.tag.give` - Give tags to players
+- `pulse.tag.remove` - Remove tags from players
+- `pulse.tag.create` - Create new tags
+- `pulse.tag.edit` - Edit existing tags
+- `pulse.tag.delete` - Delete tags
+- `pulse.tag.reload` - Reload tag system
+
+</details>
+
+## Placeholders
+<details>
+<summary>Click to view all placeholders</summary>
+
+All placeholders use the format `%pulse_<placeholder>%`
+
+### Rank Information
+- `%pulse_rank%` - Player's rank ID
+- `%pulse_rank_name%` - Player's rank name
+- `%pulse_rank_prefix%` - Player's rank prefix
+- `%pulse_rank_suffix%` - Player's rank suffix
+- `%pulse_rank_weight%` - Player's rank weight
+- `%pulse_rank_is_default%` - Whether player has default rank (true/false)
+
+### Player Display
+- `%pulse_player_formatted%` - Formatted player display name
+- `%pulse_player_display%` - Player display name (alias)
+- `%pulse_player_prefix%` - Player's prefix
+- `%pulse_player_suffix%` - Player's suffix
+- `%pulse_player_name_formatted%` - Player name with prefix and suffix
+
+### Permission Information
+- `%pulse_permissions_count%` - Total permissions count
+- `%pulse_permissions_total%` - Total permissions count (alias)
+- `%pulse_permissions_player_count%` - Player-specific permissions count
+- `%pulse_permissions_rank_count%` - Rank permissions count
+- `%pulse_permissions_denied_count%` - Denied permissions count
+
+### Economy
+- `%pulse_balance%` - Player's balance (formatted with currency symbol)
+- `%pulse_money%` - Player's balance (alias)
+- `%pulse_balance_raw%` - Player's balance (raw number)
+- `%pulse_currency_name%` - Currency name (singular)
+- `%pulse_currency_name_plural%` - Currency name (plural)
+- `%pulse_currency_symbol%` - Currency symbol
+
+### Server Statistics
+- `%pulse_players_total%` - Total players in database
+- `%pulse_players_online%` - Current online players
+- `%pulse_ranks_total%` - Total ranks
+- `%pulse_default_rank%` - Default rank ID
+
+### Time
+- `%pulse_last_seen%` - Time since player was last seen
+
+### Dynamic Placeholders
+- `%pulse_has_permission_<permission>%` - Check if player has permission (true/false)
+- `%pulse_rank_players_online_<rank>%` - Online players with specific rank
+- `%pulse_rank_players_total_<rank>%` - Total players with specific rank
+- `%pulse_rank_weight_<rank>%` - Weight of specific rank
+- `%pulse_rank_prefix_<rank>%` - Prefix of specific rank
+- `%pulse_rank_suffix_<rank>%` - Suffix of specific rank
+- `%pulse_rank_display_<rank>%` - Display name of specific rank
+- `%pulse_has_balance_<amount>%` - Check if player has balance amount (true/false)
+- `%pulse_balance_formatted_<amount>%` - Format a specific amount with currency symbol
+
+</details>

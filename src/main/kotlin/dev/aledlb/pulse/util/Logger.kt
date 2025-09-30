@@ -4,7 +4,6 @@ import java.util.logging.Level
 import java.util.logging.Logger as JavaLogger
 
 object Logger {
-    private const val PREFIX = "[Pulse]"
     private var pluginLogger: JavaLogger? = null
 
     fun initialize(logger: JavaLogger) {
@@ -16,29 +15,29 @@ object Logger {
     }
 
     fun info(message: String) {
-        getLogger().info("$PREFIX $message")
+        getLogger().info(message)
     }
 
     fun warn(message: String) {
-        getLogger().warning("$PREFIX $message")
+        getLogger().warning(message)
     }
 
     fun error(message: String) {
-        getLogger().severe("$PREFIX $message")
+        getLogger().severe(message)
     }
 
     fun error(message: String, throwable: Throwable) {
-        getLogger().log(Level.SEVERE, "$PREFIX $message", throwable)
+        getLogger().log(Level.SEVERE, message, throwable)
     }
 
     fun debug(message: String) {
         if (isDebugEnabled()) {
-            getLogger().info("$PREFIX [DEBUG] $message")
+            getLogger().info("[DEBUG] $message")
         }
     }
 
     fun success(message: String) {
-        getLogger().info("$PREFIX $message")
+        getLogger().info(message)
     }
 
     private fun isDebugEnabled(): Boolean {

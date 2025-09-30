@@ -1,31 +1,18 @@
+# ============================================================
 # Pulse Core Configuration
-# Professional server core configuration
+# ============================================================
 
-# Debug mode
-debug: false
-
-# Server display name
-server-name: "My Server"
-
-# Network settings
-network:
-  enabled: false
-  server-id: "server1"
-  redis:
-    host: "localhost"
-    port: 6379
-    password: ""
-    database: 0
-
-# Currency settings
+# ==================== CURRENCY ====================
+# Economy and currency settings
 currency:
   name: "Coins"
   symbol: "⛁"
-  starting-balance: 1000
+  starting-balance: 1000.0
 
-# Chat formatting system
+# ==================== CHAT SYSTEM ====================
+# Chat formatting, tab list, and nametag settings
 chat:
-  # Enable chat formatting
+  # Enable/disable chat formatting
   enabled: true
 
   # Chat format
@@ -61,12 +48,3 @@ chat:
     # Nametag format
     # Placeholders: {prefix}, {tags}, {player}, {suffix}, {rank}
     format: "{prefix}{tags}{player}{suffix}"
-
-    # Distance at which nametags are visible
-    distance: 64.0
-
-# General settings
-settings:
-  save-interval: 300 # seconds
-  async-operations: true
-  cache-size: 1000

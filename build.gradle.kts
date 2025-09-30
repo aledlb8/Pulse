@@ -35,6 +35,11 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-java-time:0.44.1")
     implementation("com.zaxxer:HikariCP:5.0.1")
     implementation("org.xerial:sqlite-jdbc:3.44.1.0")
+    implementation("com.mysql:mysql-connector-j:8.2.0")
+    implementation("org.postgresql:postgresql:42.7.1")
+
+    // Redis for network sync
+    implementation("redis.clients:jedis:5.1.0")
 
     // Coroutines for async operations
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")

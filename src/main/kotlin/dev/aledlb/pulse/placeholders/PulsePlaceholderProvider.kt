@@ -36,11 +36,6 @@ class PulsePlaceholderProvider(
                 val rank = rankManager.getRank(playerData.rank)
                 rank?.name ?: playerData.rank
             }
-            "rank_display", "rank_displayname" -> {
-                val playerData = rankManager.getPlayerData(player.uniqueId) ?: return rankManager.getDefaultRank()
-                val rank = rankManager.getRank(playerData.rank)
-                rank?.name ?: playerData.rank
-            }
             "rank_prefix" -> {
                 val playerData = rankManager.getPlayerData(player.uniqueId) ?: return ""
                 val rank = rankManager.getRank(playerData.rank)
@@ -120,6 +115,7 @@ class PulsePlaceholderProvider(
                 }
             }
             "currency_name" -> economyManager.getCurrencyName()
+            "currency_name_plural" -> economyManager.getCurrencyNamePlural()
             "currency_symbol" -> economyManager.getCurrencySymbol()
 
             // Server stats
@@ -231,7 +227,7 @@ class PulsePlaceholderProvider(
             "permissions_rank_count", "permissions_denied_count",
 
             // Economy
-            "balance", "money", "balance_raw", "currency_name", "currency_symbol",
+            "balance", "money", "balance_raw", "currency_name", "currency_name_plural", "currency_symbol",
 
             // Server stats
             "players_total", "players_online", "ranks_total", "default_rank",

@@ -16,8 +16,12 @@ class PunishmentManager {
     private var appealsEnabled = true
     private var appealsWebsite = "https://yourserver.com/appeals"
 
+    lateinit var service: PunishmentService
+        private set
+
     fun initialize() {
         loadConfig()
+        service = PunishmentService()
     }
 
     private fun loadConfig() {

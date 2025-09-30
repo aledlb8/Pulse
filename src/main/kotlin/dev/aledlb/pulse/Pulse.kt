@@ -1,12 +1,6 @@
 package dev.aledlb.pulse
 
-import dev.aledlb.pulse.commands.CoinCommand
-import dev.aledlb.pulse.commands.PermissionCommand
-import dev.aledlb.pulse.commands.PlaceholderCommand
-import dev.aledlb.pulse.commands.PulseCommand
-import dev.aledlb.pulse.commands.RankCommand
-import dev.aledlb.pulse.commands.ShopCommand
-import dev.aledlb.pulse.commands.TagCommand
+import dev.aledlb.pulse.commands.*
 import dev.aledlb.pulse.config.ConfigManager
 import dev.aledlb.pulse.chat.ChatManager
 import dev.aledlb.pulse.database.DatabaseManager
@@ -41,6 +35,9 @@ class Pulse : JavaPlugin() {
         private set
 
     lateinit var databaseManager: DatabaseManager
+        private set
+
+    lateinit var redisManager: dev.aledlb.pulse.database.RedisManager
         private set
 
     lateinit var messagesManager: MessagesManager
@@ -118,6 +115,10 @@ class Pulse : JavaPlugin() {
             tagManager.saveAllData()
         }
 
+        if (::redisManager.isInitialized) {
+            redisManager.shutdown()
+        }
+
         if (::databaseManager.isInitialized) {
             databaseManager.shutdown()
         }
@@ -157,6 +158,9 @@ class Pulse : JavaPlugin() {
     private fun initializeModules() {
         databaseManager = DatabaseManager()
         databaseManager.initialize()
+
+        redisManager = dev.aledlb.pulse.database.RedisManager()
+        redisManager.initialize()
 
         messagesManager = MessagesManager()
         messagesManager.initialize()
@@ -200,12 +204,13 @@ class Pulse : JavaPlugin() {
             }
         }
 
-        Logger.success("Initialized 9 core modules")
+        Logger.success("Initialized 10 core modules")
     }
 
     private fun registerEvents() {
         server.pluginManager.registerEvents(permissionManager, this)
         server.pluginManager.registerEvents(shopGUI, this)
+        server.pluginManager.registerEvents(dev.aledlb.pulse.punishment.PunishmentListener(), this)
 
         Logger.success("Registered event listeners")
     }
@@ -223,10 +228,6 @@ class Pulse : JavaPlugin() {
         getCommand("permission")?.setExecutor(permissionCommand)
         getCommand("permission")?.tabCompleter = permissionCommand
 
-        val placeholderCommand = PlaceholderCommand()
-        getCommand("placeholder")?.setExecutor(placeholderCommand)
-        getCommand("placeholder")?.tabCompleter = placeholderCommand
-
         val coinCommand = CoinCommand(economyManager)
         getCommand("coin")?.setExecutor(coinCommand)
         getCommand("coin")?.tabCompleter = coinCommand
@@ -239,7 +240,80 @@ class Pulse : JavaPlugin() {
         getCommand("tag")?.setExecutor(tagCommand)
         getCommand("tag")?.tabCompleter = tagCommand
 
-        Logger.success("Registered 7 commands")
+        val gamemodeCommand = GamemodeCommand()
+        getCommand("gamemode")?.setExecutor(gamemodeCommand)
+        getCommand("gamemode")?.tabCompleter = gamemodeCommand
+
+        val gmcCommand = GamemodeCreativeCommand()
+        getCommand("gmc")?.setExecutor(gmcCommand)
+        getCommand("gmc")?.tabCompleter = gmcCommand
+
+        val gmsCommand = GamemodeSurvivalCommand()
+        getCommand("gms")?.setExecutor(gmsCommand)
+        getCommand("gms")?.tabCompleter = gmsCommand
+
+        val gmaCommand = GamemodeAdventureCommand()
+        getCommand("gma")?.setExecutor(gmaCommand)
+        getCommand("gma")?.tabCompleter = gmaCommand
+
+        val gmspCommand = GamemodeSpectatorCommand()
+        getCommand("gmsp")?.setExecutor(gmspCommand)
+        getCommand("gmsp")?.tabCompleter = gmspCommand
+
+        // Punishment commands
+        val kickCommand = KickCommand()
+        getCommand("kick")?.setExecutor(kickCommand)
+        getCommand("kick")?.tabCompleter = kickCommand
+
+        val banCommand = BanCommand()
+        getCommand("ban")?.setExecutor(banCommand)
+        getCommand("ban")?.tabCompleter = banCommand
+
+        val tempbanCommand = TempbanCommand()
+        getCommand("tempban")?.setExecutor(tempbanCommand)
+        getCommand("tempban")?.tabCompleter = tempbanCommand
+
+        val ipbanCommand = IpbanCommand()
+        getCommand("ipban")?.setExecutor(ipbanCommand)
+        getCommand("ipban")?.tabCompleter = ipbanCommand
+
+        val tempipbanCommand = TempipbanCommand()
+        getCommand("tempipban")?.setExecutor(tempipbanCommand)
+        getCommand("tempipban")?.tabCompleter = tempipbanCommand
+
+        val unbanCommand = UnbanCommand()
+        getCommand("unban")?.setExecutor(unbanCommand)
+        getCommand("unban")?.tabCompleter = unbanCommand
+
+        val muteCommand = MuteCommand()
+        getCommand("mute")?.setExecutor(muteCommand)
+        getCommand("mute")?.tabCompleter = muteCommand
+
+        val unmuteCommand = UnmuteCommand()
+        getCommand("unmute")?.setExecutor(unmuteCommand)
+        getCommand("unmute")?.tabCompleter = unmuteCommand
+
+        val freezeCommand = FreezeCommand()
+        getCommand("freeze")?.setExecutor(freezeCommand)
+        getCommand("freeze")?.tabCompleter = freezeCommand
+
+        val unfreezeCommand = UnfreezeCommand()
+        getCommand("unfreeze")?.setExecutor(unfreezeCommand)
+        getCommand("unfreeze")?.tabCompleter = unfreezeCommand
+
+        val warnCommand = WarnCommand()
+        getCommand("warn")?.setExecutor(warnCommand)
+        getCommand("warn")?.tabCompleter = warnCommand
+
+        val warnsCommand = WarnsCommand()
+        getCommand("warns")?.setExecutor(warnsCommand)
+        getCommand("warns")?.tabCompleter = warnsCommand
+
+        val unwarnCommand = UnwarnCommand()
+        getCommand("unwarn")?.setExecutor(unwarnCommand)
+        getCommand("unwarn")?.tabCompleter = unwarnCommand
+
+        Logger.success("Registered 25 commands")
     }
 
     fun isPluginFullyLoaded(): Boolean = isFullyLoaded

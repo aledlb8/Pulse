@@ -6,7 +6,8 @@ load: STARTUP
 authors: [ aledlb ]
 description: Advanced server core plugin with modular architecture
 website: https://github.com/aledlb/pulse
-softdepend: [ PlaceholderAPI, Vault ]
+depend: [ Vault ]
+softdepend: [ PlaceholderAPI ]
 
 commands:
   pulse:
@@ -23,11 +24,6 @@ commands:
     usage: /permission <subcommand>
     permission: pulse.permission
     aliases: [perm, perms, permissions]
-  placeholder:
-    description: Manage and test placeholders
-    usage: /placeholder <subcommand>
-    permission: pulse.placeholder
-    aliases: [placeholders, ph]
   coin:
     description: Manage player coins
     usage: /coin <subcommand>
@@ -43,6 +39,79 @@ commands:
     usage: /tag <subcommand>
     permission: pulse.tag
     aliases: [tags]
+  gamemode:
+    description: Change gamemode
+    usage: /gamemode <mode> [player]
+    permission: pulse.gamemode
+    aliases: [gm]
+  gmc:
+    description: Change to creative mode
+    usage: /gmc [player]
+    permission: pulse.gamemode.creative
+  gms:
+    description: Change to survival mode
+    usage: /gms [player]
+    permission: pulse.gamemode.survival
+  gma:
+    description: Change to adventure mode
+    usage: /gma [player]
+    permission: pulse.gamemode.adventure
+  gmsp:
+    description: Change to spectator mode
+    usage: /gmsp [player]
+    permission: pulse.gamemode.spectator
+  kick:
+    description: Kick a player
+    usage: /kick <player> [reason]
+    permission: pulse.punishment.kick
+  ban:
+    description: Permanently ban a player
+    usage: /ban <player> [reason]
+    permission: pulse.punishment.ban
+  tempban:
+    description: Temporarily ban a player
+    usage: /tempban <player> <duration> [reason]
+    permission: pulse.punishment.tempban
+  ipban:
+    description: Ban a player's IP address
+    usage: /ipban <player> [reason]
+    permission: pulse.punishment.ipban
+  tempipban:
+    description: Temporarily ban a player's IP
+    usage: /tempipban <player> <duration> [reason]
+    permission: pulse.punishment.tempipban
+  unban:
+    description: Unban a player
+    usage: /unban <player>
+    permission: pulse.punishment.unban
+  mute:
+    description: Mute a player
+    usage: /mute <player> [duration] [reason]
+    permission: pulse.punishment.mute
+  unmute:
+    description: Unmute a player
+    usage: /unmute <player>
+    permission: pulse.punishment.unmute
+  freeze:
+    description: Freeze a player
+    usage: /freeze <player>
+    permission: pulse.punishment.freeze
+  unfreeze:
+    description: Unfreeze a player
+    usage: /unfreeze <player>
+    permission: pulse.punishment.freeze
+  warn:
+    description: Warn a player
+    usage: /warn <player> <reason>
+    permission: pulse.punishment.warn
+  warns:
+    description: View player warnings
+    usage: /warns <player>
+    permission: pulse.punishment.warns
+  unwarn:
+    description: Remove a player's latest warning
+    usage: /unwarn <player>
+    permission: pulse.punishment.unwarn
 
 permissions:
   pulse.*:
@@ -51,7 +120,6 @@ permissions:
       pulse.admin: true
       pulse.rank: true
       pulse.permission: true
-      pulse.placeholder: true
       pulse.coin: true
       pulse.shop: true
       pulse.tag: true
@@ -100,18 +168,6 @@ permissions:
     description: Check player permissions
   pulse.permission.list:
     description: List player permissions
-  pulse.placeholder:
-    description: Access to placeholder commands
-    children:
-      pulse.placeholder.list: true
-      pulse.placeholder.test: true
-      pulse.placeholder.providers: true
-  pulse.placeholder.list:
-    description: List available placeholders
-  pulse.placeholder.test:
-    description: Test placeholders
-  pulse.placeholder.providers:
-    description: List placeholder providers
   pulse.coin:
     description: Access to coin commands
     children:
@@ -164,3 +220,60 @@ permissions:
     description: Reload tag system
   pulse.chat.color:
     description: Use color codes in chat messages
+  pulse.gamemode:
+    description: Change gamemode
+    children:
+      pulse.gamemode.creative: true
+      pulse.gamemode.survival: true
+      pulse.gamemode.adventure: true
+      pulse.gamemode.spectator: true
+      pulse.gamemode.others: true
+  pulse.gamemode.creative:
+    description: Change to creative mode
+  pulse.gamemode.survival:
+    description: Change to survival mode
+  pulse.gamemode.adventure:
+    description: Change to adventure mode
+  pulse.gamemode.spectator:
+    description: Change to spectator mode
+  pulse.gamemode.others:
+    description: Change others' gamemode
+  pulse.punishment:
+    description: All punishment permissions
+    children:
+      pulse.punishment.kick: true
+      pulse.punishment.warn: true
+      pulse.punishment.warns: true
+      pulse.punishment.unwarn: true
+      pulse.punishment.mute: true
+      pulse.punishment.unmute: true
+      pulse.punishment.freeze: true
+      pulse.punishment.tempban: true
+      pulse.punishment.ban: true
+      pulse.punishment.unban: true
+      pulse.punishment.ipban: true
+      pulse.punishment.tempipban: true
+  pulse.punishment.kick:
+    description: Kick players
+  pulse.punishment.warn:
+    description: Warn players
+  pulse.punishment.warns:
+    description: View player warnings
+  pulse.punishment.unwarn:
+    description: Remove warnings
+  pulse.punishment.mute:
+    description: Mute players
+  pulse.punishment.unmute:
+    description: Unmute players
+  pulse.punishment.freeze:
+    description: Freeze/unfreeze players
+  pulse.punishment.tempban:
+    description: Temporarily ban players
+  pulse.punishment.ban:
+    description: Permanently ban players
+  pulse.punishment.unban:
+    description: Unban players
+  pulse.punishment.ipban:
+    description: IP ban players
+  pulse.punishment.tempipban:
+    description: Temporarily IP ban players

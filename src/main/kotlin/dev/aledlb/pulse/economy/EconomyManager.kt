@@ -17,17 +17,16 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 class EconomyManager(private val databaseManager: DatabaseManager) {
-    private var vaultEconomy: Economy? = null
-    private var useVault = false
     private val playerBalances = ConcurrentHashMap<UUID, Double>()
     private var currencyName = "Coins"
     private var currencySymbol = "⛁"
     private var startingBalance = 1000.0
+    private var vaultProvider: PulseVaultEconomy? = null
 
     fun initialize() {
         loadConfig()
-        setupVaultIntegration()
         loadPlayerBalancesFromDatabase()
+        registerVaultProvider()
     }
 
     private fun loadConfig() {
@@ -42,28 +41,27 @@ class EconomyManager(private val databaseManager: DatabaseManager) {
         }
     }
 
-    private fun setupVaultIntegration() {
-        if (Bukkit.getPluginManager().getPlugin("Vault") != null) {
-            try {
-                val rsp: RegisteredServiceProvider<Economy>? = Bukkit.getServer().servicesManager.getRegistration(Economy::class.java)
-                if (rsp != null) {
-                    vaultEconomy = rsp.provider
-                    useVault = true
-                    Logger.success("Vault economy integration enabled")
-                } else {
-                    Logger.info("Vault found but no economy provider available - using internal system")
-                }
-            } catch (e: Exception) {
-                Logger.warn("Failed to setup Vault integration: ${e.message}")
-            }
-        } else {
-            Logger.info("Vault not found - using internal economy system")
+    private fun registerVaultProvider() {
+        if (Bukkit.getPluginManager().getPlugin("Vault") == null) {
+            throw IllegalStateException("Vault is required but not installed! Please install Vault from https://www.spigotmc.org/resources/vault.34315/")
+        }
+
+        try {
+            val provider = PulseVaultEconomy(this)
+            vaultProvider = provider
+            Bukkit.getServicesManager().register(
+                Economy::class.java,
+                provider as Economy,
+                Pulse.getPlugin(),
+                org.bukkit.plugin.ServicePriority.Highest
+            )
+            Logger.success("Registered as Vault economy provider")
+        } catch (e: Exception) {
+            throw IllegalStateException("Failed to register Vault economy provider: ${e.message}", e)
         }
     }
 
     private fun loadPlayerBalancesFromDatabase() {
-        if (useVault) return // Don't load balances if using Vault
-
         runBlocking {
             try {
                 val balances = databaseManager.loadAllPlayerBalances()
@@ -78,11 +76,7 @@ class EconomyManager(private val databaseManager: DatabaseManager) {
     // ==================== BALANCE MANAGEMENT ====================
 
     fun getBalance(player: OfflinePlayer): Double {
-        return if (useVault && vaultEconomy != null) {
-            vaultEconomy!!.getBalance(player)
-        } else {
-            playerBalances.getOrDefault(player.uniqueId, startingBalance)
-        }
+        return playerBalances.getOrDefault(player.uniqueId, startingBalance)
     }
 
     fun getBalance(uuid: UUID): Double {
@@ -100,32 +94,24 @@ class EconomyManager(private val databaseManager: DatabaseManager) {
 
     fun setBalance(player: OfflinePlayer, amount: Double): Boolean {
         val clampedAmount = amount.coerceAtLeast(0.0)
+        playerBalances[player.uniqueId] = clampedAmount
 
-        return if (useVault && vaultEconomy != null) {
-            val currentBalance = vaultEconomy!!.getBalance(player)
-            val difference = clampedAmount - currentBalance
+        // Save to database asynchronously
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                databaseManager.savePlayerBalance(player.uniqueId, clampedAmount)
 
-            if (difference > 0) {
-                vaultEconomy!!.depositPlayer(player, difference).transactionSuccess()
-            } else if (difference < 0) {
-                vaultEconomy!!.withdrawPlayer(player, -difference).transactionSuccess()
-            } else {
-                true
-            }
-        } else {
-            playerBalances[player.uniqueId] = clampedAmount
-
-            // Save to database asynchronously
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    databaseManager.savePlayerBalance(player.uniqueId, clampedAmount)
-                } catch (e: Exception) {
-                    Logger.error("Failed to save player balance to database: ${player.name}", e)
+                // Sync to Redis if enabled
+                val redisManager = Pulse.getPlugin().redisManager
+                if (redisManager.isEnabled()) {
+                    redisManager.syncBalance(player.uniqueId, clampedAmount)
                 }
+            } catch (e: Exception) {
+                Logger.error("Failed to save player balance to database: ${player.name}", e)
             }
-
-            true
         }
+
+        return true
     }
 
     fun setBalance(uuid: UUID, amount: Double): Boolean {
@@ -134,12 +120,8 @@ class EconomyManager(private val databaseManager: DatabaseManager) {
     }
 
     fun addBalance(player: OfflinePlayer, amount: Double): Boolean {
-        return if (useVault && vaultEconomy != null) {
-            vaultEconomy!!.depositPlayer(player, amount).transactionSuccess()
-        } else {
-            val currentBalance = getBalance(player)
-            setBalance(player, currentBalance + amount)
-        }
+        val currentBalance = getBalance(player)
+        return setBalance(player, currentBalance + amount)
     }
 
     fun addBalance(uuid: UUID, amount: Double): Boolean {
@@ -148,17 +130,12 @@ class EconomyManager(private val databaseManager: DatabaseManager) {
     }
 
     fun removeBalance(player: OfflinePlayer, amount: Double): Boolean {
-        return if (useVault && vaultEconomy != null) {
-            vaultEconomy!!.withdrawPlayer(player, amount).transactionSuccess()
-        } else {
-            val currentBalance = getBalance(player)
-            if (currentBalance >= amount) {
-                setBalance(player, currentBalance - amount)
-                true
-            } else {
-                false
-            }
+        val currentBalance = getBalance(player)
+        if (currentBalance >= amount) {
+            setBalance(player, currentBalance - amount)
+            return true
         }
+        return false
     }
 
     fun removeBalance(uuid: UUID, amount: Double): Boolean {
@@ -214,32 +191,21 @@ class EconomyManager(private val databaseManager: DatabaseManager) {
 
     fun getStartingBalance(): Double = startingBalance
 
-    fun isUsingVault(): Boolean = useVault
+    fun getCurrencyNamePlural(): String = "${currencyName}s"
 
     fun getTopBalances(limit: Int = 10): List<Pair<OfflinePlayer, Double>> {
-        return if (useVault && vaultEconomy != null) {
-            // For Vault, we'd need to iterate through all known players
-            // This is a simplified implementation
-            Bukkit.getOfflinePlayers()
-                .map { it to getBalance(it) }
-                .sortedByDescending { it.second }
-                .take(limit)
-        } else {
-            playerBalances
-                .map { (uuid, balance) -> Bukkit.getOfflinePlayer(uuid) to balance }
-                .sortedByDescending { it.second }
-                .take(limit)
-        }
+        return playerBalances
+            .map { (uuid, balance) -> Bukkit.getOfflinePlayer(uuid) to balance }
+            .sortedByDescending { it.second }
+            .take(limit)
     }
 
     // ==================== DATA MANAGEMENT ====================
 
     fun loadPlayerData(player: Player) {
-        if (!useVault) {
-            // For internal system, ensure player has starting balance if they're new
-            if (!playerBalances.containsKey(player.uniqueId)) {
-                playerBalances[player.uniqueId] = startingBalance
-            }
+        // Ensure player has starting balance if they're new
+        if (!playerBalances.containsKey(player.uniqueId)) {
+            playerBalances[player.uniqueId] = startingBalance
         }
     }
 

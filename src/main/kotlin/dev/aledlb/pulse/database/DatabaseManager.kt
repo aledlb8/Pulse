@@ -3,6 +3,7 @@ package dev.aledlb.pulse.database
 import dev.aledlb.pulse.Pulse
 import dev.aledlb.pulse.util.Logger
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import com.zaxxer.hikari.HikariConfig
@@ -89,14 +90,14 @@ class DatabaseManager {
     }
 
     private fun setupPostgreSQL(config: org.spongepowered.configurate.ConfigurationNode) {
-        val mysqlNode = config.node("mysql") // Reuse mysql config section for PostgreSQL
+        val postgresNode = config.node("postgresql")
         val poolNode = config.node("pool")
 
-        val host = mysqlNode.node("host").getString("localhost") ?: "localhost"
-        val port = mysqlNode.node("port").getInt(5432)
-        val database = mysqlNode.node("database").getString("pulse") ?: "pulse"
-        val username = mysqlNode.node("username").getString("pulse") ?: "pulse"
-        val password = mysqlNode.node("password").getString("password") ?: "password"
+        val host = postgresNode.node("host").getString("localhost") ?: "localhost"
+        val port = postgresNode.node("port").getInt(5432)
+        val database = postgresNode.node("database").getString("pulse") ?: "pulse"
+        val username = postgresNode.node("username").getString("pulse") ?: "pulse"
+        val password = postgresNode.node("password").getString("password") ?: "password"
 
         val hikariConfig = HikariConfig().apply {
             driverClassName = "org.postgresql.Driver"
@@ -116,7 +117,7 @@ class DatabaseManager {
 
     private fun createTables() {
         transaction(database) {
-            SchemaUtils.create(PlayerDataTable, PlayerBalanceTable, PlayerTagDataTable)
+            SchemaUtils.create(PlayerDataTable, PlayerBalanceTable, PlayerTagDataTable, PunishmentTable, ActivePunishmentTable)
         }
         Logger.debug("Database tables created/verified")
     }
@@ -252,6 +253,101 @@ class DatabaseManager {
         }
     }
 
+    // Punishment operations
+    suspend fun savePunishment(
+        uuid: UUID,
+        type: String,
+        reason: String,
+        punisher: UUID,
+        punisherName: String,
+        duration: Long?,
+        ip: String?
+    ): Int {
+        return newSuspendedTransaction(Dispatchers.IO, database) {
+            PunishmentTable.insert {
+                it[PunishmentTable.uuid] = uuid.toString()
+                it[PunishmentTable.type] = type
+                it[PunishmentTable.reason] = reason
+                it[PunishmentTable.punisher] = punisher.toString()
+                it[PunishmentTable.punisherName] = punisherName
+                it[PunishmentTable.timestamp] = System.currentTimeMillis()
+                it[PunishmentTable.duration] = duration
+                it[PunishmentTable.ip] = ip
+                it[PunishmentTable.active] = true
+            } get PunishmentTable.id
+        }
+    }
+
+    suspend fun setActivePunishment(uuid: UUID, type: String, expires: Long?, punishmentId: Int) {
+        newSuspendedTransaction(Dispatchers.IO, database) {
+            ActivePunishmentTable.deleteWhere {
+                (ActivePunishmentTable.uuid eq uuid.toString()) and (ActivePunishmentTable.type eq type)
+            }
+            ActivePunishmentTable.insert {
+                it[ActivePunishmentTable.uuid] = uuid.toString()
+                it[ActivePunishmentTable.type] = type
+                it[ActivePunishmentTable.expires] = expires
+                it[ActivePunishmentTable.punishmentId] = punishmentId
+            }
+        }
+    }
+
+    suspend fun removeActivePunishment(uuid: UUID, type: String) {
+        newSuspendedTransaction(Dispatchers.IO, database) {
+            ActivePunishmentTable.deleteWhere {
+                (ActivePunishmentTable.uuid eq uuid.toString()) and (ActivePunishmentTable.type eq type)
+            }
+        }
+    }
+
+    suspend fun getActivePunishment(uuid: UUID, type: String): ActivePunishmentRow? {
+        return newSuspendedTransaction(Dispatchers.IO, database) {
+            ActivePunishmentTable.select { (ActivePunishmentTable.uuid eq uuid.toString()) and (ActivePunishmentTable.type eq type) }
+                .map {
+                    ActivePunishmentRow(
+                        uuid = UUID.fromString(it[ActivePunishmentTable.uuid]),
+                        type = it[ActivePunishmentTable.type],
+                        expires = it[ActivePunishmentTable.expires],
+                        punishmentId = it[ActivePunishmentTable.punishmentId]
+                    )
+                }
+                .singleOrNull()
+        }
+    }
+
+    suspend fun getPlayerPunishments(uuid: UUID): List<PunishmentRow> {
+        return newSuspendedTransaction(Dispatchers.IO, database) {
+            PunishmentTable.select { PunishmentTable.uuid eq uuid.toString() }
+                .orderBy(PunishmentTable.timestamp, SortOrder.DESC)
+                .map {
+                    PunishmentRow(
+                        id = it[PunishmentTable.id],
+                        uuid = UUID.fromString(it[PunishmentTable.uuid]),
+                        type = it[PunishmentTable.type],
+                        reason = it[PunishmentTable.reason],
+                        punisher = UUID.fromString(it[PunishmentTable.punisher]),
+                        punisherName = it[PunishmentTable.punisherName],
+                        timestamp = it[PunishmentTable.timestamp],
+                        duration = it[PunishmentTable.duration],
+                        ip = it[PunishmentTable.ip],
+                        active = it[PunishmentTable.active],
+                        removedBy = it[PunishmentTable.removedBy]?.let { id -> UUID.fromString(id) },
+                        removedAt = it[PunishmentTable.removedAt]
+                    )
+                }
+        }
+    }
+
+    suspend fun deactivatePunishment(punishmentId: Int, removedBy: UUID) {
+        newSuspendedTransaction(Dispatchers.IO, database) {
+            PunishmentTable.update({ PunishmentTable.id eq punishmentId }) {
+                it[active] = false
+                it[PunishmentTable.removedBy] = removedBy.toString()
+                it[removedAt] = System.currentTimeMillis()
+            }
+        }
+    }
+
     fun shutdown() {
         if (::dataSource.isInitialized && !dataSource.isClosed) {
             dataSource.close()
@@ -301,4 +397,53 @@ data class PlayerTagDataRow(
     val name: String,
     val ownedTags: Set<String>,
     val activeTags: Set<String>
+)
+
+// Punishment Tables
+object PunishmentTable : Table("punishments") {
+    val id = integer("id").autoIncrement()
+    val uuid = varchar("uuid", 36)
+    val type = varchar("type", 32) // BAN, TEMPBAN, IPBAN, TEMPIPBAN, MUTE, KICK, WARN
+    val reason = text("reason")
+    val punisher = varchar("punisher", 36)
+    val punisherName = varchar("punisher_name", 16)
+    val timestamp = long("timestamp")
+    val duration = long("duration").nullable() // null = permanent
+    val ip = varchar("ip", 45).nullable()
+    val active = bool("active")
+    val removedBy = varchar("removed_by", 36).nullable()
+    val removedAt = long("removed_at").nullable()
+
+    override val primaryKey = PrimaryKey(id)
+}
+
+object ActivePunishmentTable : Table("active_punishments") {
+    val uuid = varchar("uuid", 36)
+    val type = varchar("type", 32) // MUTE, FREEZE, BAN
+    val expires = long("expires").nullable() // null = permanent
+    val punishmentId = integer("punishment_id")
+
+    override val primaryKey = PrimaryKey(uuid, type)
+}
+
+data class PunishmentRow(
+    val id: Int,
+    val uuid: UUID,
+    val type: String,
+    val reason: String,
+    val punisher: UUID,
+    val punisherName: String,
+    val timestamp: Long,
+    val duration: Long?,
+    val ip: String?,
+    val active: Boolean,
+    val removedBy: UUID?,
+    val removedAt: Long?
+)
+
+data class ActivePunishmentRow(
+    val uuid: UUID,
+    val type: String,
+    val expires: Long?,
+    val punishmentId: Int
 )
