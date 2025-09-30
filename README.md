@@ -56,11 +56,28 @@ The shaded jar is created at `build/libs/Pulse-1.0-all.jar`.
 - `pulse.permission.check` - Check player permissions
 - `pulse.permission.list` - List player permissions
 
-### Placeholder Permissions
-- `pulse.placeholder` - Access to placeholder commands (includes all sub-permissions)
-- `pulse.placeholder.list` - List available placeholders
-- `pulse.placeholder.test` - Test placeholders
-- `pulse.placeholder.providers` - List placeholder providers
+### Gamemode Permissions
+- `pulse.gamemode` - Change gamemode (includes all sub-permissions)
+- `pulse.gamemode.creative` - Change to creative mode
+- `pulse.gamemode.survival` - Change to survival mode
+- `pulse.gamemode.adventure` - Change to adventure mode
+- `pulse.gamemode.spectator` - Change to spectator mode
+- `pulse.gamemode.others` - Change others' gamemode
+
+### Punishment Permissions
+- `pulse.punishment` - All punishment permissions (includes all sub-permissions)
+- `pulse.punishment.kick` - Kick players
+- `pulse.punishment.warn` - Warn players
+- `pulse.punishment.warns` - View player warnings
+- `pulse.punishment.unwarn` - Remove warnings
+- `pulse.punishment.mute` - Mute players
+- `pulse.punishment.unmute` - Unmute players
+- `pulse.punishment.freeze` - Freeze/unfreeze players
+- `pulse.punishment.tempban` - Temporarily ban players
+- `pulse.punishment.ban` - Permanently ban players
+- `pulse.punishment.unban` - Unban players
+- `pulse.punishment.ipban` - IP ban players
+- `pulse.punishment.tempipban` - Temporarily IP ban players
 
 ### Economy Permissions
 - `pulse.coin` - Access to coin commands (includes pay permission)

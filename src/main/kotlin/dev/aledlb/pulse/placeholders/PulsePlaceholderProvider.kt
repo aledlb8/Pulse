@@ -215,7 +215,7 @@ class PulsePlaceholderProvider(
     override fun getPlaceholders(): List<String> {
         return listOf(
             // Basic rank info
-            "rank", "rank_name", "rank_display", "rank_displayname",
+            "rank", "rank_name",
             "rank_prefix", "rank_suffix", "rank_weight", "rank_is_default",
 
             // Player display
