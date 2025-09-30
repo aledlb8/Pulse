@@ -88,7 +88,11 @@ abstract class BasePunishmentCommand(
 class KickCommand : BasePunishmentCommand("kick", "pulse.punishment.kick") {
     override fun executePunishment(sender: CommandSender, target: Player?, targetOffline: UUID, targetName: String, args: Array<out String>) {
         if (target == null || !target.isOnline) {
-            sendMessage(sender, "§cPlayer §7$targetName §cis not online!")
+            val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                "punishment.player-not-online",
+                "player" to targetName
+            )
+            sendMessage(sender, msg)
             return
         }
 
@@ -96,7 +100,12 @@ class KickCommand : BasePunishmentCommand("kick", "pulse.punishment.kick") {
         val (punisherUuid, punisherName) = getPunisherInfo(sender)
 
         Pulse.getPlugin().punishmentManager.service.kick(target, reason, punisherUuid, punisherName)
-        sendMessage(sender, "§aKicked §7$targetName §afor: §7$reason")
+        val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+            "punishment.kick-success",
+            "player" to targetName,
+            "reason" to reason
+        )
+        sendMessage(sender, msg)
     }
 }
 
@@ -107,7 +116,12 @@ class BanCommand : BasePunishmentCommand("ban", "pulse.punishment.ban") {
         val (punisherUuid, punisherName) = getPunisherInfo(sender)
 
         Pulse.getPlugin().punishmentManager.service.ban(targetOffline, targetName, reason, punisherUuid, punisherName)
-        sendMessage(sender, "§aBanned §7$targetName §afor: §7$reason")
+        val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+            "punishment.ban-success",
+            "player" to targetName,
+            "reason" to reason
+        )
+        sendMessage(sender, msg)
     }
 }
 
@@ -117,15 +131,14 @@ class TempbanCommand : BasePunishmentCommand("tempban", "pulse.punishment.tempba
 
     override fun executePunishment(sender: CommandSender, target: Player?, targetOffline: UUID, targetName: String, args: Array<out String>) {
         if (args.size < 2) {
-            sendMessage(sender, "§cUsage: /tempban <player> <duration> [reason...]")
-            sendMessage(sender, "§cExample: /tempban Player123 1d Griefing")
-            sendMessage(sender, "§cDuration format: 1s, 5m, 2h, 7d")
+            sendMessage(sender, Pulse.getPlugin().messagesManager.getMessage("punishment.usage-tempban"))
+            sendMessage(sender, Pulse.getPlugin().messagesManager.getMessage("punishment.duration-example"))
             return
         }
 
         val duration = parseDuration(args[1])
         if (duration == null) {
-            sendMessage(sender, "§cInvalid duration format. Use: 1s, 5m, 2h, 7d")
+            sendMessage(sender, Pulse.getPlugin().messagesManager.getMessage("punishment.invalid-duration"))
             return
         }
 
@@ -133,7 +146,13 @@ class TempbanCommand : BasePunishmentCommand("tempban", "pulse.punishment.tempba
         val (punisherUuid, punisherName) = getPunisherInfo(sender)
 
         Pulse.getPlugin().punishmentManager.service.tempban(targetOffline, targetName, reason, punisherUuid, punisherName, duration)
-        sendMessage(sender, "§aTemporarily banned §7$targetName §afor §7${formatDuration(duration)} §aReason: §7$reason")
+        val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+            "punishment.tempban-success",
+            "player" to targetName,
+            "duration" to formatDuration(duration),
+            "reason" to reason
+        )
+        sendMessage(sender, msg)
     }
 
     private fun formatDuration(seconds: Long): String {
@@ -155,12 +174,16 @@ class TempbanCommand : BasePunishmentCommand("tempban", "pulse.punishment.tempba
 class IpbanCommand : BasePunishmentCommand("ipban", "pulse.punishment.ipban") {
     override fun executePunishment(sender: CommandSender, target: Player?, targetOffline: UUID, targetName: String, args: Array<out String>) {
         if (target == null || !target.isOnline) {
-            sendMessage(sender, "§cPlayer must be online to IP ban!")
+            val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                "punishment.player-not-online",
+                "player" to targetName
+            )
+            sendMessage(sender, msg)
             return
         }
 
         val ip = target.address?.address?.hostAddress ?: run {
-            sendMessage(sender, "§cCould not determine player's IP address!")
+            sendMessage(sender, Pulse.getPlugin().messagesManager.getMessage("punishment.ipban-cannot-determine-ip"))
             return
         }
 
@@ -168,7 +191,12 @@ class IpbanCommand : BasePunishmentCommand("ipban", "pulse.punishment.ipban") {
         val (punisherUuid, punisherName) = getPunisherInfo(sender)
 
         Pulse.getPlugin().punishmentManager.service.ipban(targetOffline, targetName, ip, reason, punisherUuid, punisherName)
-        sendMessage(sender, "§aIP banned §7$targetName §afor: §7$reason")
+        val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+            "punishment.ipban-success",
+            "player" to targetName,
+            "reason" to reason
+        )
+        sendMessage(sender, msg)
     }
 }
 
@@ -178,22 +206,26 @@ class TempipbanCommand : BasePunishmentCommand("tempipban", "pulse.punishment.te
 
     override fun executePunishment(sender: CommandSender, target: Player?, targetOffline: UUID, targetName: String, args: Array<out String>) {
         if (args.size < 2) {
-            sendMessage(sender, "§cUsage: /tempipban <player> <duration> [reason...]")
+            sendMessage(sender, Pulse.getPlugin().messagesManager.getMessage("punishment.usage-tempipban"))
             return
         }
 
         if (target == null || !target.isOnline) {
-            sendMessage(sender, "§cPlayer must be online to temp IP ban!")
+            val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                "punishment.player-not-online",
+                "player" to targetName
+            )
+            sendMessage(sender, msg)
             return
         }
 
         val ip = target.address?.address?.hostAddress ?: run {
-            sendMessage(sender, "§cCould not determine player's IP address!")
+            sendMessage(sender, Pulse.getPlugin().messagesManager.getMessage("punishment.ipban-cannot-determine-ip"))
             return
         }
 
         val duration = parseDuration(args[1]) ?: run {
-            sendMessage(sender, "§cInvalid duration format. Use: 1s, 5m, 2h, 7d")
+            sendMessage(sender, Pulse.getPlugin().messagesManager.getMessage("punishment.invalid-duration"))
             return
         }
 
@@ -201,7 +233,26 @@ class TempipbanCommand : BasePunishmentCommand("tempipban", "pulse.punishment.te
         val (punisherUuid, punisherName) = getPunisherInfo(sender)
 
         Pulse.getPlugin().punishmentManager.service.tempipban(targetOffline, targetName, ip, reason, punisherUuid, punisherName, duration)
-        sendMessage(sender, "§aTemporarily IP banned §7$targetName")
+        val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+            "punishment.tempipban-success",
+            "player" to targetName,
+            "duration" to formatDuration(duration)
+        )
+        sendMessage(sender, msg)
+    }
+
+    private fun formatDuration(seconds: Long): String {
+        val days = seconds / 86400
+        val hours = (seconds % 86400) / 3600
+        val minutes = (seconds % 3600) / 60
+        val secs = seconds % 60
+
+        return buildString {
+            if (days > 0) append("${days}d ")
+            if (hours > 0) append("${hours}h ")
+            if (minutes > 0) append("${minutes}m ")
+            if (secs > 0 || isEmpty()) append("${secs}s")
+        }.trim()
     }
 }
 
@@ -212,9 +263,17 @@ class UnbanCommand : BasePunishmentCommand("unban", "pulse.punishment.unban", re
 
         val success = Pulse.getPlugin().punishmentManager.service.unban(targetOffline, targetName, punisherUuid, punisherName)
         if (success) {
-            sendMessage(sender, "§aUnbanned §7$targetName")
+            val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                "punishment.unban-success",
+                "player" to targetName
+            )
+            sendMessage(sender, msg)
         } else {
-            sendMessage(sender, "§c$targetName §7is not banned!")
+            val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                "punishment.unban-not-banned",
+                "player" to targetName
+            )
+            sendMessage(sender, msg)
         }
     }
 }
@@ -230,7 +289,13 @@ class MuteCommand : BasePunishmentCommand("mute", "pulse.punishment.mute") {
         val (punisherUuid, punisherName) = getPunisherInfo(sender)
 
         Pulse.getPlugin().punishmentManager.service.mute(targetOffline, targetName, reason, punisherUuid, punisherName, duration)
-        sendMessage(sender, "§aMuted §7$targetName §a${duration?.let { "for ${formatDuration(it)}" } ?: "permanently"}")
+        val durationText = duration?.let { "for ${formatDuration(it)}" } ?: "permanently"
+        val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+            "punishment.mute-success",
+            "player" to targetName,
+            "duration" to durationText
+        )
+        sendMessage(sender, msg)
     }
 
     private fun formatDuration(seconds: Long): String {
@@ -255,9 +320,17 @@ class UnmuteCommand : BasePunishmentCommand("unmute", "pulse.punishment.unmute",
 
         val success = Pulse.getPlugin().punishmentManager.service.unmute(targetOffline, targetName, punisherUuid)
         if (success) {
-            sendMessage(sender, "§aUnmuted §7$targetName")
+            val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                "punishment.unmute-success",
+                "player" to targetName
+            )
+            sendMessage(sender, msg)
         } else {
-            sendMessage(sender, "§c$targetName §7is not muted!")
+            val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                "punishment.unmute-not-muted",
+                "player" to targetName
+            )
+            sendMessage(sender, msg)
         }
     }
 }
@@ -266,13 +339,23 @@ class UnmuteCommand : BasePunishmentCommand("unmute", "pulse.punishment.unmute",
 class FreezeCommand : BasePunishmentCommand("freeze", "pulse.punishment.freeze", requiresReason = false) {
     override fun executePunishment(sender: CommandSender, target: Player?, targetOffline: UUID, targetName: String, args: Array<out String>) {
         if (target == null || !target.isOnline) {
-            sendMessage(sender, "§cPlayer §7$targetName §cis not online!")
+            val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                "punishment.player-not-online",
+                "player" to targetName
+            )
+            sendMessage(sender, msg)
             return
         }
 
         Pulse.getPlugin().punishmentManager.service.freeze(targetOffline)
-        target.sendMessage(net.kyori.adventure.text.Component.text("§c§lFROZEN\n§7You have been frozen by staff. Do not log out!"))
-        sendMessage(sender, "§aFroze §7$targetName")
+        target.sendMessage(net.kyori.adventure.text.Component.text(
+            Pulse.getPlugin().messagesManager.getMessage("punishment.freeze-screen")
+        ))
+        val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+            "punishment.freeze-success",
+            "player" to targetName
+        )
+        sendMessage(sender, msg)
     }
 }
 
@@ -280,8 +363,14 @@ class FreezeCommand : BasePunishmentCommand("freeze", "pulse.punishment.freeze",
 class UnfreezeCommand : BasePunishmentCommand("unfreeze", "pulse.punishment.freeze", requiresReason = false) {
     override fun executePunishment(sender: CommandSender, target: Player?, targetOffline: UUID, targetName: String, args: Array<out String>) {
         Pulse.getPlugin().punishmentManager.service.unfreeze(targetOffline)
-        target?.sendMessage(net.kyori.adventure.text.Component.text("§a§lUNFROZEN\n§7You have been unfrozen."))
-        sendMessage(sender, "§aUnfroze §7$targetName")
+        target?.sendMessage(net.kyori.adventure.text.Component.text(
+            Pulse.getPlugin().messagesManager.getMessage("punishment.unfreeze-screen")
+        ))
+        val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+            "punishment.unfreeze-success",
+            "player" to targetName
+        )
+        sendMessage(sender, msg)
     }
 }
 
@@ -292,7 +381,12 @@ class WarnCommand : BasePunishmentCommand("warn", "pulse.punishment.warn") {
         val (punisherUuid, punisherName) = getPunisherInfo(sender)
 
         Pulse.getPlugin().punishmentManager.service.warn(targetOffline, targetName, reason, punisherUuid, punisherName)
-        sendMessage(sender, "§aWarned §7$targetName §afor: §7$reason")
+        val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+            "punishment.warn-success",
+            "player" to targetName,
+            "reason" to reason
+        )
+        sendMessage(sender, msg)
     }
 }
 
@@ -302,13 +396,27 @@ class WarnsCommand : BasePunishmentCommand("warns", "pulse.punishment.warns", re
         val warns = Pulse.getPlugin().punishmentManager.service.getWarns(targetOffline)
 
         if (warns.isEmpty()) {
-            sendMessage(sender, "§7$targetName §ahas no active warnings.")
+            val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                "punishment.warns-none",
+                "player" to targetName
+            )
+            sendMessage(sender, msg)
             return
         }
 
-        sendMessage(sender, "§e§lWarnings for $targetName §7(${warns.size})")
+        val header = Pulse.getPlugin().messagesManager.getFormattedMessage(
+            "punishment.warns-header",
+            "player" to targetName,
+            "count" to warns.size.toString()
+        )
+        sendMessage(sender, header)
         warns.take(5).forEach { warn ->
-            sendMessage(sender, "§7- §f${warn.reason} §8(by ${warn.punisherName})")
+            val entry = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                "punishment.warns-entry",
+                "reason" to warn.reason,
+                "punisher" to warn.punisherName
+            )
+            sendMessage(sender, entry)
         }
     }
 }
@@ -319,7 +427,11 @@ class UnwarnCommand : BasePunishmentCommand("unwarn", "pulse.punishment.unwarn",
         val warns = Pulse.getPlugin().punishmentManager.service.getWarns(targetOffline)
 
         if (warns.isEmpty()) {
-            sendMessage(sender, "§c$targetName §7has no warnings to remove!")
+            val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                "punishment.unwarn-no-warnings",
+                "player" to targetName
+            )
+            sendMessage(sender, msg)
             return
         }
 
@@ -332,6 +444,10 @@ class UnwarnCommand : BasePunishmentCommand("unwarn", "pulse.punishment.unwarn",
             Pulse.getPlugin().databaseManager.deactivatePunishment(latestWarn.id, punisherUuid)
         }
 
-        sendMessage(sender, "§aRemoved latest warning from §7$targetName")
+        val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+            "punishment.unwarn-success",
+            "player" to targetName
+        )
+        sendMessage(sender, msg)
     }
 }

@@ -10,6 +10,23 @@ broadcast:
   mutes: false
   warns: false
 
+# Freeze evasion settings
+freeze-evasion:
+  # Actions to take when a player logs out while frozen (can be multiple)
+  # Options: BAN, TEMPBAN, IPBAN, TEMPIPBAN, MUTE, KICK, WARN, NONE
+  # Examples:
+  #   - Single action: ["BAN"]
+  #   - Multiple actions: ["WARN", "TEMPBAN"]
+  #   - IP ban with warn: ["WARN", "IPBAN"]
+  actions:
+    - "BAN"
+
+  # Duration in seconds (used for TEMPBAN, TEMPIPBAN, and MUTE)
+  duration: 86400 # 24 hours
+
+  # Broadcast the punishment
+  broadcast: true
+
 # Automatic punishment escalation
 auto-escalation:
   enabled: true

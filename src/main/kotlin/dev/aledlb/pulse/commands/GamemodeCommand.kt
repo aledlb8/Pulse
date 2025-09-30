@@ -23,13 +23,17 @@ abstract class BaseGamemodeCommand(
         // For /gamemode command, mode is null and needs to be parsed
         val targetMode = mode ?: run {
             if (args.isEmpty()) {
-                sendMessage(sender, "§cUsage: /gamemode <mode> [player]")
-                sendMessage(sender, "§cModes: §7creative, survival, adventure, spectator")
+                sendMessage(sender, Pulse.getPlugin().messagesManager.getMessage("gamemode.usage"))
+                sendMessage(sender, Pulse.getPlugin().messagesManager.getMessage("gamemode.modes-list"))
                 return
             }
             val parsed = parseGameMode(args[0])
             if (parsed == null) {
-                sendMessage(sender, "§cInvalid gamemode: §7${args[0]}")
+                val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                    "gamemode.invalid-mode",
+                    "mode" to args[0]
+                )
+                sendMessage(sender, msg)
                 return
             }
             parsed
@@ -39,13 +43,17 @@ abstract class BaseGamemodeCommand(
         val targetArg = if (mode == null) args.getOrNull(1) else args.getOrNull(0)
         val target = if (targetArg != null) {
             if (!sender.hasPermission("pulse.gamemode.others")) {
-                sendMessage(sender, "§cYou don't have permission to change others' gamemode!")
+                sendMessage(sender, Pulse.getPlugin().messagesManager.getMessage("gamemode.no-permission-others"))
                 return
             }
 
             val player = Bukkit.getPlayer(targetArg)
             if (player == null) {
-                sendMessage(sender, "§cPlayer not found: §7$targetArg")
+                val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                    "gamemode.player-not-online",
+                    "player" to targetArg
+                )
+                sendMessage(sender, msg)
                 return
             }
             player
@@ -59,10 +67,24 @@ abstract class BaseGamemodeCommand(
 
         // Send messages
         if (target == sender) {
-            sendMessage(sender, "§aGamemode changed to §7$displayName")
+            val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                "gamemode.changed-self",
+                "mode" to displayName
+            )
+            sendMessage(sender, msg)
         } else {
-            sendMessage(sender, "§aSet §7${target.name}§a's gamemode to §7$displayName")
-            target.sendMessage("${Pulse.getPlugin().messagesManager.getPrefix()}§aYour gamemode has been set to §7$displayName")
+            val senderMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                "gamemode.changed-other",
+                "player" to target.name,
+                "mode" to displayName
+            )
+            sendMessage(sender, senderMsg)
+
+            val targetMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                "gamemode.changed-notification",
+                "mode" to displayName
+            )
+            target.sendMessage("${Pulse.getPlugin().messagesManager.getPrefix()}$targetMsg")
         }
     }
 

@@ -28,11 +28,21 @@ class PunishmentService {
                 // Kick player if online
                 Bukkit.getScheduler().runTask(Pulse.getPlugin(), Runnable {
                     val player = Bukkit.getPlayer(target)
-                    player?.kick(Component.text("§c§lBANNED\n\n§7Reason: §f$reason\n§7By: §f$punisherName"))
+                    val kickMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                        "punishment.ban-screen",
+                        "reason" to reason,
+                        "punisher" to punisherName
+                    )
+                    player?.kick(Component.text(kickMsg))
                 })
 
                 if (broadcast && Pulse.getPlugin().punishmentManager.shouldBroadcastBans()) {
-                    Bukkit.getServer().sendMessage(Component.text("§c$targetName has been banned by $punisherName"))
+                    val broadcastMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                        "punishment.ban-broadcast",
+                        "player" to targetName,
+                        "punisher" to punisherName
+                    )
+                    Bukkit.getServer().sendMessage(Component.text(broadcastMsg))
                 }
             } catch (e: Exception) {
                 Logger.error("Failed to ban player $targetName", e)
@@ -50,11 +60,23 @@ class PunishmentService {
 
                 Bukkit.getScheduler().runTask(Pulse.getPlugin(), Runnable {
                     val player = Bukkit.getPlayer(target)
-                    player?.kick(Component.text("§c§lTEMPORARILY BANNED\n\n§7Reason: §f$reason\n§7Duration: §f${formatDuration(duration)}\n§7By: §f$punisherName"))
+                    val kickMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                        "punishment.tempban-screen",
+                        "reason" to reason,
+                        "duration" to formatDuration(duration),
+                        "punisher" to punisherName
+                    )
+                    player?.kick(Component.text(kickMsg))
                 })
 
                 if (broadcast && Pulse.getPlugin().punishmentManager.shouldBroadcastBans()) {
-                    Bukkit.getServer().sendMessage(Component.text("§c$targetName has been temporarily banned by $punisherName for ${formatDuration(duration)}"))
+                    val broadcastMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                        "punishment.tempban-broadcast",
+                        "player" to targetName,
+                        "punisher" to punisherName,
+                        "duration" to formatDuration(duration)
+                    )
+                    Bukkit.getServer().sendMessage(Component.text(broadcastMsg))
                 }
             } catch (e: Exception) {
                 Logger.error("Failed to tempban player $targetName", e)
@@ -72,11 +94,21 @@ class PunishmentService {
                 Bukkit.getScheduler().runTask(Pulse.getPlugin(), Runnable {
                     Bukkit.getIPBans().add(ip)
                     val player = Bukkit.getPlayer(target)
-                    player?.kick(Component.text("§c§lIP BANNED\n\n§7Reason: §f$reason\n§7By: §f$punisherName"))
+                    val kickMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                        "punishment.ipban-screen",
+                        "reason" to reason,
+                        "punisher" to punisherName
+                    )
+                    player?.kick(Component.text(kickMsg))
                 })
 
                 if (broadcast && Pulse.getPlugin().punishmentManager.shouldBroadcastBans()) {
-                    Bukkit.getServer().sendMessage(Component.text("§c$targetName has been IP banned by $punisherName"))
+                    val broadcastMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                        "punishment.ipban-broadcast",
+                        "player" to targetName,
+                        "punisher" to punisherName
+                    )
+                    Bukkit.getServer().sendMessage(Component.text(broadcastMsg))
                 }
             } catch (e: Exception) {
                 Logger.error("Failed to IP ban player $targetName", e)
@@ -95,11 +127,23 @@ class PunishmentService {
                 Bukkit.getScheduler().runTask(Pulse.getPlugin(), Runnable {
                     Bukkit.getIPBans().add(ip)
                     val player = Bukkit.getPlayer(target)
-                    player?.kick(Component.text("§c§lTEMPORARILY IP BANNED\n\n§7Reason: §f$reason\n§7Duration: §f${formatDuration(duration)}\n§7By: §f$punisherName"))
+                    val kickMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                        "punishment.tempipban-screen",
+                        "reason" to reason,
+                        "duration" to formatDuration(duration),
+                        "punisher" to punisherName
+                    )
+                    player?.kick(Component.text(kickMsg))
                 })
 
                 if (broadcast && Pulse.getPlugin().punishmentManager.shouldBroadcastBans()) {
-                    Bukkit.getServer().sendMessage(Component.text("§c$targetName has been temporarily IP banned by $punisherName for ${formatDuration(duration)}"))
+                    val broadcastMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                        "punishment.tempipban-broadcast",
+                        "player" to targetName,
+                        "punisher" to punisherName,
+                        "duration" to formatDuration(duration)
+                    )
+                    Bukkit.getServer().sendMessage(Component.text(broadcastMsg))
                 }
             } catch (e: Exception) {
                 Logger.error("Failed to temp IP ban player $targetName", e)
@@ -146,11 +190,23 @@ class PunishmentService {
 
                 Bukkit.getScheduler().runTask(Pulse.getPlugin(), Runnable {
                     val player = Bukkit.getPlayer(target)
-                    player?.sendMessage(Component.text("§c§lMUTED\n\n§7Reason: §f$reason\n§7Duration: §f${duration?.let { formatDuration(it) } ?: "Permanent"}\n§7By: §f$punisherName"))
+                    val durationText = duration?.let { formatDuration(it) } ?: "Permanent"
+                    val muteMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                        "punishment.mute-screen",
+                        "reason" to reason,
+                        "duration" to durationText,
+                        "punisher" to punisherName
+                    )
+                    player?.sendMessage(Component.text(muteMsg))
                 })
 
                 if (broadcast && Pulse.getPlugin().punishmentManager.shouldBroadcastMutes()) {
-                    Bukkit.getServer().sendMessage(Component.text("§e$targetName has been muted by $punisherName"))
+                    val broadcastMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                        "punishment.mute-broadcast",
+                        "player" to targetName,
+                        "punisher" to punisherName
+                    )
+                    Bukkit.getServer().sendMessage(Component.text(broadcastMsg))
                 }
             } catch (e: Exception) {
                 Logger.error("Failed to mute player $targetName", e)
@@ -169,7 +225,8 @@ class PunishmentService {
 
                     Bukkit.getScheduler().runTask(Pulse.getPlugin(), Runnable {
                         val player = Bukkit.getPlayer(target)
-                        player?.sendMessage(Component.text("§a§lUNMUTED\n\n§7You have been unmuted."))
+                        val unmuteMsg = Pulse.getPlugin().messagesManager.getMessage("punishment.unmute-screen")
+                        player?.sendMessage(Component.text(unmuteMsg))
                     })
                     true
                 } else {
@@ -221,11 +278,21 @@ class PunishmentService {
 
                 Bukkit.getScheduler().runTask(Pulse.getPlugin(), Runnable {
                     val player = Bukkit.getPlayer(target)
-                    player?.sendMessage(Component.text("§e§lWARNED\n\n§7Reason: §f$reason\n§7By: §f$punisherName"))
+                    val warnMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                        "punishment.warn-screen",
+                        "reason" to reason,
+                        "punisher" to punisherName
+                    )
+                    player?.sendMessage(Component.text(warnMsg))
                 })
 
                 if (broadcast && Pulse.getPlugin().punishmentManager.shouldBroadcastWarns()) {
-                    Bukkit.getServer().sendMessage(Component.text("§e$targetName has been warned by $punisherName"))
+                    val broadcastMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                        "punishment.warn-broadcast",
+                        "player" to targetName,
+                        "punisher" to punisherName
+                    )
+                    Bukkit.getServer().sendMessage(Component.text(broadcastMsg))
                 }
             } catch (e: Exception) {
                 Logger.error("Failed to warn player $targetName", e)
@@ -264,11 +331,21 @@ class PunishmentService {
                 db.savePunishment(target.uniqueId, "KICK", reason, punisher, punisherName, null, null)
 
                 Bukkit.getScheduler().runTask(Pulse.getPlugin(), Runnable {
-                    target.kick(Component.text("§c§lKICKED\n\n§7Reason: §f$reason\n§7By: §f$punisherName"))
+                    val kickMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                        "punishment.kick-screen",
+                        "reason" to reason,
+                        "punisher" to punisherName
+                    )
+                    target.kick(Component.text(kickMsg))
                 })
 
                 if (broadcast && Pulse.getPlugin().punishmentManager.shouldBroadcastKicks()) {
-                    Bukkit.getServer().sendMessage(Component.text("§e${target.name} has been kicked by $punisherName"))
+                    val broadcastMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                        "punishment.kick-broadcast",
+                        "player" to target.name,
+                        "punisher" to punisherName
+                    )
+                    Bukkit.getServer().sendMessage(Component.text(broadcastMsg))
                 }
             } catch (e: Exception) {
                 Logger.error("Failed to kick player ${target.name}", e)

@@ -5,7 +5,7 @@ import dev.aledlb.pulse.util.Logger
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 
 class MessagesManager {
-    private var prefix = "&d[&5Pulse&d]&r "
+    private var prefix = "§d[§5Pulse§d]§r "
     private val messages = mutableMapOf<String, String>()
     private val serializer = LegacyComponentSerializer.legacyAmpersand()
 
@@ -29,9 +29,11 @@ class MessagesManager {
         loadMessageSection("general", messagesConfig)
         loadMessageSection("punishment", messagesConfig)
         loadMessageSection("economy", messagesConfig)
+        loadMessageSection("coin", messagesConfig)
         loadMessageSection("shop", messagesConfig)
         loadMessageSection("tag", messagesConfig)
         loadMessageSection("pulse", messagesConfig)
+        loadMessageSection("gamemode", messagesConfig)
 
         Logger.info("Loaded ${messages.size} messages from configuration")
     }

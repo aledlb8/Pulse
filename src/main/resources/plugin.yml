@@ -5,7 +5,7 @@ api-version: '1.21'
 load: STARTUP
 authors: [ aledlb ]
 description: Advanced server core plugin with modular architecture
-website: https://github.com/aledlb/pulse
+website: https://github.com/aledlb8/pulse
 depend: [ Vault ]
 softdepend: [ PlaceholderAPI ]
 

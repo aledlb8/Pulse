@@ -15,6 +15,9 @@ class PunishmentManager {
     private var banDuration = 86400L // seconds
     private var appealsEnabled = true
     private var appealsWebsite = "https://yourserver.com/appeals"
+    private var freezeEvasionActions = listOf("BAN")
+    private var freezeEvasionDuration = 86400L // seconds
+    private var freezeEvasionBroadcast = true
 
     lateinit var service: PunishmentService
         private set
@@ -55,6 +58,22 @@ class PunishmentManager {
         appealsEnabled = appealsNode.node("enabled").getBoolean(true)
         appealsWebsite = appealsNode.node("website").getString("https://yourserver.com/appeals") ?: "https://yourserver.com/appeals"
 
+        // Load freeze evasion settings
+        val freezeEvasionNode = punishmentConfig.node("freeze-evasion")
+
+        // Load actions list
+        val actionsNode = freezeEvasionNode.node("actions")
+        freezeEvasionActions = if (actionsNode.isList) {
+            actionsNode.getList(String::class.java)?.map { it.uppercase() } ?: listOf("BAN")
+        } else {
+            // Fallback for old config format
+            val singleAction = freezeEvasionNode.node("action").getString("BAN")?.uppercase() ?: "BAN"
+            listOf(singleAction)
+        }
+
+        freezeEvasionDuration = freezeEvasionNode.node("duration").getLong(86400)
+        freezeEvasionBroadcast = freezeEvasionNode.node("broadcast").getBoolean(true)
+
         Logger.info("Punishment configuration loaded successfully")
     }
 
@@ -70,6 +89,9 @@ class PunishmentManager {
     fun getBanDuration(): Long = banDuration
     fun areAppealsEnabled(): Boolean = appealsEnabled
     fun getAppealsWebsite(): String = appealsWebsite
+    fun getFreezeEvasionActions(): List<String> = freezeEvasionActions
+    fun getFreezeEvasionDuration(): Long = freezeEvasionDuration
+    fun shouldBroadcastFreezeEvasion(): Boolean = freezeEvasionBroadcast
 
     fun reload() {
         loadConfig()
