@@ -204,6 +204,9 @@ class Pulse : JavaPlugin() {
             }
         }
 
+        // Start rank expiration task
+        dev.aledlb.pulse.tasks.RankExpirationTask.start(this, rankManager, permissionManager)
+
         Logger.success("Initialized 10 core modules")
     }
 
@@ -313,7 +316,11 @@ class Pulse : JavaPlugin() {
         getCommand("unwarn")?.setExecutor(unwarnCommand)
         getCommand("unwarn")?.tabCompleter = unwarnCommand
 
-        Logger.success("Registered 25 commands")
+        val grantCommand = GrantCommand(rankManager, permissionManager)
+        getCommand("grant")?.setExecutor(grantCommand)
+        getCommand("grant")?.tabCompleter = grantCommand
+
+        Logger.success("Registered 26 commands")
     }
 
     fun isPluginFullyLoaded(): Boolean = isFullyLoaded

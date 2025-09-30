@@ -17,6 +17,7 @@ class ShopCommand(
 
     override fun execute(sender: CommandSender, args: Array<out String>) {
         if (!shopManager.isEnabled()) {
+            val pulse = dev.aledlb.pulse.Pulse.getPlugin()
             sendMessage(sender, "§cShop is disabled (Economy system requires Vault)")
             return
         }
@@ -39,6 +40,7 @@ class ShopCommand(
                 if (category != null) {
                     shopGUI.openCategoryShop(player, category.id)
                 } else {
+                    val pulse = dev.aledlb.pulse.Pulse.getPlugin()
                     sendMessage(sender, "§cCategory §e${args[0]}§c not found!")
                     showHelp(sender)
                 }
@@ -48,22 +50,26 @@ class ShopCommand(
 
     private fun handleReload(sender: CommandSender) {
         if (!sender.hasPermission("pulse.shop.reload")) {
+            val pulse = dev.aledlb.pulse.Pulse.getPlugin()
             sendMessage(sender, "§cYou don't have permission to reload the shop!")
             return
         }
 
         shopManager.reload()
+        val pulse = dev.aledlb.pulse.Pulse.getPlugin()
         sendMessage(sender, "§aShop configuration reloaded successfully!")
     }
 
     private fun handleList(sender: CommandSender) {
         if (!sender.hasPermission("pulse.shop.list")) {
+            val pulse = dev.aledlb.pulse.Pulse.getPlugin()
             sendMessage(sender, "§cYou don't have permission to list shop items!")
             return
         }
 
         val categories = shopManager.getCategories()
         val totalItems = shopManager.getShopItems().size
+        val pulse = dev.aledlb.pulse.Pulse.getPlugin()
 
         sendMessage(sender, "§f")
         sendMessage(sender, "§5╔════════════════════════════════╗")
@@ -82,6 +88,7 @@ class ShopCommand(
     }
 
     private fun showHelp(sender: CommandSender) {
+        val pulse = dev.aledlb.pulse.Pulse.getPlugin()
         sendMessage(sender, "§f")
         sendMessage(sender, "§5╔════════════════════════════════╗")
         sendMessage(sender, "§5║        §fSHOP COMMANDS§5         ║")

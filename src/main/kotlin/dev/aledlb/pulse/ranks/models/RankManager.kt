@@ -65,10 +65,25 @@ class RankManager(private val databaseManager: DatabaseManager) {
             try {
                 val playerDataRows = databaseManager.loadAllPlayerData()
                 playerDataRows.forEach { row ->
+                    // Load player ranks from PlayerRanksTable
+                    val playerRanks = try {
+                        databaseManager.loadPlayerRanks(row.uuid)
+                    } catch (e: Exception) {
+                        Logger.error("Failed to load ranks for player ${row.name}", e)
+                        emptyList()
+                    }
+
+                    // Convert PlayerRankRow to PlayerRankEntry
+                    val ranksSet = playerRanks.map {
+                        PlayerRankEntry(it.rankName, it.expiration)
+                    }.toMutableSet()
+
                     val data = PlayerData(
                         uuid = row.uuid,
                         name = row.name,
-                        rank = row.rank
+                        rank = row.rank,
+                        rankExpiration = row.rankExpiration,
+                        ranks = ranksSet
                     )
                     playerData[row.uuid] = data
                 }
@@ -157,12 +172,18 @@ class RankManager(private val databaseManager: DatabaseManager) {
 
     fun getOrCreatePlayerData(uuid: UUID, name: String): PlayerData {
         return playerData.computeIfAbsent(uuid) {
-            val newData = PlayerData(uuid = uuid, name = name, rank = defaultRank)
+            val newData = PlayerData(
+                uuid = uuid,
+                name = name,
+                rank = defaultRank,
+                ranks = mutableSetOf(PlayerRankEntry(defaultRank, null))
+            )
 
             // Save new player to database asynchronously
             CoroutineScope(Dispatchers.IO).launch {
                 try {
                     databaseManager.savePlayerData(uuid, name, defaultRank)
+                    databaseManager.savePlayerRanks(uuid, newData.ranks)
                 } catch (e: Exception) {
                     Logger.error("Failed to save new player data to database: $name", e)
                 }
@@ -172,40 +193,135 @@ class RankManager(private val databaseManager: DatabaseManager) {
         }
     }
 
-    fun setPlayerRank(uuid: UUID, rankName: String): Boolean {
+    fun setPlayerRank(uuid: UUID, rankName: String, expiration: Long? = null): Boolean {
+        return addPlayerRank(uuid, rankName, expiration)
+    }
+
+    fun setPlayerRank(player: Player, rankName: String, expiration: Long? = null): Boolean {
+        return addPlayerRank(player, rankName, expiration)
+    }
+
+    fun addPlayerRank(uuid: UUID, rankName: String, expiration: Long? = null): Boolean {
         if (!ranks.containsKey(rankName.lowercase())) return false
 
         val data = playerData[uuid] ?: return false
-        data.updateRank(rankName)
+        data.addRank(rankName, expiration)
+        updatePlayerPrimaryRank(data)
 
         // Save to database asynchronously
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                databaseManager.savePlayerData(uuid, data.name, rankName)
+                databaseManager.savePlayerRanks(uuid, data.ranks)
+                databaseManager.savePlayerData(uuid, data.name, data.rank, data.rankExpiration)
             } catch (e: Exception) {
-                Logger.error("Failed to save player rank to database: ${data.name}", e)
+                Logger.error("Failed to save player ranks to database: ${data.name}", e)
             }
         }
 
         return true
     }
 
-    fun setPlayerRank(player: Player, rankName: String): Boolean {
+    fun addPlayerRank(player: Player, rankName: String, expiration: Long? = null): Boolean {
         if (!ranks.containsKey(rankName.lowercase())) return false
 
         val data = getOrCreatePlayerData(player.uniqueId, player.name)
-        data.updateRank(rankName)
+        data.addRank(rankName, expiration)
+        updatePlayerPrimaryRank(data)
 
         // Save to database asynchronously
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                databaseManager.savePlayerData(player.uniqueId, player.name, rankName)
+                databaseManager.savePlayerRanks(player.uniqueId, data.ranks)
+                databaseManager.savePlayerData(player.uniqueId, player.name, data.rank, data.rankExpiration)
             } catch (e: Exception) {
-                Logger.error("Failed to save player rank to database: ${player.name}", e)
+                Logger.error("Failed to save player ranks to database: ${player.name}", e)
             }
         }
 
         return true
+    }
+
+    fun removePlayerRank(uuid: UUID, rankName: String): Boolean {
+        val data = playerData[uuid] ?: return false
+        val removed = data.removeRank(rankName)
+
+        if (removed) {
+            updatePlayerPrimaryRank(data)
+
+            // Save to database asynchronously
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    databaseManager.savePlayerRanks(uuid, data.ranks)
+                    databaseManager.savePlayerData(uuid, data.name, data.rank, data.rankExpiration)
+                } catch (e: Exception) {
+                    Logger.error("Failed to save player ranks to database: ${data.name}", e)
+                }
+            }
+        }
+
+        return removed
+    }
+
+    fun removePlayerRank(player: Player, rankName: String): Boolean {
+        val data = getOrCreatePlayerData(player.uniqueId, player.name)
+        val removed = data.removeRank(rankName)
+
+        if (removed) {
+            updatePlayerPrimaryRank(data)
+
+            // Save to database asynchronously
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    databaseManager.savePlayerRanks(player.uniqueId, data.ranks)
+                    databaseManager.savePlayerData(player.uniqueId, player.name, data.rank, data.rankExpiration)
+                } catch (e: Exception) {
+                    Logger.error("Failed to save player ranks to database: ${player.name}", e)
+                }
+            }
+        }
+
+        return removed
+    }
+
+    fun updatePlayerPrimaryRank(playerData: PlayerData) {
+        val currentTime = System.currentTimeMillis()
+
+        // Get all non-expired ranks
+        val activeRanks = playerData.ranks.filter {
+            it.expiration == null || it.expiration!! > currentTime
+        }
+
+        if (activeRanks.isEmpty()) {
+            // No active ranks, set to default rank
+            playerData.updateRank(defaultRank)
+            playerData.rankExpiration = null
+            playerData.ranks.clear()
+            playerData.ranks.add(PlayerRankEntry(defaultRank, null))
+            return
+        }
+
+        // Find the highest weight rank
+        var highestRank: PlayerRankEntry? = null
+        var highestWeight = Int.MIN_VALUE
+
+        for (rankEntry in activeRanks) {
+            val rank = getRank(rankEntry.rankName)
+            if (rank != null && rank.weight > highestWeight) {
+                highestWeight = rank.weight
+                highestRank = rankEntry
+            }
+        }
+
+        if (highestRank != null) {
+            playerData.updateRank(highestRank.rankName)
+            playerData.rankExpiration = highestRank.expiration
+        } else {
+            // Fallback to default if no valid rank found
+            playerData.updateRank(defaultRank)
+            playerData.rankExpiration = null
+            playerData.ranks.clear()
+            playerData.ranks.add(PlayerRankEntry(defaultRank, null))
+        }
     }
 
     // Permission Checking
@@ -352,9 +468,43 @@ class RankManager(private val databaseManager: DatabaseManager) {
         runBlocking {
             playerData.forEach { (uuid, data) ->
                 try {
-                    databaseManager.savePlayerData(uuid, data.name, data.rank)
+                    databaseManager.savePlayerData(uuid, data.name, data.rank, data.rankExpiration)
+                    databaseManager.savePlayerRanks(uuid, data.ranks)
                 } catch (e: Exception) {
                     Logger.error("Failed to save player data for ${data.name}", e)
+                }
+            }
+        }
+    }
+
+    fun checkExpiredRanks() {
+        val currentTime = System.currentTimeMillis()
+        playerData.values.forEach { data ->
+            // Get expired ranks from the ranks set
+            val expiredRanks = data.getExpiredRanks()
+
+            if (expiredRanks.isNotEmpty()) {
+                Logger.info("Found ${expiredRanks.size} expired rank(s) for player ${data.name}")
+
+                // Remove expired ranks from the set
+                expiredRanks.forEach { expiredRank ->
+                    data.ranks.removeIf {
+                        it.rankName.lowercase() == expiredRank.rankName.lowercase() &&
+                        it.expiration == expiredRank.expiration
+                    }
+                }
+
+                // Update primary rank
+                updatePlayerPrimaryRank(data)
+
+                // Save to database
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        databaseManager.savePlayerRanks(data.uuid, data.ranks)
+                        databaseManager.savePlayerData(data.uuid, data.name, data.rank, data.rankExpiration)
+                    } catch (e: Exception) {
+                        Logger.error("Failed to save expired rank changes for ${data.name}", e)
+                    }
                 }
             }
         }

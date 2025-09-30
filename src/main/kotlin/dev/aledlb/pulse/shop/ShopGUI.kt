@@ -53,7 +53,7 @@ class ShopGUI(
         val categoryObj = shopManager.getCategory(category)
 
         if (items.isEmpty()) {
-            player.sendMessage(messagesManager.getFormattedMessageWithPrefix("shop.category-empty"))
+            player.sendMessage(messagesManager.getFormattedMessage("shop.category-empty"))
             return
         }
 
@@ -264,42 +264,42 @@ class ShopGUI(
 
         when (result) {
             ShopManager.PurchaseResult.SUCCESS -> {
-                player.sendMessage(messagesManager.getFormattedMessageWithPrefix("shop.purchase-success", "item" to item.name))
+                player.sendMessage(messagesManager.getFormattedMessage("shop.purchase-success", "item" to item.name))
 
                 // Close GUI and show updated balance
                 player.closeInventory()
                 val newBalance = economyManager.formatBalance(economyManager.getBalance(player))
-                player.sendMessage(messagesManager.getFormattedMessageWithPrefix("shop.new-balance", "balance" to newBalance))
+                player.sendMessage(messagesManager.getFormattedMessage("shop.new-balance", "balance" to newBalance))
             }
 
             ShopManager.PurchaseResult.INSUFFICIENT_FUNDS -> {
                 val playerBalance = economyManager.formatBalance(economyManager.getBalance(player))
                 val itemPrice = economyManager.formatBalance(item.price)
-                player.sendMessage(messagesManager.getFormattedMessageWithPrefix("shop.insufficient-funds"))
-                player.sendMessage(messagesManager.getFormattedMessageWithPrefix("shop.insufficient-funds-detail",
+                player.sendMessage(messagesManager.getFormattedMessage("shop.insufficient-funds"))
+                player.sendMessage(messagesManager.getFormattedMessage("shop.insufficient-funds-detail",
                     "price" to itemPrice,
                     "balance" to playerBalance
                 ))
             }
 
             ShopManager.PurchaseResult.ALREADY_OWNED -> {
-                player.sendMessage(messagesManager.getFormattedMessageWithPrefix("shop.already-owned"))
+                player.sendMessage(messagesManager.getFormattedMessage("shop.already-owned"))
             }
 
             ShopManager.PurchaseResult.NO_PERMISSION -> {
-                player.sendMessage(messagesManager.getFormattedMessageWithPrefix("shop.no-permission"))
+                player.sendMessage(messagesManager.getFormattedMessage("shop.no-permission"))
             }
 
             ShopManager.PurchaseResult.ITEM_NOT_FOUND -> {
-                player.sendMessage(messagesManager.getFormattedMessageWithPrefix("shop.item-not-found"))
+                player.sendMessage(messagesManager.getFormattedMessage("shop.item-not-found"))
             }
 
             ShopManager.PurchaseResult.ITEM_DISABLED -> {
-                player.sendMessage(messagesManager.getFormattedMessageWithPrefix("shop.item-disabled"))
+                player.sendMessage(messagesManager.getFormattedMessage("shop.item-disabled"))
             }
 
             else -> {
-                player.sendMessage(messagesManager.getFormattedMessageWithPrefix("shop.purchase-failed"))
+                player.sendMessage(messagesManager.getFormattedMessage("shop.purchase-failed"))
             }
         }
     }

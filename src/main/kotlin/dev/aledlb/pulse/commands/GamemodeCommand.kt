@@ -84,7 +84,7 @@ abstract class BaseGamemodeCommand(
                 "gamemode.changed-notification",
                 "mode" to displayName
             )
-            target.sendMessage("${Pulse.getPlugin().messagesManager.getPrefix()}$targetMsg")
+            target.sendMessage(targetMsg)
         }
     }
 

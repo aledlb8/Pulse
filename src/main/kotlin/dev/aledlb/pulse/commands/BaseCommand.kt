@@ -28,7 +28,7 @@ abstract class BaseCommand : CommandExecutor, TabCompleter {
         try {
             execute(sender, args)
         } catch (e: Exception) {
-            sender.sendMessage("${Pulse.getPlugin().messagesManager.getPrefix()}§cAn error occurred while executing this command!")
+            sender.sendMessage("§cAn error occurred while executing this command!")
             e.printStackTrace()
         }
 
@@ -52,13 +52,17 @@ abstract class BaseCommand : CommandExecutor, TabCompleter {
 
     protected fun requirePlayer(sender: CommandSender): Player? {
         if (sender !is Player) {
-            sender.sendMessage("${Pulse.getPlugin().messagesManager.getPrefix()}§cThis command can only be used by players!")
+            sendMessage(sender, Pulse.getPlugin().messagesManager.getFormattedMessage("general.player-only"))
             return null
         }
         return sender
     }
 
     protected fun sendMessage(sender: CommandSender, message: String) {
-        sender.sendMessage("${Pulse.getPlugin().messagesManager.getPrefix()}$message")
+        sender.sendMessage(message)
+    }
+
+    protected fun sendUsage(sender: CommandSender) {
+        sendMessage(sender, "§7Usage: $usage")
     }
 }

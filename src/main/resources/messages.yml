@@ -17,13 +17,12 @@
 # {count} - Generic counter
 # {parent} - Parent rank
 
-prefix: "§d[§5Pulse§d]§r "
-
 # ==================== GENERAL ====================
 general:
   no-permission: "§cYou don't have permission to do that!"
   player-not-found: "§cPlayer not found!"
   player-not-online: "§cPlayer §e{player}§c is not online!"
+  player-only: "§cThis command can only be used by players!"
   invalid-command: "§cInvalid command usage!"
   command-disabled: "§cThis command is currently disabled!"
   unknown-subcommand: "§cUnknown subcommand: {subcommand}"

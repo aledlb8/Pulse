@@ -34,7 +34,7 @@ class PermissionCommand(
             "list" -> handleList(sender, args)
             "help" -> showHelp(sender)
             else -> {
-                sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("general.unknown-subcommand", "subcommand" to args[0]))
+                sendMessage(sender, messagesManager.getFormattedMessage("general.unknown-subcommand", "subcommand" to args[0]))
                 showHelp(sender)
             }
         }
@@ -48,6 +48,7 @@ class PermissionCommand(
 
         if (args.size < 3) {
             sendMessage(sender, messagesManager.invalidCommand())
+            sendMessage(sender, "§7Usage: /permission add <player> <permission>")
             return
         }
 
@@ -56,13 +57,13 @@ class PermissionCommand(
 
         val targetPlayer = Bukkit.getPlayer(playerName)
         if (targetPlayer == null) {
-            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("general.player-not-online", "player" to playerName))
+            sendMessage(sender, messagesManager.getFormattedMessage("general.player-not-online", "player" to playerName))
             return
         }
 
         permissionManager.addPlayerPermission(targetPlayer, permission)
-        sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("permission.add-success", "permission" to permission, "player" to targetPlayer.name))
-        sendMessage(targetPlayer, messagesManager.getFormattedMessageWithPrefix("permission.add-notification", "permission" to permission))
+        sendMessage(sender, messagesManager.getFormattedMessage("permission.add-success", "permission" to permission, "player" to targetPlayer.name))
+        sendMessage(targetPlayer, messagesManager.getFormattedMessage("permission.add-notification", "permission" to permission))
     }
 
     private fun handleRemove(sender: CommandSender, args: Array<out String>) {
@@ -73,6 +74,7 @@ class PermissionCommand(
 
         if (args.size < 3) {
             sendMessage(sender, messagesManager.invalidCommand())
+            sendMessage(sender, "§7Usage: /permission remove <player> <permission>")
             return
         }
 
@@ -81,13 +83,13 @@ class PermissionCommand(
 
         val targetPlayer = Bukkit.getPlayer(playerName)
         if (targetPlayer == null) {
-            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("general.player-not-online", "player" to playerName))
+            sendMessage(sender, messagesManager.getFormattedMessage("general.player-not-online", "player" to playerName))
             return
         }
 
         permissionManager.removePlayerPermission(targetPlayer, permission)
-        sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("permission.remove-success", "permission" to permission, "player" to targetPlayer.name))
-        sendMessage(targetPlayer, messagesManager.getFormattedMessageWithPrefix("permission.remove-notification", "permission" to permission))
+        sendMessage(sender, messagesManager.getFormattedMessage("permission.remove-success", "permission" to permission, "player" to targetPlayer.name))
+        sendMessage(targetPlayer, messagesManager.getFormattedMessage("permission.remove-notification", "permission" to permission))
     }
 
     private fun handleDeny(sender: CommandSender, args: Array<out String>) {
@@ -98,6 +100,7 @@ class PermissionCommand(
 
         if (args.size < 3) {
             sendMessage(sender, messagesManager.invalidCommand())
+            sendMessage(sender, "§7Usage: /permission deny <player> <permission>")
             return
         }
 
@@ -106,13 +109,13 @@ class PermissionCommand(
 
         val targetPlayer = Bukkit.getPlayer(playerName)
         if (targetPlayer == null) {
-            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("general.player-not-online", "player" to playerName))
+            sendMessage(sender, messagesManager.getFormattedMessage("general.player-not-online", "player" to playerName))
             return
         }
 
         permissionManager.denyPlayerPermission(targetPlayer, permission)
-        sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("permission.deny-success", "permission" to permission, "player" to targetPlayer.name))
-        sendMessage(targetPlayer, messagesManager.getFormattedMessageWithPrefix("permission.deny-notification", "permission" to permission))
+        sendMessage(sender, messagesManager.getFormattedMessage("permission.deny-success", "permission" to permission, "player" to targetPlayer.name))
+        sendMessage(targetPlayer, messagesManager.getFormattedMessage("permission.deny-notification", "permission" to permission))
     }
 
     private fun handleUndeny(sender: CommandSender, args: Array<out String>) {
@@ -123,6 +126,7 @@ class PermissionCommand(
 
         if (args.size < 3) {
             sendMessage(sender, messagesManager.invalidCommand())
+            sendMessage(sender, "§7Usage: /permission undeny <player> <permission>")
             return
         }
 
@@ -131,7 +135,7 @@ class PermissionCommand(
 
         val targetPlayer = Bukkit.getPlayer(playerName)
         if (targetPlayer == null) {
-            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("general.player-not-online", "player" to playerName))
+            sendMessage(sender, messagesManager.getFormattedMessage("general.player-not-online", "player" to playerName))
             return
         }
 
@@ -139,8 +143,8 @@ class PermissionCommand(
         playerData.undenyPermission(permission)
         permissionManager.updatePlayerPermissions(targetPlayer)
 
-        sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("permission.undeny-success", "permission" to permission, "player" to targetPlayer.name))
-        sendMessage(targetPlayer, messagesManager.getFormattedMessageWithPrefix("permission.undeny-notification", "permission" to permission))
+        sendMessage(sender, messagesManager.getFormattedMessage("permission.undeny-success", "permission" to permission, "player" to targetPlayer.name))
+        sendMessage(targetPlayer, messagesManager.getFormattedMessage("permission.undeny-notification", "permission" to permission))
     }
 
     private fun handleCheck(sender: CommandSender, args: Array<out String>) {
@@ -151,6 +155,7 @@ class PermissionCommand(
 
         if (args.size < 3) {
             sendMessage(sender, messagesManager.invalidCommand())
+            sendMessage(sender, "§7Usage: /permission check <player> <permission>")
             return
         }
 
@@ -159,16 +164,16 @@ class PermissionCommand(
 
         val targetPlayer = Bukkit.getPlayer(playerName)
         if (targetPlayer == null) {
-            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("general.player-not-online", "player" to playerName))
+            sendMessage(sender, messagesManager.getFormattedMessage("general.player-not-online", "player" to playerName))
             return
         }
 
         val hasPermission = permissionManager.hasPermission(targetPlayer, permission)
 
         if (hasPermission) {
-            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("permission.check-has", "player" to targetPlayer.name, "permission" to permission))
+            sendMessage(sender, messagesManager.getFormattedMessage("permission.check-has", "player" to targetPlayer.name, "permission" to permission))
         } else {
-            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("permission.check-not-has", "player" to targetPlayer.name, "permission" to permission))
+            sendMessage(sender, messagesManager.getFormattedMessage("permission.check-not-has", "player" to targetPlayer.name, "permission" to permission))
         }
 
         // Show more detailed info
@@ -194,13 +199,14 @@ class PermissionCommand(
 
         if (args.size < 2) {
             sendMessage(sender, messagesManager.invalidCommand())
+            sendMessage(sender, "§7Usage: /permission list <player>")
             return
         }
 
         val playerName = args[1]
         val targetPlayer = Bukkit.getPlayer(playerName)
         if (targetPlayer == null) {
-            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("general.player-not-online", "player" to playerName))
+            sendMessage(sender, messagesManager.getFormattedMessage("general.player-not-online", "player" to playerName))
             return
         }
 

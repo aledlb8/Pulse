@@ -117,19 +117,20 @@ class DatabaseManager {
 
     private fun createTables() {
         transaction(database) {
-            SchemaUtils.create(PlayerDataTable, PlayerBalanceTable, PlayerTagDataTable, PunishmentTable, ActivePunishmentTable)
+            SchemaUtils.create(PlayerDataTable, PlayerRanksTable, PlayerBalanceTable, PlayerTagDataTable, PunishmentTable, ActivePunishmentTable)
         }
         Logger.debug("Database tables created/verified")
     }
 
     // Player Data operations
-    suspend fun savePlayerData(uuid: UUID, name: String, rank: String) {
+    suspend fun savePlayerData(uuid: UUID, name: String, rank: String, rankExpiration: Long? = null) {
         newSuspendedTransaction(Dispatchers.IO, database) {
             // Try to update first, if no rows affected then insert
             val updated = PlayerDataTable.update({ PlayerDataTable.uuid eq uuid.toString() }) {
                 it[PlayerDataTable.name] = name
                 it[PlayerDataTable.rank] = rank
                 it[PlayerDataTable.lastSeen] = System.currentTimeMillis()
+                it[PlayerDataTable.rankExpiration] = rankExpiration
             }
 
             if (updated == 0) {
@@ -138,6 +139,7 @@ class DatabaseManager {
                     it[PlayerDataTable.name] = name
                     it[PlayerDataTable.rank] = rank
                     it[PlayerDataTable.lastSeen] = System.currentTimeMillis()
+                    it[PlayerDataTable.rankExpiration] = rankExpiration
                 }
             }
         }
@@ -151,7 +153,8 @@ class DatabaseManager {
                         uuid = UUID.fromString(it[PlayerDataTable.uuid]),
                         name = it[PlayerDataTable.name],
                         rank = it[PlayerDataTable.rank],
-                        lastSeen = it[PlayerDataTable.lastSeen]
+                        lastSeen = it[PlayerDataTable.lastSeen],
+                        rankExpiration = it[PlayerDataTable.rankExpiration]
                     )
                 }
                 .singleOrNull()
@@ -193,7 +196,38 @@ class DatabaseManager {
                         uuid = UUID.fromString(it[PlayerDataTable.uuid]),
                         name = it[PlayerDataTable.name],
                         rank = it[PlayerDataTable.rank],
-                        lastSeen = it[PlayerDataTable.lastSeen]
+                        lastSeen = it[PlayerDataTable.lastSeen],
+                        rankExpiration = it[PlayerDataTable.rankExpiration]
+                    )
+                }
+        }
+    }
+
+    // Player Ranks operations
+    suspend fun savePlayerRanks(uuid: UUID, ranks: Set<dev.aledlb.pulse.ranks.models.PlayerRankEntry>) {
+        newSuspendedTransaction(Dispatchers.IO, database) {
+            // Delete existing ranks for this player
+            PlayerRanksTable.deleteWhere { PlayerRanksTable.uuid eq uuid.toString() }
+
+            // Insert new ranks
+            ranks.forEach { rankEntry ->
+                PlayerRanksTable.insert {
+                    it[PlayerRanksTable.uuid] = uuid.toString()
+                    it[PlayerRanksTable.rankName] = rankEntry.rankName
+                    it[PlayerRanksTable.expiration] = rankEntry.expiration
+                }
+            }
+        }
+    }
+
+    suspend fun loadPlayerRanks(uuid: UUID): List<PlayerRankRow> {
+        return newSuspendedTransaction(Dispatchers.IO, database) {
+            PlayerRanksTable.select { PlayerRanksTable.uuid eq uuid.toString() }
+                .map {
+                    PlayerRankRow(
+                        uuid = UUID.fromString(it[PlayerRanksTable.uuid]),
+                        rankName = it[PlayerRanksTable.rankName],
+                        expiration = it[PlayerRanksTable.expiration]
                     )
                 }
         }
@@ -362,8 +396,17 @@ object PlayerDataTable : Table("player_data") {
     val name = varchar("name", 16)
     val rank = varchar("rank", 32)
     val lastSeen = long("last_seen")
+    val rankExpiration = long("rank_expiration").nullable() // null = permanent
 
     override val primaryKey = PrimaryKey(uuid)
+}
+
+object PlayerRanksTable : Table("player_ranks") {
+    val uuid = varchar("uuid", 36)
+    val rankName = varchar("rank_name", 32)
+    val expiration = long("expiration").nullable() // null = permanent
+
+    override val primaryKey = PrimaryKey(uuid, rankName)
 }
 
 object PlayerBalanceTable : Table("player_balances") {
@@ -389,7 +432,14 @@ data class PlayerDataRow(
     val uuid: UUID,
     val name: String,
     val rank: String,
-    val lastSeen: Long
+    val lastSeen: Long,
+    val rankExpiration: Long? = null
+)
+
+data class PlayerRankRow(
+    val uuid: UUID,
+    val rankName: String,
+    val expiration: Long? = null
 )
 
 data class PlayerTagDataRow(

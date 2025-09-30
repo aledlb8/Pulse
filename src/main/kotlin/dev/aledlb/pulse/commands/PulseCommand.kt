@@ -23,14 +23,14 @@ class PulseCommand : BaseCommand() {
             "info", "version" -> handleInfo(sender)
             "help" -> showHelp(sender)
             else -> {
-                sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("general.unknown-subcommand", "subcommand" to args[0]))
+                sendMessage(sender, messagesManager.getFormattedMessage("general.unknown-subcommand", "subcommand" to args[0]))
                 showHelp(sender)
             }
         }
     }
 
     private fun handleReload(sender: CommandSender) {
-        sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("pulse.reload-started"))
+        sendMessage(sender, messagesManager.getFormattedMessage("pulse.reload-started"))
 
         try {
             val plugin = Pulse.getPlugin()
@@ -53,10 +53,10 @@ class PulseCommand : BaseCommand() {
             plugin.messagesManager.reload()
             plugin.punishmentManager.reload()
 
-            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("pulse.reload-success"))
-            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("pulse.reload-managers-refreshed"))
+            sendMessage(sender, messagesManager.getFormattedMessage("pulse.reload-success"))
+            sendMessage(sender, messagesManager.getFormattedMessage("pulse.reload-managers-refreshed"))
         } catch (e: Exception) {
-            sendMessage(sender, messagesManager.getFormattedMessageWithPrefix("pulse.reload-failed", "error" to (e.message ?: "Unknown error")))
+            sendMessage(sender, messagesManager.getFormattedMessage("pulse.reload-failed", "error" to (e.message ?: "Unknown error")))
             e.printStackTrace()
         }
     }

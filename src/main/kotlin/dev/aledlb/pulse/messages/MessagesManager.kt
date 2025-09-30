@@ -5,7 +5,6 @@ import dev.aledlb.pulse.util.Logger
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 
 class MessagesManager {
-    private var prefix = "§d[§5Pulse§d]§r "
     private val messages = mutableMapOf<String, String>()
     private val serializer = LegacyComponentSerializer.legacyAmpersand()
 
@@ -22,14 +21,13 @@ class MessagesManager {
             return
         }
 
-        // Load prefix
-        prefix = messagesConfig.node("prefix").getString("&d[&5Pulse&d]&r ") ?: "&d[&5Pulse&d]&r "
-
         // Load general messages
         loadMessageSection("general", messagesConfig)
         loadMessageSection("punishment", messagesConfig)
         loadMessageSection("economy", messagesConfig)
         loadMessageSection("coin", messagesConfig)
+        loadMessageSection("rank", messagesConfig)
+        loadMessageSection("permission", messagesConfig)
         loadMessageSection("shop", messagesConfig)
         loadMessageSection("tag", messagesConfig)
         loadMessageSection("pulse", messagesConfig)
@@ -62,23 +60,15 @@ class MessagesManager {
         return serializer.serialize(serializer.deserialize(message))
     }
 
-    fun getPrefix(): String {
-        return serializer.serialize(serializer.deserialize(prefix))
-    }
-
-    fun getFormattedMessageWithPrefix(key: String, vararg replacements: Pair<String, String>): String {
-        return getPrefix() + getFormattedMessage(key, *replacements)
-    }
-
     // Convenience methods for common messages
-    fun noPermission(): String = getFormattedMessageWithPrefix("general.no-permission")
-    fun playerNotFound(): String = getFormattedMessageWithPrefix("general.player-not-found")
-    fun invalidCommand(): String = getFormattedMessageWithPrefix("general.invalid-command")
-    fun commandDisabled(): String = getFormattedMessageWithPrefix("general.command-disabled")
+    fun noPermission(): String = getFormattedMessage("general.no-permission")
+    fun playerNotFound(): String = getFormattedMessage("general.player-not-found")
+    fun invalidCommand(): String = getFormattedMessage("general.invalid-command")
+    fun commandDisabled(): String = getFormattedMessage("general.command-disabled")
 
     fun insufficientFunds(currency: String): String =
-        getFormattedMessageWithPrefix("economy.insufficient-funds", "currency" to currency)
-    fun transactionComplete(): String = getFormattedMessageWithPrefix("economy.transaction-complete")
+        getFormattedMessage("economy.insufficient-funds", "currency" to currency)
+    fun transactionComplete(): String = getFormattedMessage("economy.transaction-complete")
 
     fun reload() {
         messages.clear()
