@@ -107,6 +107,9 @@ The shaded jar is created at `build/libs/Pulse-1.0-all.jar`.
 - `pulse.tag.delete` - Delete tags
 - `pulse.tag.reload` - Reload tag system
 
+### Grant Permissions
+- `pulse.grant` - Access to grant command GUI for managing player ranks
+
 </details>
 
 ## Placeholders
