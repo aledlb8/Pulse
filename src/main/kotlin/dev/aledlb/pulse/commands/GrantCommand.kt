@@ -39,19 +39,18 @@ class GrantCommand(
 
     override fun execute(sender: CommandSender, args: Array<out String>) {
         if (sender !is Player) {
-            sender.sendMessage(messagesManager.getFormattedMessage("general.player-only"))
+            sendMessage(sender, messagesManager.getFormattedMessage("general.player-only"))
             return
         }
 
         if (args.isEmpty()) {
-            sender.sendMessage(messagesManager.invalidCommand())
             sendUsage(sender)
             return
         }
 
         val targetPlayer = Bukkit.getPlayer(args[0])
         if (targetPlayer == null) {
-            sender.sendMessage(messagesManager.getFormattedMessage("general.player-not-online", "player" to args[0]))
+            sendMessage(sender, messagesManager.getFormattedMessage("general.player-not-online", "player" to args[0]))
             return
         }
 
@@ -400,7 +399,7 @@ class GrantCommand(
                         )
                         openSeeRanksMenu(viewer, target)
                     } else {
-                        viewer.sendMessage(messagesManager.invalidCommand())
+                        sendUsage(viewer)
                     }
                 }
             }
@@ -460,7 +459,7 @@ class GrantCommand(
                     viewer.closeInventory()
                     activeGuis.remove(viewer.uniqueId)
                 } else {
-                    viewer.sendMessage(messagesManager.invalidCommand())
+                    sendUsage(viewer)
                     viewer.closeInventory()
                     activeGuis.remove(viewer.uniqueId)
                 }

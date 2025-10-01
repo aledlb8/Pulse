@@ -52,8 +52,7 @@ class RankCommand(
         }
 
         if (args.size < 5) {
-            sendMessage(sender, messagesManager.invalidCommand())
-            sendMessage(sender, "§7Usage: /rank create <name> <prefix> <suffix> <weight>")
+            sendUsage(sender)
             return
         }
 
@@ -61,8 +60,7 @@ class RankCommand(
         val prefix = args[2].replace("_", " ").replace("&", "§")
         val suffix = args[3].replace("_", " ").replace("&", "§")
         val weight = args[4].toIntOrNull() ?: run {
-            sendMessage(sender, messagesManager.invalidCommand())
-            sendMessage(sender, "§7Usage: /rank create <name> <prefix> <suffix> <weight>")
+            sendUsage(sender)
             return
         }
 
@@ -80,8 +78,7 @@ class RankCommand(
         }
 
         if (args.size < 2) {
-            sendMessage(sender, messagesManager.invalidCommand())
-            sendMessage(sender, "§7Usage: /rank delete <rank>")
+            sendUsage(sender)
             return
         }
 
@@ -101,8 +98,7 @@ class RankCommand(
         }
 
         if (args.size < 3) {
-            sendMessage(sender, messagesManager.invalidCommand())
-            sendMessage(sender, "§7Usage: /rank set <player> <rank>")
+            sendUsage(sender)
             return
         }
 
@@ -126,7 +122,7 @@ class RankCommand(
             sendMessage(targetPlayer, messagesManager.getFormattedMessage("rank.set-notification", "rank" to rank.name))
             permissionManager.updatePlayerDisplayNames()
         } else {
-            sendMessage(sender, messagesManager.invalidCommand())
+            sendUsage(sender)
         }
     }
 
@@ -137,8 +133,7 @@ class RankCommand(
         }
 
         if (args.size < 3) {
-            sendMessage(sender, messagesManager.invalidCommand())
-            sendMessage(sender, "§7Usage: /rank remove <player> <rank>")
+            sendUsage(sender)
             return
         }
 
@@ -165,7 +160,7 @@ class RankCommand(
             sendMessage(targetPlayer, messagesManager.getFormattedMessage("rank.remove-notification", "rank" to rankName))
             permissionManager.updatePlayerDisplayNames()
         } else {
-            sendMessage(sender, messagesManager.invalidCommand())
+            sendUsage(sender)
         }
     }
 
@@ -176,8 +171,7 @@ class RankCommand(
         }
 
         if (args.size < 2) {
-            sendMessage(sender, messagesManager.invalidCommand())
-            showHelp(sender)
+            sendUsage(sender)
             return
         }
 
@@ -228,8 +222,7 @@ class RankCommand(
 
         val ranks = rankManager.getRanksSorted()
         if (ranks.isEmpty()) {
-            sendMessage(sender, messagesManager.invalidCommand())
-            showHelp(sender)
+            sendUsage(sender)
             return
         }
 
@@ -254,8 +247,7 @@ class RankCommand(
         }
 
         if (args.size < 3) {
-            sendMessage(sender, messagesManager.invalidCommand())
-            showHelp(sender)
+            sendUsage(sender)
             return
         }
 
@@ -277,8 +269,7 @@ class RankCommand(
         }
 
         if (args.size < 3) {
-            sendMessage(sender, messagesManager.invalidCommand())
-            showHelp(sender)
+            sendUsage(sender)
             return
         }
 
@@ -300,8 +291,7 @@ class RankCommand(
         }
 
         if (args.size < 3) {
-            sendMessage(sender, messagesManager.invalidCommand())
-            showHelp(sender)
+            sendUsage(sender)
             return
         }
 
@@ -309,8 +299,7 @@ class RankCommand(
         val parentName = args[2]
 
         if (rankName.lowercase() == parentName.lowercase()) {
-            sendMessage(sender, messagesManager.invalidCommand())
-            showHelp(sender)
+            sendUsage(sender)
             return
         }
 
@@ -342,8 +331,7 @@ class RankCommand(
         }
 
         if (args.size < 3) {
-            sendMessage(sender, messagesManager.invalidCommand())
-            showHelp(sender)
+            sendUsage(sender)
             return
         }
 
@@ -360,7 +348,7 @@ class RankCommand(
             sendMessage(sender, messagesManager.getFormattedMessage("rank.removeparent-success", "parent" to parentName, "rank" to rank.name))
             permissionManager.updateAllOnlinePlayersPermissions()
         } else {
-            sendMessage(sender, messagesManager.invalidCommand())
+            sendUsage(sender)
         }
     }
 

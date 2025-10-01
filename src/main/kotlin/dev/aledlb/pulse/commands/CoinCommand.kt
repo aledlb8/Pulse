@@ -51,8 +51,7 @@ class CoinCommand(private val economyManager: EconomyManager) : BaseCommand() {
             if (sender is Player) {
                 sender.name
             } else {
-                sendMessage(sender, messagesManager.invalidCommand())
-                sendMessage(sender, "§7Usage: /coin balance <player>")
+                sendUsage(sender)
                 return
             }
         }
@@ -89,8 +88,7 @@ class CoinCommand(private val economyManager: EconomyManager) : BaseCommand() {
         }
 
         if (args.size < 3) {
-            sendMessage(sender, messagesManager.invalidCommand())
-            sendMessage(sender, "§7Usage: /coin add <player> <amount>")
+            sendUsage(sender)
             return
         }
 
@@ -135,8 +133,7 @@ class CoinCommand(private val economyManager: EconomyManager) : BaseCommand() {
         }
 
         if (args.size < 3) {
-            sendMessage(sender, messagesManager.invalidCommand())
-            sendMessage(sender, "§7Usage: /coin remove <player> <amount>")
+            sendUsage(sender)
             return
         }
 
@@ -181,8 +178,7 @@ class CoinCommand(private val economyManager: EconomyManager) : BaseCommand() {
         }
 
         if (args.size < 3) {
-            sendMessage(sender, messagesManager.invalidCommand())
-            sendMessage(sender, "§7Usage: /coin set <player> <amount>")
+            sendUsage(sender)
             return
         }
 
@@ -227,8 +223,7 @@ class CoinCommand(private val economyManager: EconomyManager) : BaseCommand() {
         }
 
         if (args.size < 3) {
-            sendMessage(sender, messagesManager.invalidCommand())
-            sendMessage(sender, "§7Usage: /coin pay <player> <amount>")
+            sendUsage(sender)
             return
         }
 

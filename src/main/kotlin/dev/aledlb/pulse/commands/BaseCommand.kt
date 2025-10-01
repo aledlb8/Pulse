@@ -21,14 +21,14 @@ abstract class BaseCommand : CommandExecutor, TabCompleter {
         args: Array<out String>
     ): Boolean {
         if (permission != null && !sender.hasPermission(permission!!)) {
-            sender.sendMessage(Pulse.getPlugin().messagesManager.noPermission())
+            sendMessage(sender, Pulse.getPlugin().messagesManager.noPermission())
             return true
         }
 
         try {
             execute(sender, args)
         } catch (e: Exception) {
-            sender.sendMessage("§cAn error occurred while executing this command!")
+            sendMessage(sender, "§cAn error occurred while executing this command!")
             e.printStackTrace()
         }
 
@@ -59,7 +59,7 @@ abstract class BaseCommand : CommandExecutor, TabCompleter {
     }
 
     protected fun sendMessage(sender: CommandSender, message: String) {
-        sender.sendMessage(message)
+        sendMessage(sender, message)
     }
 
     protected fun sendUsage(sender: CommandSender) {

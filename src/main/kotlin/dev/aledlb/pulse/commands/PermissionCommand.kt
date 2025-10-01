@@ -47,8 +47,7 @@ class PermissionCommand(
         }
 
         if (args.size < 3) {
-            sendMessage(sender, messagesManager.invalidCommand())
-            sendMessage(sender, "§7Usage: /permission add <player> <permission>")
+            sendUsage(sender)
             return
         }
 
@@ -73,8 +72,7 @@ class PermissionCommand(
         }
 
         if (args.size < 3) {
-            sendMessage(sender, messagesManager.invalidCommand())
-            sendMessage(sender, "§7Usage: /permission remove <player> <permission>")
+            sendUsage(sender)
             return
         }
 
@@ -99,8 +97,7 @@ class PermissionCommand(
         }
 
         if (args.size < 3) {
-            sendMessage(sender, messagesManager.invalidCommand())
-            sendMessage(sender, "§7Usage: /permission deny <player> <permission>")
+            sendUsage(sender)
             return
         }
 
@@ -125,8 +122,7 @@ class PermissionCommand(
         }
 
         if (args.size < 3) {
-            sendMessage(sender, messagesManager.invalidCommand())
-            sendMessage(sender, "§7Usage: /permission undeny <player> <permission>")
+            sendUsage(sender)
             return
         }
 
@@ -154,8 +150,7 @@ class PermissionCommand(
         }
 
         if (args.size < 3) {
-            sendMessage(sender, messagesManager.invalidCommand())
-            sendMessage(sender, "§7Usage: /permission check <player> <permission>")
+            sendUsage(sender)
             return
         }
 
@@ -198,8 +193,7 @@ class PermissionCommand(
         }
 
         if (args.size < 2) {
-            sendMessage(sender, messagesManager.invalidCommand())
-            sendMessage(sender, "§7Usage: /permission list <player>")
+            sendUsage(sender)
             return
         }
 

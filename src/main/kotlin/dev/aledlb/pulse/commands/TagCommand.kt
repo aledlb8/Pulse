@@ -117,8 +117,7 @@ class TagCommand : BaseCommand() {
         val player = requirePlayer(sender) ?: return
 
         if (args.size < 2) {
-            sendMessage(sender, messagesManager.invalidCommand())
-            sendMessage(sender, "§7Usage: /tag activate <tag>")
+            sendUsage(sender)
             return
         }
 
@@ -142,8 +141,7 @@ class TagCommand : BaseCommand() {
         val player = requirePlayer(sender) ?: return
 
         if (args.size < 2) {
-            sendMessage(sender, messagesManager.invalidCommand())
-            sendMessage(sender, "§7Usage: /tag deactivate <tag>")
+            sendUsage(sender)
             return
         }
 
@@ -170,8 +168,7 @@ class TagCommand : BaseCommand() {
         }
 
         if (args.size < 3) {
-            sendMessage(sender, messagesManager.invalidCommand())
-            sendMessage(sender, "§7Usage: /tag give <player> <tag>")
+            sendUsage(sender)
             return
         }
 
@@ -204,8 +201,7 @@ class TagCommand : BaseCommand() {
         }
 
         if (args.size < 3) {
-            sendMessage(sender, messagesManager.invalidCommand())
-            sendMessage(sender, "§7Usage: /tag remove <player> <tag>")
+            sendUsage(sender)
             return
         }
 
@@ -238,9 +234,7 @@ class TagCommand : BaseCommand() {
         }
 
         if (args.size < 3) {
-            sendMessage(sender, messagesManager.invalidCommand())
-            sendMessage(sender, "§7Usage: /tag create <id> <name> [prefix] [suffix]")
-            sendMessage(sender, "§7Example: /tag create test \"Test Tag\" \"&a[Test] \" \"\"")
+            sendUsage(sender)
             return
         }
 
@@ -265,9 +259,7 @@ class TagCommand : BaseCommand() {
         }
 
         if (args.size < 4) {
-            sendMessage(sender, messagesManager.invalidCommand())
-            sendMessage(sender, "§7Usage: /tag edit <tag> <property> <value>")
-            sendMessage(sender, "§7Properties: name, prefix, suffix, price, purchasable, enabled")
+            sendUsage(sender)
             return
         }
 
@@ -333,8 +325,7 @@ class TagCommand : BaseCommand() {
         }
 
         if (args.size < 2) {
-            sendMessage(sender, messagesManager.invalidCommand())
-            sendMessage(sender, "§7Usage: /tag delete <tag>")
+            sendUsage(sender)
             return
         }
 
@@ -356,8 +347,7 @@ class TagCommand : BaseCommand() {
 
     private fun tagInfo(sender: CommandSender, args: Array<out String>) {
         if (args.size < 2) {
-            sendMessage(sender, messagesManager.invalidCommand())
-            sendMessage(sender, "§7Usage: /tag info <tag>")
+            sendUsage(sender)
             return
         }
 

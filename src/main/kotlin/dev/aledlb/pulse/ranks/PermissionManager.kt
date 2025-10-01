@@ -143,6 +143,11 @@ class PermissionManager(private val rankManager: RankManager) : Listener {
             val displayName = getPlayerDisplayName(player)
             player.displayName(net.kyori.adventure.text.Component.text(displayName))
             player.playerListName(net.kyori.adventure.text.Component.text(displayName))
+
+            // Update nametags and tab list via ChatManager
+            if (Pulse.getPlugin().isPluginFullyLoaded()) {
+                Pulse.getPlugin().chatManager.updatePlayerFormats(player)
+            }
         }
     }
 
