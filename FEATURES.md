@@ -108,6 +108,21 @@ pages:
           - SHARPNESS:5
 ```
 
+### ⏱️ Playtime System
+Track, display, and persist player playtime with Folia-safe scheduling and database storage.
+
+**Features:**
+- Accurate playtime tracking with session calculation
+- Asynchronous auto-save every 5 minutes (Folia/Paper compatible)
+- Persistent storage in database (SQLite/MySQL/PostgreSQL)
+- Cached lookups for performance
+- Placeholders for formatted/raw time values
+- Commands to view self and others' playtime with permission checks
+
+**Commands:**
+- `/playtime` - View your playtime
+- `/playtime <player>` - View another player's playtime (requires `pulse.playtime.others`)
+
 ### 🏷️ Tag System
 Player name tags with prefixes, suffixes, colors, and decorations.
 
