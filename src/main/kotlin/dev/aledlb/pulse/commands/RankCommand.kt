@@ -183,32 +183,31 @@ class RankCommand(
         }
 
         sendMessage(sender, "§f")
-        sendMessage(sender, "§5╔════════════════════════════════╗")
-        sendMessage(sender, "§5║         §fRANK INFO§5            ║")
-        sendMessage(sender, "§5╠════════════════════════════════╣")
-        sendMessage(sender, "§5║ §fName: §e${rank.name}")
-        sendMessage(sender, "§5║ §fPrefix: ${rank.prefix}")
-        sendMessage(sender, "§5║ §fSuffix: ${rank.suffix}")
-        sendMessage(sender, "§5║ §fWeight: §a${rank.weight}")
-        sendMessage(sender, "§5║ §fDefault: ${if (rank.isDefault) "§aYes" else "§cNo"}")
-        sendMessage(sender, "§5║ §fPermissions: §7${rank.permissions.size}")
+        sendMessage(sender, messagesManager.getMessage("rank.info-header"))
+        sendMessage(sender, messagesManager.getFormattedMessage("rank.info-name", "name" to rank.name))
+        sendMessage(sender, messagesManager.getFormattedMessage("rank.info-prefix", "prefix" to rank.prefix))
+        sendMessage(sender, messagesManager.getFormattedMessage("rank.info-suffix", "suffix" to rank.suffix))
+        sendMessage(sender, messagesManager.getFormattedMessage("rank.info-weight", "weight" to rank.weight.toString()))
+        val defaultStatus = if (rank.isDefault) messagesManager.getMessage("rank.info-default-yes") else messagesManager.getMessage("rank.info-default-no")
+        sendMessage(sender, messagesManager.getFormattedMessage("rank.info-default", "status" to defaultStatus))
+        sendMessage(sender, messagesManager.getFormattedMessage("rank.info-permissions-count", "count" to rank.permissions.size.toString()))
         if (rank.parents.isNotEmpty()) {
-            sendMessage(sender, "§5║ §fParents: §7${rank.parents.joinToString(", ")}")
+            sendMessage(sender, messagesManager.getFormattedMessage("rank.info-parents", "parents" to rank.parents.joinToString(", ")))
         }
-        sendMessage(sender, "§5╚════════════════════════════════╝")
+        sendMessage(sender, messagesManager.getMessage("rank.info-footer"))
 
         if (rank.permissions.isNotEmpty()) {
-            sendMessage(sender, "§7Permissions:")
+            sendMessage(sender, messagesManager.getMessage("rank.info-permissions-header"))
             for (permission in rank.permissions.sorted()) {
-                sendMessage(sender, "§7- §f$permission")
+                sendMessage(sender, messagesManager.getFormattedMessage("rank.info-permission-entry", "permission" to permission))
             }
         }
 
         val playersWithRank = rankManager.getOnlinePlayersByRank(rank.name)
         if (playersWithRank.isNotEmpty()) {
-            sendMessage(sender, "§7Online players with this rank:")
+            sendMessage(sender, messagesManager.getMessage("rank.info-online-players"))
             for (player in playersWithRank) {
-                sendMessage(sender, "§7- §e${player.name}")
+                sendMessage(sender, messagesManager.getFormattedMessage("rank.info-player-entry", "player" to player.name))
             }
         }
         sendMessage(sender, "§f")
@@ -227,15 +226,13 @@ class RankCommand(
         }
 
         sendMessage(sender, "§f")
-        sendMessage(sender, "§5╔════════════════════════════════╗")
-        sendMessage(sender, "§5║         §fRANK LIST§5            ║")
-        sendMessage(sender, "§5╚════════════════════════════════╝")
+        sendMessage(sender, messagesManager.getMessage("rank.list-header"))
 
         for (rank in ranks) {
-            val defaultTag = if (rank.isDefault) " §7(default)" else ""
+            val defaultTag = if (rank.isDefault) messagesManager.getMessage("rank.list-default-tag") else ""
             val onlineCount = rankManager.getOnlinePlayersByRank(rank.name).size
-            val parentsTag = if (rank.parents.isNotEmpty()) " §7parents: §e[${rank.parents.joinToString(", ")}]" else ""
-            sendMessage(sender, "§e${rank.name}$defaultTag §7(§a$onlineCount§7 online)$parentsTag")
+            val parentsTag = if (rank.parents.isNotEmpty()) messagesManager.getFormattedMessage("rank.list-parents-tag", "parents" to rank.parents.joinToString(", ")) else ""
+            sendMessage(sender, messagesManager.getFormattedMessage("rank.list-entry", "rank" to rank.name, "default_tag" to defaultTag, "online_count" to onlineCount.toString(), "parents_tag" to parentsTag))
         }
         sendMessage(sender, "§f")
     }
@@ -317,7 +314,7 @@ class RankCommand(
 
         if (rankManager.addRankParent(rankName, parentName)) {
             sendMessage(sender, messagesManager.getFormattedMessage("rank.addparent-success", "parent" to parent.name, "rank" to rank.name))
-            sendMessage(sender, "§7Rank §e${rank.name}§7 will now inherit permissions from §e${parent.name}§7.")
+            sendMessage(sender, messagesManager.getFormattedMessage("rank.addparent-inheritance", "rank" to rank.name, "parent" to parent.name))
             permissionManager.updateAllOnlinePlayersPermissions()
         } else {
             sendMessage(sender, messagesManager.getFormattedMessage("rank.addparent-circular"))

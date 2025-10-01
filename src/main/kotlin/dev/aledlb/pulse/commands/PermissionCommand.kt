@@ -176,13 +176,13 @@ class PermissionCommand(
         val rank = rankManager.getRank(playerData.rank)
 
         if (playerData.permissions.contains(permission)) {
-            sendMessage(sender, "§7Source: Player-specific permission")
+            sendMessage(sender, messagesManager.getMessage("permission.source-player-specific"))
         } else if (playerData.deniedPermissions.contains(permission)) {
-            sendMessage(sender, "§7Source: Player-specific denial")
+            sendMessage(sender, messagesManager.getMessage("permission.source-player-denial"))
         } else if (rank?.hasPermission(permission) == true) {
-            sendMessage(sender, "§7Source: Rank §e${rank.name}§7 permission")
+            sendMessage(sender, messagesManager.getFormattedMessage("permission.source-rank", "rank" to rank.name))
         } else {
-            sendMessage(sender, "§7Source: Not granted")
+            sendMessage(sender, messagesManager.getMessage("permission.source-not-granted"))
         }
     }
 
@@ -209,35 +209,32 @@ class PermissionCommand(
         val allPermissions = playerData.getAllPermissions(rankManager)
 
         sendMessage(sender, "§f")
-        sendMessage(sender, "§5╔════════════════════════════════╗")
-        sendMessage(sender, "§5║      §fPLAYER PERMISSIONS§5       ║")
-        sendMessage(sender, "§5╠════════════════════════════════╣")
-        sendMessage(sender, "§5║ §fPlayer: §e${targetPlayer.name}")
-        sendMessage(sender, "§5║ §fRank: §e${rank?.name ?: "Unknown"}")
-        sendMessage(sender, "§5║ §fTotal Permissions: §a${allPermissions.size}")
-        sendMessage(sender, "§5╚════════════════════════════════╝")
+        sendMessage(sender, messagesManager.getMessage("permission.list-header"))
+        sendMessage(sender, messagesManager.getFormattedMessage("permission.list-player", "player" to targetPlayer.name))
+        sendMessage(sender, messagesManager.getFormattedMessage("permission.list-rank", "rank" to (rank?.name ?: "Unknown")))
+        sendMessage(sender, messagesManager.getFormattedMessage("permission.list-total", "count" to allPermissions.size.toString()))
+        sendMessage(sender, messagesManager.getMessage("permission.list-footer"))
 
         if (playerData.permissions.isNotEmpty()) {
-            sendMessage(sender, "§aPlayer-specific permissions:")
+            sendMessage(sender, messagesManager.getMessage("permission.list-player-specific"))
             for (permission in playerData.permissions.sorted()) {
-                sendMessage(sender, "§a+ §f$permission")
+                sendMessage(sender, messagesManager.getFormattedMessage("permission.list-entry-allowed", "permission" to permission))
             }
         }
 
         if (playerData.deniedPermissions.isNotEmpty()) {
-            sendMessage(sender, "§cDenied permissions:")
+            sendMessage(sender, messagesManager.getMessage("permission.list-denied"))
             for (permission in playerData.deniedPermissions.sorted()) {
-                sendMessage(sender, "§c- §f$permission")
+                sendMessage(sender, messagesManager.getFormattedMessage("permission.list-entry-denied", "permission" to permission))
             }
         }
 
         if (rank != null && rank.permissions.isNotEmpty()) {
-            sendMessage(sender, "§eRank permissions (from §e${rank.name}§e):")
+            sendMessage(sender, messagesManager.getFormattedMessage("permission.list-rank-perms", "rank" to rank.name))
             for (permission in rank.permissions.sorted()) {
                 val isDenied = playerData.deniedPermissions.contains(permission)
-                val color = if (isDenied) "§7" else "§e"
                 val prefix = if (isDenied) "§c~ " else "§e+ "
-                sendMessage(sender, "$prefix§f$permission")
+                sendMessage(sender, messagesManager.getFormattedMessage("permission.list-entry-rank", "prefix" to prefix, "permission" to permission))
             }
         }
 

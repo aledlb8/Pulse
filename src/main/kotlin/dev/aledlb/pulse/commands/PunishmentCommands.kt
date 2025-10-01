@@ -22,8 +22,10 @@ abstract class BasePunishmentCommand(
     protected abstract fun executePunishment(sender: CommandSender, target: Player?, targetOffline: UUID, targetName: String, args: Array<out String>)
 
     override fun execute(sender: CommandSender, args: Array<out String>) {
+        val messagesManager = Pulse.getPlugin().messagesManager
+
         if (args.isEmpty()) {
-            sendMessage(sender, "§cUsage: $usage")
+            sendMessage(sender, messagesManager.getFormattedMessage("punishment.usage", "usage" to usage))
             return
         }
 
@@ -31,14 +33,14 @@ abstract class BasePunishmentCommand(
         val offlinePlayer = Bukkit.getOfflinePlayer(targetName)
 
         if (!offlinePlayer.hasPlayedBefore() && !offlinePlayer.isOnline) {
-            sendMessage(sender, "§cPlayer not found: §7$targetName")
+            sendMessage(sender, messagesManager.getFormattedMessage("punishment.player-not-found-name", "player" to targetName))
             return
         }
 
         val reason = if (args.size > 1) args.slice(1 until args.size).joinToString(" ") else "No reason specified"
 
         if (requiresReason && args.size < 2) {
-            sendMessage(sender, "§cUsage: $usage")
+            sendMessage(sender, messagesManager.getFormattedMessage("punishment.usage", "usage" to usage))
             return
         }
 

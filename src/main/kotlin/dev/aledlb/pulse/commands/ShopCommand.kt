@@ -1,5 +1,6 @@
 package dev.aledlb.pulse.commands
 
+import dev.aledlb.pulse.Pulse
 import dev.aledlb.pulse.shop.ShopGUI
 import dev.aledlb.pulse.shop.ShopManager
 import org.bukkit.command.CommandSender
@@ -10,6 +11,8 @@ class ShopCommand(
     private val shopGUI: ShopGUI
 ) : BaseCommand() {
 
+    private val messagesManager get() = Pulse.getPlugin().messagesManager
+
     override val name = "shop"
     override val permission = "pulse.shop"
     override val description = "Open the server shop"
@@ -17,8 +20,7 @@ class ShopCommand(
 
     override fun execute(sender: CommandSender, args: Array<out String>) {
         if (!shopManager.isEnabled()) {
-            val pulse = dev.aledlb.pulse.Pulse.getPlugin()
-            sendMessage(sender, "§cShop is disabled (Economy system requires Vault)")
+            sendMessage(sender, messagesManager.getMessage("shop.system-disabled"))
             return
         }
 
@@ -40,8 +42,7 @@ class ShopCommand(
                 if (category != null) {
                     shopGUI.openCategoryShop(player, category.id)
                 } else {
-                    val pulse = dev.aledlb.pulse.Pulse.getPlugin()
-                    sendMessage(sender, "§cCategory §e${args[0]}§c not found!")
+                    sendMessage(sender, messagesManager.getFormattedMessage("shop.category-not-found", "category" to args[0]))
                     showHelp(sender)
                 }
             }
@@ -50,45 +51,38 @@ class ShopCommand(
 
     private fun handleReload(sender: CommandSender) {
         if (!sender.hasPermission("pulse.shop.reload")) {
-            val pulse = dev.aledlb.pulse.Pulse.getPlugin()
-            sendMessage(sender, "§cYou don't have permission to reload the shop!")
+            sendMessage(sender, messagesManager.getMessage("shop.no-permission-reload"))
             return
         }
 
         shopManager.reload()
-        val pulse = dev.aledlb.pulse.Pulse.getPlugin()
-        sendMessage(sender, "§aShop configuration reloaded successfully!")
+        sendMessage(sender, messagesManager.getMessage("shop.reload-success"))
     }
 
     private fun handleList(sender: CommandSender) {
         if (!sender.hasPermission("pulse.shop.list")) {
-            val pulse = dev.aledlb.pulse.Pulse.getPlugin()
-            sendMessage(sender, "§cYou don't have permission to list shop items!")
+            sendMessage(sender, messagesManager.getMessage("shop.no-permission-list"))
             return
         }
 
         val categories = shopManager.getCategories()
         val totalItems = shopManager.getShopItems().size
-        val pulse = dev.aledlb.pulse.Pulse.getPlugin()
 
         sendMessage(sender, "§f")
-        sendMessage(sender, "§5╔════════════════════════════════╗")
-        sendMessage(sender, "§5║         §fSHOP INFO§5            ║")
-        sendMessage(sender, "§5╠════════════════════════════════╣")
-        sendMessage(sender, "§5║ §fTotal Items: §a$totalItems")
-        sendMessage(sender, "§5║ §fCategories: §a${categories.size}")
-        sendMessage(sender, "§5╚════════════════════════════════╝")
+        sendMessage(sender, messagesManager.getMessage("shop.list-header"))
+        sendMessage(sender, messagesManager.getFormattedMessage("shop.list-total-items", "count" to totalItems.toString()))
+        sendMessage(sender, messagesManager.getFormattedMessage("shop.list-categories", "count" to categories.size.toString()))
+        sendMessage(sender, messagesManager.getMessage("shop.list-footer"))
 
         for (category in categories) {
             val itemCount = shopManager.getItemsByCategory(category.id).size
-            sendMessage(sender, "§e${category.displayName} §7- §a$itemCount items")
+            sendMessage(sender, messagesManager.getFormattedMessage("shop.list-category-entry", "category" to category.displayName, "count" to itemCount.toString()))
         }
 
         sendMessage(sender, "§f")
     }
 
     private fun showHelp(sender: CommandSender) {
-        val pulse = dev.aledlb.pulse.Pulse.getPlugin()
         sendMessage(sender, "§f")
         sendMessage(sender, "§5╔════════════════════════════════╗")
         sendMessage(sender, "§5║        §fSHOP COMMANDS§5         ║")

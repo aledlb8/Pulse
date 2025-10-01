@@ -26,6 +26,9 @@ general:
   invalid-command: "§cInvalid command usage!"
   command-disabled: "§cThis command is currently disabled!"
   unknown-subcommand: "§cUnknown subcommand: {subcommand}"
+  error: "§cError: {error}"
+  command-error: "§cAn error occurred while executing this command!"
+  usage: "§7Usage: {usage}"
 
 # ==================== PUNISHMENT ====================
 punishment:
@@ -102,6 +105,8 @@ punishment:
   usage-tempban: "§cUsage: /tempban <player> <duration> [reason...]"
   usage-tempipban: "§cUsage: /tempipban <player> <duration> [reason...]"
   duration-example: "§cExample: /tempban Player123 1d Griefing"
+  usage: "§cUsage: {usage}"
+  player-not-found-name: "§cPlayer not found: §7{player}"
 
 # ==================== ECONOMY ====================
 economy:
@@ -113,6 +118,7 @@ economy:
   cannot-pay-yourself: "§cYou cannot pay yourself!"
   not-enough-coins: "§cYou don't have enough coins!"
   transaction-failed: "§cTransaction failed!"
+  system-disabled: "§cEconomy system is disabled (Vault not found)"
 
 # ==================== COIN COMMAND ====================
 coin:
@@ -127,6 +133,9 @@ coin:
   pay-success-sender: "§aYou paid §e{amount}§a to §e{player}§a!"
   pay-success-receiver: "§aYou received §e{amount}§a from §e{player}§a!"
   new-balance: "§7New balance: §e{balance}"
+  top-header: "§5╔════════════════════════════════╗\n§5║       §fTOP BALANCES§5           ║\n§5╚════════════════════════════════╝"
+  top-no-balances: "§7No balances to display."
+  top-entry: "{rank_color}{rank}. §f{player} §7- §a{balance}"
 
 # ==================== RANK COMMAND ====================
 rank:
@@ -146,6 +155,26 @@ rank:
   addparent-circular: "§cFailed to add parent! This would create a circular inheritance."
   removeparent-success: "§aRemoved parent §e{parent}§a from rank §e{rank}§a!"
   reload-success: "§aRank system reloaded successfully!"
+  info-header: "§5╔════════════════════════════════╗\n§5║         §fRANK INFO§5            ║\n§5╠════════════════════════════════╣"
+  info-footer: "§5╚════════════════════════════════╝"
+  info-name: "§5║ §fName: §e{name}"
+  info-prefix: "§5║ §fPrefix: {prefix}"
+  info-suffix: "§5║ §fSuffix: {suffix}"
+  info-weight: "§5║ §fWeight: §a{weight}"
+  info-default-yes: "§aYes"
+  info-default-no: "§cNo"
+  info-default: "§5║ §fDefault: {status}"
+  info-permissions-count: "§5║ §fPermissions: §7{count}"
+  info-parents: "§5║ §fParents: §7{parents}"
+  info-permissions-header: "§7Permissions:"
+  info-permission-entry: "§7- §f{permission}"
+  info-online-players: "§7Online players with this rank:"
+  info-player-entry: "§7- §e{player}"
+  list-header: "§5╔════════════════════════════════╗\n§5║         §fRANK LIST§5            ║\n§5╚════════════════════════════════╝"
+  list-default-tag: " §7(default)"
+  list-entry: "§e{rank}{default_tag} §7(§a{online_count}§7 online){parents_tag}"
+  list-parents-tag: " §7parents: §e[{parents}]"
+  addparent-inheritance: "§7Rank §e{rank}§7 will now inherit permissions from §e{parent}§7."
 
 # ==================== PERMISSION COMMAND ====================
 permission:
@@ -159,6 +188,21 @@ permission:
   undeny-notification: "§aPermission denial removed: §e{permission}"
   check-has: "§e{player}§f §ahas §fthe permission §e{permission}§f!"
   check-not-has: "§e{player}§f §cdoes not have §fthe permission §e{permission}§f!"
+  source-player-specific: "§7Source: Player-specific permission"
+  source-player-denial: "§7Source: Player-specific denial"
+  source-rank: "§7Source: Rank §e{rank}§7 permission"
+  source-not-granted: "§7Source: Not granted"
+  list-header: "§5╔════════════════════════════════╗\n§5║      §fPLAYER PERMISSIONS§5       ║\n§5╠════════════════════════════════╣"
+  list-footer: "§5╚════════════════════════════════╝"
+  list-player: "§5║ §fPlayer: §e{player}"
+  list-rank: "§5║ §fRank: §e{rank}"
+  list-total: "§5║ §fTotal Permissions: §a{count}"
+  list-player-specific: "§aPlayer-specific permissions:"
+  list-denied: "§cDenied permissions:"
+  list-rank-perms: "§eRank permissions (from §e{rank}§e):"
+  list-entry-allowed: "§a+ §f{permission}"
+  list-entry-denied: "§c- §f{permission}"
+  list-entry-rank: "{prefix}§f{permission}"
 
 # ==================== TAG COMMAND ====================
 tag:
@@ -181,6 +225,34 @@ tag:
   no-tags-available: "§cNo tags available!"
   no-owned-tags: "§cNo owned tags!"
   no-active-tags: "§cNo active tags!"
+  list-available-header: "§6Available Tags ({count}):"
+  list-available-entry: "§7- §e{id} §7({name}§7) {status}"
+  list-purchasable-yes: "§a[Shop]"
+  list-purchasable-no: "§7[Not for sale]"
+  list-owned-header-self: "§6Your Owned Tags ({count}):"
+  list-owned-header-other: "§6{player}'s Owned Tags ({count}):"
+  list-owned-entry: "§7- §e{id} §7({name}§7) {status}"
+  list-active-status-yes: "§a[Active]"
+  list-active-status-no: "§7[Inactive]"
+  list-active-header-self: "§6Your Active Tags ({count}):"
+  list-active-header-other: "§6{player}'s Active Tags ({count}):"
+  list-active-entry: "§7- §e{id} §7({name}§7)"
+  edit-invalid-price: "§cInvalid price: {value}"
+  edit-invalid-boolean: "§cInvalid boolean: {value} (use true/false)"
+  info-header: "§6Tag Information: §e{id}"
+  info-name: "§7Name: §f{name}"
+  info-prefix: "§7Prefix: '{prefix}§7'"
+  info-suffix: "§7Suffix: '{suffix}§7'"
+  info-material: "§7Material: §f{material}"
+  info-price: "§7Price: §f{price}"
+  info-permission: "§7Permission: §f{permission}"
+  info-permission-none: "None"
+  info-enabled: "§7Enabled: {status}"
+  info-purchasable: "§7Purchasable: {status}"
+  info-yes: "§aYes"
+  info-no: "§cNo"
+  info-description-header: "§7Description:"
+  info-description-line: "§7  {line}"
 
 # ==================== SHOP COMMAND ====================
 shop:
@@ -196,6 +268,14 @@ shop:
   purchase-failed: "§cPurchase failed! Please try again later."
   category-not-found: "§cCategory §e{category}§c not found!"
   reload-success: "§aShop configuration reloaded successfully!"
+  system-disabled: "§cShop is disabled (Economy system requires Vault)"
+  no-permission-reload: "§cYou don't have permission to reload the shop!"
+  no-permission-list: "§cYou don't have permission to list shop items!"
+  list-header: "§5╔════════════════════════════════╗\n§5║         §fSHOP INFO§5            ║\n§5╠════════════════════════════════╣"
+  list-footer: "§5╚════════════════════════════════╝"
+  list-total-items: "§5║ §fTotal Items: §a{count}"
+  list-categories: "§5║ §fCategories: §a{count}"
+  list-category-entry: "§e{category} §7- §a{count} items"
 
 # ==================== PULSE COMMAND ====================
 pulse:

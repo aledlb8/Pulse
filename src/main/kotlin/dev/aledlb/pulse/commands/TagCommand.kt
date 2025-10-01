@@ -47,10 +47,10 @@ class TagCommand : BaseCommand() {
             return
         }
 
-        sendMessage(sender, "§6Available Tags (${allTags.size}):")
+        sendMessage(sender, messagesManager.getFormattedMessage("tag.list-available-header", "count" to allTags.size.toString()))
         allTags.forEach { tag ->
-            val purchasableText = if (tag.purchasable) "§a[Shop]" else "§7[Not for sale]"
-            sendMessage(sender, "§7- §e${tag.id} §7(${tag.name}§7) $purchasableText")
+            val purchasableText = if (tag.purchasable) messagesManager.getMessage("tag.list-purchasable-yes") else messagesManager.getMessage("tag.list-purchasable-no")
+            sendMessage(sender, messagesManager.getFormattedMessage("tag.list-available-entry", "id" to tag.id, "name" to tag.name, "status" to purchasableText))
         }
     }
 
@@ -74,14 +74,18 @@ class TagCommand : BaseCommand() {
             return
         }
 
-        val playerName = if (targetPlayer == player) "Your" else "${targetPlayer.name}'s"
-        sendMessage(sender, "§6$playerName Owned Tags (${playerData.getOwnedTagsList().size}):")
+        val headerMessage = if (targetPlayer == player) {
+            messagesManager.getFormattedMessage("tag.list-owned-header-self", "count" to playerData.getOwnedTagsList().size.toString())
+        } else {
+            messagesManager.getFormattedMessage("tag.list-owned-header-other", "player" to targetPlayer.name, "count" to playerData.getOwnedTagsList().size.toString())
+        }
+        sendMessage(sender, headerMessage)
 
         playerData.getOwnedTagsList().forEach { tagId ->
             val tag = tagManager.getTag(tagId)
             if (tag != null) {
-                val activeStatus = if (playerData.isTagActive(tagId)) "§a[Active]" else "§7[Inactive]"
-                sendMessage(sender, "§7- §e$tagId §7(${tag.name}§7) $activeStatus")
+                val activeStatus = if (playerData.isTagActive(tagId)) messagesManager.getMessage("tag.list-active-status-yes") else messagesManager.getMessage("tag.list-active-status-no")
+                sendMessage(sender, messagesManager.getFormattedMessage("tag.list-owned-entry", "id" to tagId, "name" to tag.name, "status" to activeStatus))
             }
         }
     }
@@ -106,10 +110,14 @@ class TagCommand : BaseCommand() {
             return
         }
 
-        val playerName = if (targetPlayer == player) "Your" else "${targetPlayer.name}'s"
-        sendMessage(sender, "§6$playerName Active Tags (${activeTags.size}):")
+        val headerMessage = if (targetPlayer == player) {
+            messagesManager.getFormattedMessage("tag.list-active-header-self", "count" to activeTags.size.toString())
+        } else {
+            messagesManager.getFormattedMessage("tag.list-active-header-other", "player" to targetPlayer.name, "count" to activeTags.size.toString())
+        }
+        sendMessage(sender, headerMessage)
         activeTags.forEach { tag ->
-            sendMessage(sender, "§7- §e${tag.id} §7(${tag.name}§7)")
+            sendMessage(sender, messagesManager.getFormattedMessage("tag.list-active-entry", "id" to tag.id, "name" to tag.name))
         }
     }
 
@@ -283,7 +291,7 @@ class TagCommand : BaseCommand() {
                 if (price != null) {
                     tagManager.editTag(id, price = price)
                 } else {
-                    sendMessage(sender, "§cInvalid price: $value")
+                    sendMessage(sender, messagesManager.getFormattedMessage("tag.edit-invalid-price", "value" to value))
                     return
                 }
             }
@@ -292,7 +300,7 @@ class TagCommand : BaseCommand() {
                 if (purchasable != null) {
                     tagManager.editTag(id, purchasable = purchasable)
                 } else {
-                    sendMessage(sender, "§cInvalid boolean: $value (use true/false)")
+                    sendMessage(sender, messagesManager.getFormattedMessage("tag.edit-invalid-boolean", "value" to value))
                     return
                 }
             }
@@ -301,7 +309,7 @@ class TagCommand : BaseCommand() {
                 if (enabled != null) {
                     tagManager.editTag(id, enabled = enabled)
                 } else {
-                    sendMessage(sender, "§cInvalid boolean: $value (use true/false)")
+                    sendMessage(sender, messagesManager.getFormattedMessage("tag.edit-invalid-boolean", "value" to value))
                     return
                 }
             }
@@ -360,20 +368,23 @@ class TagCommand : BaseCommand() {
             return
         }
 
-        sendMessage(sender, "§6Tag Information: §e${tag.id}")
-        sendMessage(sender, "§7Name: §f${tag.name}")
-        sendMessage(sender, "§7Prefix: '${tag.getFormattedPrefix()}§7'")
-        sendMessage(sender, "§7Suffix: '${tag.getFormattedSuffix()}§7'")
-        sendMessage(sender, "§7Material: §f${tag.material}")
-        sendMessage(sender, "§7Price: §f${tag.price}")
-        sendMessage(sender, "§7Permission: §f${tag.permission ?: "None"}")
-        sendMessage(sender, "§7Enabled: ${if (tag.enabled) "§aYes" else "§cNo"}")
-        sendMessage(sender, "§7Purchasable: ${if (tag.purchasable) "§aYes" else "§cNo"}")
+        sendMessage(sender, messagesManager.getFormattedMessage("tag.info-header", "id" to tag.id))
+        sendMessage(sender, messagesManager.getFormattedMessage("tag.info-name", "name" to tag.name))
+        sendMessage(sender, messagesManager.getFormattedMessage("tag.info-prefix", "prefix" to tag.getFormattedPrefix()))
+        sendMessage(sender, messagesManager.getFormattedMessage("tag.info-suffix", "suffix" to tag.getFormattedSuffix()))
+        sendMessage(sender, messagesManager.getFormattedMessage("tag.info-material", "material" to tag.material.toString()))
+        sendMessage(sender, messagesManager.getFormattedMessage("tag.info-price", "price" to tag.price.toString()))
+        val permissionText = tag.permission ?: messagesManager.getMessage("tag.info-permission-none")
+        sendMessage(sender, messagesManager.getFormattedMessage("tag.info-permission", "permission" to permissionText))
+        val enabledStatus = if (tag.enabled) messagesManager.getMessage("tag.info-yes") else messagesManager.getMessage("tag.info-no")
+        sendMessage(sender, messagesManager.getFormattedMessage("tag.info-enabled", "status" to enabledStatus))
+        val purchasableStatus = if (tag.purchasable) messagesManager.getMessage("tag.info-yes") else messagesManager.getMessage("tag.info-no")
+        sendMessage(sender, messagesManager.getFormattedMessage("tag.info-purchasable", "status" to purchasableStatus))
 
         if (tag.description.isNotEmpty()) {
-            sendMessage(sender, "§7Description:")
+            sendMessage(sender, messagesManager.getMessage("tag.info-description-header"))
             tag.getFormattedDescription().forEach { line ->
-                sendMessage(sender, "§7  $line")
+                sendMessage(sender, messagesManager.getFormattedMessage("tag.info-description-line", "line" to line))
             }
         }
     }

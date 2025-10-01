@@ -28,7 +28,7 @@ abstract class BaseCommand : CommandExecutor, TabCompleter {
         try {
             execute(sender, args)
         } catch (e: Exception) {
-            sendMessage(sender, "§cAn error occurred while executing this command!")
+            sendMessage(sender, Pulse.getPlugin().messagesManager.getMessage("general.command-error"))
             e.printStackTrace()
         }
 
@@ -63,6 +63,6 @@ abstract class BaseCommand : CommandExecutor, TabCompleter {
     }
 
     protected fun sendUsage(sender: CommandSender) {
-        sendMessage(sender, "§7Usage: $usage")
+        sendMessage(sender, Pulse.getPlugin().messagesManager.getFormattedMessage("general.usage", "usage" to usage))
     }
 }

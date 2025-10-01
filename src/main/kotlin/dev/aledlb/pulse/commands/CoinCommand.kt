@@ -17,7 +17,7 @@ class CoinCommand(private val economyManager: EconomyManager) : BaseCommand() {
 
     override fun execute(sender: CommandSender, args: Array<out String>) {
         if (!economyManager.isEnabled()) {
-            sendMessage(sender, messagesManager.getFormattedMessage("general.error", "error" to "Economy system is disabled (Vault not found)"))
+            sendMessage(sender, messagesManager.getMessage("economy.system-disabled"))
             return
         }
 
@@ -290,12 +290,10 @@ class CoinCommand(private val economyManager: EconomyManager) : BaseCommand() {
         val topBalances = economyManager.getTopBalances(limit)
 
         sendMessage(sender, "§f")
-        sendMessage(sender, "§5╔════════════════════════════════╗")
-        sendMessage(sender, "§5║       §fTOP BALANCES§5           ║")
-        sendMessage(sender, "§5╚════════════════════════════════╝")
+        sendMessage(sender, messagesManager.getMessage("coin.top-header"))
 
         if (topBalances.isEmpty()) {
-            sendMessage(sender, "§7No balances to display.")
+            sendMessage(sender, messagesManager.getMessage("coin.top-no-balances"))
         } else {
             topBalances.forEachIndexed { index, (player, balance) ->
                 val rank = index + 1
@@ -306,7 +304,7 @@ class CoinCommand(private val economyManager: EconomyManager) : BaseCommand() {
                     3 -> "§c"  // Bronze
                     else -> "§e"  // Yellow
                 }
-                sendMessage(sender, "$rankColor$rank. §f${player.name} §7- §a$formattedBalance")
+                sendMessage(sender, messagesManager.getFormattedMessage("coin.top-entry", "rank_color" to rankColor, "rank" to rank.toString(), "player" to player.name!!, "balance" to formattedBalance))
             }
         }
 
