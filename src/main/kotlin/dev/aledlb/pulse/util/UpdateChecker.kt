@@ -12,6 +12,7 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
+import java.net.URI
 
 class UpdateChecker(private val plugin: Pulse) : Listener {
     @Volatile
@@ -55,7 +56,7 @@ class UpdateChecker(private val plugin: Pulse) : Listener {
     }
 
     private fun fetchLatestVersion(): String {
-        val url = URL(apiUrl)
+        val url = URI.create(apiUrl).toURL()
         val connection = (url.openConnection() as HttpURLConnection).apply {
             requestMethod = "GET"
             connectTimeout = 5000

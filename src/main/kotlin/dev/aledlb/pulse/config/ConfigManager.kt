@@ -5,6 +5,7 @@ import org.spongepowered.configurate.ConfigurationNode
 import org.spongepowered.configurate.yaml.NodeStyle
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader
 import java.io.File
+import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
@@ -117,7 +118,7 @@ class ConfigManager(private val dataFolder: File) {
         val resourceStream = this::class.java.classLoader.getResourceAsStream(fileName) ?: return false
 
         val defaultLoader = YamlConfigurationLoader.builder()
-            .source { InputStreamReader(resourceStream) }
+            .source { BufferedReader(InputStreamReader(resourceStream)) }
             .indent(2)
             .nodeStyle(NodeStyle.BLOCK)
             .defaultOptions { opts -> opts.shouldCopyDefaults(false) }
@@ -162,5 +163,4 @@ class ConfigManager(private val dataFolder: File) {
         merge(defaultNode, liveNode)
         return changed
     }
-
 }
