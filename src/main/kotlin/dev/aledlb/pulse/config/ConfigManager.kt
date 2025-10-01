@@ -133,34 +133,67 @@ class ConfigManager(private val dataFolder: File) {
 
         var changed = false
 
-        fun merge(source: ConfigurationNode, target: ConfigurationNode) {
-            // If the source is a map-like node
-            val children = source.childrenMap()
-            if (children.isNotEmpty()) {
-                for ((key, childSrc) in children) {
-                    val childTgt = target.node(key)
-                    if (childTgt.virtual()) {
-                        // Missing in target: copy entire subtree
-                        childTgt.set(childSrc)
-                        changed = true
-                    } else {
-                        // Exists: recurse for nested maps, do not override scalars
-                        if (childSrc.childrenMap().isNotEmpty()) {
-                            merge(childSrc, childTgt)
-                        }
-                    }
+        // Build a new ordered structure
+        fun buildOrdered(source: ConfigurationNode, target: ConfigurationNode, newNode: ConfigurationNode) {
+            val sourceChildren = source.childrenMap()
+            if (sourceChildren.isEmpty()) {
+                // Scalar or list - use target value if exists, otherwise source
+                if (!target.virtual()) {
+                    newNode.set(target)
+                } else {
+                    newNode.set(source)
+                    changed = true
                 }
                 return
             }
 
-            // If it's a scalar or list and the target is missing, copy it
-            if (target.virtual()) {
-                target.set(source)
-                changed = true
+            val targetChildren = target.childrenMap()
+
+            // Add keys in source order
+            for ((key, childSrc) in sourceChildren) {
+                val childTgt = targetChildren[key]
+                val newChild = newNode.node(key)
+
+                if (childTgt != null && !childTgt.virtual()) {
+                    // Key exists in target
+                    if (childSrc.childrenMap().isNotEmpty() && childTgt.childrenMap().isNotEmpty()) {
+                        // Both are maps - recurse
+                        buildOrdered(childSrc, childTgt, newChild)
+                    } else {
+                        // Use target's value
+                        newChild.set(childTgt)
+                    }
+                } else {
+                    // Key missing in target - use source
+                    newChild.set(childSrc)
+                    changed = true
+                }
+            }
+
+            // Add any extra target keys not in source (user additions)
+            for ((key, value) in targetChildren) {
+                if (!sourceChildren.containsKey(key)) {
+                    newNode.node(key).set(value)
+                }
             }
         }
 
-        merge(defaultNode, liveNode)
+        // Create temporary node with correct structure
+        val tempLoader = YamlConfigurationLoader.builder()
+            .indent(2)
+            .nodeStyle(NodeStyle.BLOCK)
+            .build()
+        val tempNode = tempLoader.createNode()
+
+        buildOrdered(defaultNode, liveNode, tempNode)
+
+        // Only update if there were changes
+        if (changed) {
+            // Clear liveNode and copy from tempNode
+            liveNode.childrenMap().keys.toList().forEach { liveNode.removeChild(it) }
+            liveNode.mergeFrom(tempNode)
+        }
+
         return changed
     }
 }
