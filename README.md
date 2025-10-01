@@ -110,12 +110,7 @@ The shaded jar is created at `build/libs/Pulse-1.0-all.jar`.
 ### Grant Permissions
 - `pulse.grant` - Access to grant command GUI for managing player ranks
 
-</details>
-
-## Playtime Permissions
-<details>
-<summary>Click to view playtime permissions</summary>
-
+### Playtime Permissions
 - `pulse.playtime` - View own playtime
 - `pulse.playtime.others` - View other players' playtime
 
