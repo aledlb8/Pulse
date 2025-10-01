@@ -70,6 +70,12 @@ class ConfigManager(private val dataFolder: File) {
         return loadConfig(fileName, false)
     }
 
+    fun reloadAllConfigs() {
+        configs.keys.toList().forEach { fileName ->
+            reloadConfig(fileName)
+        }
+    }
+
     private fun createDefaultConfig(fileName: String, configFile: File) {
         try {
             // Copy the default config from resources

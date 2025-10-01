@@ -173,20 +173,14 @@ class TagCommand : BaseCommand() {
     }
 
     private fun giveTag(sender: CommandSender, args: Array<out String>) {
-        if (!sender.hasPermission("pulse.tag.give")) {
-            sendMessage(sender, messagesManager.noPermission())
-            return
-        }
+        if (!requirePermission(sender, "pulse.tag.give")) return
 
         if (args.size < 3) {
             sendUsage(sender)
             return
         }
 
-        val targetPlayer = Bukkit.getPlayer(args[1]) ?: run {
-            sendMessage(sender, messagesManager.getFormattedMessage("general.player-not-online", "player" to args[1]))
-            return
-        }
+        val targetPlayer = getOnlinePlayer(sender, args[1]) ?: return
 
         val tagId = args[2]
         val tagManager = Pulse.getPlugin().tagManager
@@ -206,20 +200,14 @@ class TagCommand : BaseCommand() {
     }
 
     private fun removeTag(sender: CommandSender, args: Array<out String>) {
-        if (!sender.hasPermission("pulse.tag.remove")) {
-            sendMessage(sender, messagesManager.noPermission())
-            return
-        }
+        if (!requirePermission(sender, "pulse.tag.remove")) return
 
         if (args.size < 3) {
             sendUsage(sender)
             return
         }
 
-        val targetPlayer = Bukkit.getPlayer(args[1]) ?: run {
-            sendMessage(sender, messagesManager.getFormattedMessage("general.player-not-online", "player" to args[1]))
-            return
-        }
+        val targetPlayer = getOnlinePlayer(sender, args[1]) ?: return
 
         val tagId = args[2]
         val tagManager = Pulse.getPlugin().tagManager
@@ -239,10 +227,7 @@ class TagCommand : BaseCommand() {
     }
 
     private fun createTag(sender: CommandSender, args: Array<out String>) {
-        if (!sender.hasPermission("pulse.tag.create")) {
-            sendMessage(sender, messagesManager.noPermission())
-            return
-        }
+        if (!requirePermission(sender, "pulse.tag.create")) return
 
         if (args.size < 3) {
             sendUsage(sender)
@@ -264,10 +249,7 @@ class TagCommand : BaseCommand() {
     }
 
     private fun editTag(sender: CommandSender, args: Array<out String>) {
-        if (!sender.hasPermission("pulse.tag.edit")) {
-            sendMessage(sender, messagesManager.noPermission())
-            return
-        }
+        if (!requirePermission(sender, "pulse.tag.edit")) return
 
         if (args.size < 4) {
             sendUsage(sender)
@@ -330,10 +312,7 @@ class TagCommand : BaseCommand() {
     }
 
     private fun deleteTag(sender: CommandSender, args: Array<out String>) {
-        if (!sender.hasPermission("pulse.tag.delete")) {
-            sendMessage(sender, messagesManager.noPermission())
-            return
-        }
+        if (!requirePermission(sender, "pulse.tag.delete")) return
 
         if (args.size < 2) {
             sendUsage(sender)
@@ -393,10 +372,7 @@ class TagCommand : BaseCommand() {
     }
 
     private fun reloadTags(sender: CommandSender, args: Array<out String>) {
-        if (!sender.hasPermission("pulse.tag.reload")) {
-            sendMessage(sender, messagesManager.noPermission())
-            return
-        }
+        if (!requirePermission(sender, "pulse.tag.reload")) return
 
         val tagManager = Pulse.getPlugin().tagManager
         tagManager.reload()

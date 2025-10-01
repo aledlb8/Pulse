@@ -36,16 +36,9 @@ class PulseCommand : BaseCommand() {
 
         try {
             val plugin = Pulse.getPlugin()
-            val configManager = plugin.configManager
 
-            // Reload config files from disk
-            configManager.reloadConfig("config.yml")
-            configManager.reloadConfig("database.yml")
-            configManager.reloadConfig("messages.yml")
-            configManager.reloadConfig("punishment.yml")
-            configManager.reloadConfig("ranks.yml")
-            configManager.reloadConfig("shop.yml")
-            configManager.reloadConfig("tags.yml")
+            // Reload all config files from disk
+            plugin.configManager.reloadAllConfigs()
 
             // Reload managers to apply changes
             plugin.rankManager.reload()

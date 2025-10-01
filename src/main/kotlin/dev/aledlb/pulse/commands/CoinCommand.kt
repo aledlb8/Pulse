@@ -61,10 +61,7 @@ class CoinCommand(private val economyManager: EconomyManager) : BaseCommand() {
         val targetPlayer = if (sender.name.equals(targetName, true)) {
             sender as? Player
         } else {
-            if (!sender.hasPermission("pulse.coin.others")) {
-                sendMessage(sender, messagesManager.noPermission())
-                return
-            }
+            if (!requirePermission(sender, "pulse.coin.others")) return
             Bukkit.getPlayer(targetName) ?: Bukkit.getOfflinePlayer(targetName)
         }
 
@@ -84,10 +81,7 @@ class CoinCommand(private val economyManager: EconomyManager) : BaseCommand() {
     }
 
     private fun handleAdd(sender: CommandSender, args: Array<out String>) {
-        if (!sender.hasPermission("pulse.coin.add")) {
-            sendMessage(sender, messagesManager.noPermission())
-            return
-        }
+        if (!requirePermission(sender, "pulse.coin.add")) return
 
         if (args.size < 3) {
             sendUsage(sender)
@@ -129,10 +123,7 @@ class CoinCommand(private val economyManager: EconomyManager) : BaseCommand() {
     }
 
     private fun handleRemove(sender: CommandSender, args: Array<out String>) {
-        if (!sender.hasPermission("pulse.coin.remove")) {
-            sendMessage(sender, messagesManager.noPermission())
-            return
-        }
+        if (!requirePermission(sender, "pulse.coin.remove")) return
 
         if (args.size < 3) {
             sendUsage(sender)
@@ -174,10 +165,7 @@ class CoinCommand(private val economyManager: EconomyManager) : BaseCommand() {
     }
 
     private fun handleSet(sender: CommandSender, args: Array<out String>) {
-        if (!sender.hasPermission("pulse.coin.set")) {
-            sendMessage(sender, messagesManager.noPermission())
-            return
-        }
+        if (!requirePermission(sender, "pulse.coin.set")) return
 
         if (args.size < 3) {
             sendUsage(sender)
@@ -218,11 +206,7 @@ class CoinCommand(private val economyManager: EconomyManager) : BaseCommand() {
 
     private fun handlePay(sender: CommandSender, args: Array<out String>) {
         val player = requirePlayer(sender) ?: return
-
-        if (!sender.hasPermission("pulse.coin.pay")) {
-            sendMessage(sender, messagesManager.noPermission())
-            return
-        }
+        if (!requirePermission(sender, "pulse.coin.pay")) return
 
         if (args.size < 3) {
             sendUsage(sender)
@@ -240,10 +224,7 @@ class CoinCommand(private val economyManager: EconomyManager) : BaseCommand() {
             return
         }
 
-        val targetPlayer = Bukkit.getPlayer(targetName) ?: run {
-            sendMessage(sender, messagesManager.getFormattedMessage("general.player-not-online", "player" to targetName))
-            return
-        }
+        val targetPlayer = getOnlinePlayer(sender, targetName) ?: return
 
         if (targetPlayer.uniqueId == player.uniqueId) {
             sendMessage(sender, messagesManager.getFormattedMessage("economy.cannot-pay-yourself"))
@@ -278,10 +259,7 @@ class CoinCommand(private val economyManager: EconomyManager) : BaseCommand() {
     }
 
     private fun handleTop(sender: CommandSender, args: Array<out String>) {
-        if (!sender.hasPermission("pulse.coin.top")) {
-            sendMessage(sender, messagesManager.noPermission())
-            return
-        }
+        if (!requirePermission(sender, "pulse.coin.top")) return
 
         val limit = if (args.size > 1) {
             args[1].toIntOrNull()?.coerceIn(1, 25) ?: 10

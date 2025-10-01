@@ -43,10 +43,7 @@ class PermissionCommand(
     }
 
     private fun handleAdd(sender: CommandSender, args: Array<out String>) {
-        if (!sender.hasPermission("pulse.permission.add")) {
-            sendMessage(sender, messagesManager.noPermission())
-            return
-        }
+        if (!requirePermission(sender, "pulse.permission.add")) return
 
         if (args.size < 3) {
             sendUsage(sender)
@@ -56,11 +53,7 @@ class PermissionCommand(
         val playerName = args[1]
         val permission = args[2]
 
-        val targetPlayer = Bukkit.getPlayer(playerName)
-        if (targetPlayer == null) {
-            sendMessage(sender, messagesManager.getFormattedMessage("general.player-not-online", "player" to playerName))
-            return
-        }
+        val targetPlayer = getOnlinePlayer(sender, playerName) ?: return
 
         permissionManager.addPlayerPermission(targetPlayer, permission)
         sendMessage(sender, messagesManager.getFormattedMessage("permission.add-success", "permission" to permission, "player" to targetPlayer.name))
@@ -68,10 +61,7 @@ class PermissionCommand(
     }
 
     private fun handleRemove(sender: CommandSender, args: Array<out String>) {
-        if (!sender.hasPermission("pulse.permission.remove")) {
-            sendMessage(sender, messagesManager.noPermission())
-            return
-        }
+        if (!requirePermission(sender, "pulse.permission.remove")) return
 
         if (args.size < 3) {
             sendUsage(sender)
@@ -81,11 +71,7 @@ class PermissionCommand(
         val playerName = args[1]
         val permission = args[2]
 
-        val targetPlayer = Bukkit.getPlayer(playerName)
-        if (targetPlayer == null) {
-            sendMessage(sender, messagesManager.getFormattedMessage("general.player-not-online", "player" to playerName))
-            return
-        }
+        val targetPlayer = getOnlinePlayer(sender, playerName) ?: return
 
         permissionManager.removePlayerPermission(targetPlayer, permission)
         sendMessage(sender, messagesManager.getFormattedMessage("permission.remove-success", "permission" to permission, "player" to targetPlayer.name))
@@ -93,10 +79,7 @@ class PermissionCommand(
     }
 
     private fun handleDeny(sender: CommandSender, args: Array<out String>) {
-        if (!sender.hasPermission("pulse.permission.deny")) {
-            sendMessage(sender, messagesManager.noPermission())
-            return
-        }
+        if (!requirePermission(sender, "pulse.permission.deny")) return
 
         if (args.size < 3) {
             sendUsage(sender)
@@ -106,11 +89,7 @@ class PermissionCommand(
         val playerName = args[1]
         val permission = args[2]
 
-        val targetPlayer = Bukkit.getPlayer(playerName)
-        if (targetPlayer == null) {
-            sendMessage(sender, messagesManager.getFormattedMessage("general.player-not-online", "player" to playerName))
-            return
-        }
+        val targetPlayer = getOnlinePlayer(sender, playerName) ?: return
 
         permissionManager.denyPlayerPermission(targetPlayer, permission)
         sendMessage(sender, messagesManager.getFormattedMessage("permission.deny-success", "permission" to permission, "player" to targetPlayer.name))
@@ -118,10 +97,7 @@ class PermissionCommand(
     }
 
     private fun handleUndeny(sender: CommandSender, args: Array<out String>) {
-        if (!sender.hasPermission("pulse.permission.deny")) {
-            sendMessage(sender, messagesManager.noPermission())
-            return
-        }
+        if (!requirePermission(sender, "pulse.permission.deny")) return
 
         if (args.size < 3) {
             sendUsage(sender)
@@ -131,11 +107,7 @@ class PermissionCommand(
         val playerName = args[1]
         val permission = args[2]
 
-        val targetPlayer = Bukkit.getPlayer(playerName)
-        if (targetPlayer == null) {
-            sendMessage(sender, messagesManager.getFormattedMessage("general.player-not-online", "player" to playerName))
-            return
-        }
+        val targetPlayer = getOnlinePlayer(sender, playerName) ?: return
 
         val playerData = rankManager.getOrCreatePlayerData(targetPlayer.uniqueId, targetPlayer.name)
         playerData.undenyPermission(permission)
@@ -146,10 +118,7 @@ class PermissionCommand(
     }
 
     private fun handleCheck(sender: CommandSender, args: Array<out String>) {
-        if (!sender.hasPermission("pulse.permission.check")) {
-            sendMessage(sender, messagesManager.noPermission())
-            return
-        }
+        if (!requirePermission(sender, "pulse.permission.check")) return
 
         if (args.size < 3) {
             sendUsage(sender)
@@ -159,11 +128,7 @@ class PermissionCommand(
         val playerName = args[1]
         val permission = args[2]
 
-        val targetPlayer = Bukkit.getPlayer(playerName)
-        if (targetPlayer == null) {
-            sendMessage(sender, messagesManager.getFormattedMessage("general.player-not-online", "player" to playerName))
-            return
-        }
+        val targetPlayer = getOnlinePlayer(sender, playerName) ?: return
 
         val hasPermission = permissionManager.hasPermission(targetPlayer, permission)
 
@@ -189,10 +154,7 @@ class PermissionCommand(
     }
 
     private fun handleList(sender: CommandSender, args: Array<out String>) {
-        if (!sender.hasPermission("pulse.permission.list")) {
-            sendMessage(sender, messagesManager.noPermission())
-            return
-        }
+        if (!requirePermission(sender, "pulse.permission.list")) return
 
         if (args.size < 2) {
             sendUsage(sender)
@@ -200,11 +162,7 @@ class PermissionCommand(
         }
 
         val playerName = args[1]
-        val targetPlayer = Bukkit.getPlayer(playerName)
-        if (targetPlayer == null) {
-            sendMessage(sender, messagesManager.getFormattedMessage("general.player-not-online", "player" to playerName))
-            return
-        }
+        val targetPlayer = getOnlinePlayer(sender, playerName) ?: return
 
         val playerData = rankManager.getPlayerData(targetPlayer)
         val rank = rankManager.getRank(playerData.rank)

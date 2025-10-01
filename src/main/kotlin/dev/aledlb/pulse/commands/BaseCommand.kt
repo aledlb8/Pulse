@@ -58,6 +58,22 @@ abstract class BaseCommand : CommandExecutor, TabCompleter {
         return sender
     }
 
+    protected fun requirePermission(sender: CommandSender, permission: String): Boolean {
+        if (!sender.hasPermission(permission)) {
+            sendMessage(sender, Pulse.getPlugin().messagesManager.noPermission())
+            return false
+        }
+        return true
+    }
+
+    protected fun getOnlinePlayer(sender: CommandSender, playerName: String): Player? {
+        val player = org.bukkit.Bukkit.getPlayer(playerName)
+        if (player == null) {
+            sendMessage(sender, Pulse.getPlugin().messagesManager.getFormattedMessage("general.player-not-online", "player" to playerName))
+        }
+        return player
+    }
+
     protected fun sendMessage(sender: CommandSender, message: String) {
         sender.sendMessage(message)
     }

@@ -48,10 +48,7 @@ class RankCommand(
     }
 
     private fun handleCreate(sender: CommandSender, args: Array<out String>) {
-        if (!sender.hasPermission("pulse.rank.create")) {
-            sendMessage(sender, messagesManager.noPermission())
-            return
-        }
+        if (!requirePermission(sender, "pulse.rank.create")) return
 
         if (args.size < 5) {
             sendUsage(sender)
@@ -74,10 +71,7 @@ class RankCommand(
     }
 
     private fun handleDelete(sender: CommandSender, args: Array<out String>) {
-        if (!sender.hasPermission("pulse.rank.delete")) {
-            sendMessage(sender, messagesManager.noPermission())
-            return
-        }
+        if (!requirePermission(sender, "pulse.rank.delete")) return
 
         if (args.size < 2) {
             sendUsage(sender)
@@ -94,10 +88,7 @@ class RankCommand(
     }
 
     private fun handleSet(sender: CommandSender, args: Array<out String>) {
-        if (!sender.hasPermission("pulse.rank.set")) {
-            sendMessage(sender, messagesManager.noPermission())
-            return
-        }
+        if (!requirePermission(sender, "pulse.rank.set")) return
 
         if (args.size < 3) {
             sendUsage(sender)
@@ -107,11 +98,7 @@ class RankCommand(
         val playerName = args[1]
         val rankName = args[2]
 
-        val targetPlayer = Bukkit.getPlayer(playerName)
-        if (targetPlayer == null) {
-            sendMessage(sender, messagesManager.getFormattedMessage("general.player-not-online", "player" to playerName))
-            return
-        }
+        val targetPlayer = getOnlinePlayer(sender, playerName) ?: return
 
         val rank = rankManager.getRank(rankName)
         if (rank == null) {
@@ -129,10 +116,7 @@ class RankCommand(
     }
 
     private fun handleRemove(sender: CommandSender, args: Array<out String>) {
-        if (!sender.hasPermission("pulse.rank.remove")) {
-            sendMessage(sender, messagesManager.noPermission())
-            return
-        }
+        if (!requirePermission(sender, "pulse.rank.remove")) return
 
         if (args.size < 3) {
             sendUsage(sender)
@@ -142,11 +126,7 @@ class RankCommand(
         val playerName = args[1]
         val rankName = args[2]
 
-        val targetPlayer = Bukkit.getPlayer(playerName)
-        if (targetPlayer == null) {
-            sendMessage(sender, messagesManager.getFormattedMessage("general.player-not-online", "player" to playerName))
-            return
-        }
+        val targetPlayer = getOnlinePlayer(sender, playerName) ?: return
 
         val playerData = rankManager.getPlayerData(targetPlayer)
         if (playerData.rank.lowercase() != rankName.lowercase()) {
@@ -167,10 +147,7 @@ class RankCommand(
     }
 
     private fun handleInfo(sender: CommandSender, args: Array<out String>) {
-        if (!sender.hasPermission("pulse.rank.info")) {
-            sendMessage(sender, messagesManager.noPermission())
-            return
-        }
+        if (!requirePermission(sender, "pulse.rank.info")) return
 
         if (args.size < 2) {
             sendUsage(sender)
@@ -216,10 +193,7 @@ class RankCommand(
     }
 
     private fun handleList(sender: CommandSender) {
-        if (!sender.hasPermission("pulse.rank.list")) {
-            sendMessage(sender, messagesManager.noPermission())
-            return
-        }
+        if (!requirePermission(sender, "pulse.rank.list")) return
 
         val ranks = rankManager.getRanksSorted()
         if (ranks.isEmpty()) {
@@ -240,10 +214,7 @@ class RankCommand(
     }
 
     private fun handleAddPermission(sender: CommandSender, args: Array<out String>) {
-        if (!sender.hasPermission("pulse.rank.permission")) {
-            sendMessage(sender, messagesManager.noPermission())
-            return
-        }
+        if (!requirePermission(sender, "pulse.rank.permission")) return
 
         if (args.size < 3) {
             sendUsage(sender)
@@ -262,10 +233,7 @@ class RankCommand(
     }
 
     private fun handleRemovePermission(sender: CommandSender, args: Array<out String>) {
-        if (!sender.hasPermission("pulse.rank.permission")) {
-            sendMessage(sender, messagesManager.noPermission())
-            return
-        }
+        if (!requirePermission(sender, "pulse.rank.permission")) return
 
         if (args.size < 3) {
             sendUsage(sender)
@@ -284,10 +252,7 @@ class RankCommand(
     }
 
     private fun handleAddParent(sender: CommandSender, args: Array<out String>) {
-        if (!sender.hasPermission("pulse.rank.parent")) {
-            sendMessage(sender, messagesManager.noPermission())
-            return
-        }
+        if (!requirePermission(sender, "pulse.rank.parent")) return
 
         if (args.size < 3) {
             sendUsage(sender)
@@ -324,10 +289,7 @@ class RankCommand(
     }
 
     private fun handleRemoveParent(sender: CommandSender, args: Array<out String>) {
-        if (!sender.hasPermission("pulse.rank.parent")) {
-            sendMessage(sender, messagesManager.noPermission())
-            return
-        }
+        if (!requirePermission(sender, "pulse.rank.parent")) return
 
         if (args.size < 3) {
             sendUsage(sender)
@@ -352,10 +314,7 @@ class RankCommand(
     }
 
     private fun handleReload(sender: CommandSender) {
-        if (!sender.hasPermission("pulse.rank.reload")) {
-            sendMessage(sender, messagesManager.noPermission())
-            return
-        }
+        if (!requirePermission(sender, "pulse.rank.reload")) return
 
         permissionManager.reloadPermissions()
         sendMessage(sender, messagesManager.getFormattedMessage("rank.reload-success"))

@@ -52,20 +52,14 @@ class ShopCommand(
     }
 
     private fun handleReload(sender: CommandSender) {
-        if (!sender.hasPermission("pulse.shop.reload")) {
-            sendMessage(sender, messagesManager.getMessage("shop.no-permission-reload"))
-            return
-        }
+        if (!requirePermission(sender, "pulse.shop.reload")) return
 
         shopManager.reload()
         sendMessage(sender, messagesManager.getMessage("shop.reload-success"))
     }
 
     private fun handleList(sender: CommandSender) {
-        if (!sender.hasPermission("pulse.shop.list")) {
-            sendMessage(sender, messagesManager.getMessage("shop.no-permission-list"))
-            return
-        }
+        if (!requirePermission(sender, "pulse.shop.list")) return
 
         val categories = shopManager.getCategories()
         val totalItems = shopManager.getShopItems().size
