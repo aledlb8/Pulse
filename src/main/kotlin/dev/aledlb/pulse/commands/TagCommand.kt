@@ -1,6 +1,9 @@
 package dev.aledlb.pulse.commands
 
 import dev.aledlb.pulse.Pulse
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.command.CommandSender
@@ -254,7 +257,7 @@ class TagCommand : BaseCommand() {
         val tagManager = Pulse.getPlugin().tagManager
 
         if (tagManager.createTag(id, name, prefix, suffix)) {
-            sendMessage(sender, messagesManager.getFormattedMessage("tag.create-success", "tag" to "$id §7($name§7)"))
+            sendMessage(sender, messagesManager.getFormattedMessage("tag.create-success", "tag" to "$id ($name)"))
         } else {
             sendMessage(sender, messagesManager.getFormattedMessage("tag.tag-already-exists", "tag" to id))
         }
@@ -401,27 +404,27 @@ class TagCommand : BaseCommand() {
     }
 
     private fun showHelp(sender: CommandSender) {
-        sendMessage(sender, "§6Tag Commands:")
-        sendMessage(sender, "§7/tag list §f- List all available tags")
-        sendMessage(sender, "§7/tag owned [player] §f- List owned tags")
-        sendMessage(sender, "§7/tag active [player] §f- List active tags")
-        sendMessage(sender, "§7/tag activate <id> §f- Activate a tag")
-        sendMessage(sender, "§7/tag deactivate <id> §f- Deactivate a tag")
-        sendMessage(sender, "§7/tag info <id> §f- View tag information")
+        sender.sendMessage(Component.text("Tag Commands:").color(NamedTextColor.GOLD))
+        sender.sendMessage(Component.text("/tag list ", NamedTextColor.GRAY).append(Component.text("- List all available tags", NamedTextColor.WHITE)))
+        sender.sendMessage(Component.text("/tag owned [player] ", NamedTextColor.GRAY).append(Component.text("- List owned tags", NamedTextColor.WHITE)))
+        sender.sendMessage(Component.text("/tag active [player] ", NamedTextColor.GRAY).append(Component.text("- List active tags", NamedTextColor.WHITE)))
+        sender.sendMessage(Component.text("/tag activate <id> ", NamedTextColor.GRAY).append(Component.text("- Activate a tag", NamedTextColor.WHITE)))
+        sender.sendMessage(Component.text("/tag deactivate <id> ", NamedTextColor.GRAY).append(Component.text("- Deactivate a tag", NamedTextColor.WHITE)))
+        sender.sendMessage(Component.text("/tag info <id> ", NamedTextColor.GRAY).append(Component.text("- View tag information", NamedTextColor.WHITE)))
 
         if (sender.hasPermission("pulse.tag.give")) {
-            sendMessage(sender, "§7/tag give <player> <id> §f- Give a tag to player")
-            sendMessage(sender, "§7/tag remove <player> <id> §f- Remove tag from player")
+            sender.sendMessage(Component.text("/tag give <player> <id> ", NamedTextColor.GRAY).append(Component.text("- Give a tag to player", NamedTextColor.WHITE)))
+            sender.sendMessage(Component.text("/tag remove <player> <id> ", NamedTextColor.GRAY).append(Component.text("- Remove tag from player", NamedTextColor.WHITE)))
         }
 
         if (sender.hasPermission("pulse.tag.create")) {
-            sendMessage(sender, "§7/tag create <id> <name> <display> §f- Create new tag")
-            sendMessage(sender, "§7/tag edit <id> <property> <value> §f- Edit tag")
-            sendMessage(sender, "§7/tag delete <id> §f- Delete tag")
+            sender.sendMessage(Component.text("/tag create <id> <name> <display> ", NamedTextColor.GRAY).append(Component.text("- Create new tag", NamedTextColor.WHITE)))
+            sender.sendMessage(Component.text("/tag edit <id> <property> <value> ", NamedTextColor.GRAY).append(Component.text("- Edit tag", NamedTextColor.WHITE)))
+            sender.sendMessage(Component.text("/tag delete <id> ", NamedTextColor.GRAY).append(Component.text("- Delete tag", NamedTextColor.WHITE)))
         }
 
         if (sender.hasPermission("pulse.tag.reload")) {
-            sendMessage(sender, "§7/tag reload §f- Reload tag system")
+            sender.sendMessage(Component.text("/tag reload ", NamedTextColor.GRAY).append(Component.text("- Reload tag system", NamedTextColor.WHITE)))
         }
     }
 

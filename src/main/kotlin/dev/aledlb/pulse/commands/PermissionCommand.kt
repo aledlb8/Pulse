@@ -3,6 +3,8 @@ package dev.aledlb.pulse.commands
 import dev.aledlb.pulse.Pulse
 import dev.aledlb.pulse.ranks.PermissionManager
 import dev.aledlb.pulse.ranks.models.RankManager
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
@@ -208,7 +210,7 @@ class PermissionCommand(
         val rank = rankManager.getRank(playerData.rank)
         val allPermissions = playerData.getAllPermissions(rankManager)
 
-        sendMessage(sender, "§f")
+        sender.sendMessage(Component.empty())
         sendMessage(sender, messagesManager.getMessage("permission.list-header"))
         sendMessage(sender, messagesManager.getFormattedMessage("permission.list-player", "player" to targetPlayer.name))
         sendMessage(sender, messagesManager.getFormattedMessage("permission.list-rank", "rank" to (rank?.name ?: "Unknown")))
@@ -233,27 +235,24 @@ class PermissionCommand(
             sendMessage(sender, messagesManager.getFormattedMessage("permission.list-rank-perms", "rank" to rank.name))
             for (permission in rank.permissions.sorted()) {
                 val isDenied = playerData.deniedPermissions.contains(permission)
-                val prefix = if (isDenied) "§c~ " else "§e+ "
-                sendMessage(sender, messagesManager.getFormattedMessage("permission.list-entry-rank", "prefix" to prefix, "permission" to permission))
+                sender.sendMessage(
+                    Component.text(if (isDenied) "~ " else "+ ", if (isDenied) NamedTextColor.RED else NamedTextColor.YELLOW)
+                        .append(Component.text(permission, NamedTextColor.GRAY))
+                )
             }
         }
 
-        sendMessage(sender, "§f")
+        sender.sendMessage(Component.empty())
     }
 
     private fun showHelp(sender: CommandSender) {
-        sendMessage(sender, "§f")
-        sendMessage(sender, "§5╔════════════════════════════════╗")
-        sendMessage(sender, "§5║      §fPERMISSION COMMANDS§5      ║")
-        sendMessage(sender, "§5╠════════════════════════════════╣")
-        sendMessage(sender, "§5║ §f/perm add <player> <permission> §7- Add permission")
-        sendMessage(sender, "§5║ §f/perm remove <player> <permission> §7- Remove permission")
-        sendMessage(sender, "§5║ §f/perm deny <player> <permission> §7- Deny permission")
-        sendMessage(sender, "§5║ §f/perm undeny <player> <permission> §7- Undeny permission")
-        sendMessage(sender, "§5║ §f/perm check <player> <permission> §7- Check permission")
-        sendMessage(sender, "§5║ §f/perm list <player> §7- List all permissions")
-        sendMessage(sender, "§5╚════════════════════════════════╝")
-        sendMessage(sender, "§f")
+        sender.sendMessage(Component.text("Permission Commands:").color(NamedTextColor.GOLD))
+        sender.sendMessage(Component.text("/perm add <player> <permission> ", NamedTextColor.GRAY).append(Component.text("- Add permission", NamedTextColor.WHITE)))
+        sender.sendMessage(Component.text("/perm remove <player> <permission> ", NamedTextColor.GRAY).append(Component.text("- Remove permission", NamedTextColor.WHITE)))
+        sender.sendMessage(Component.text("/perm deny <player> <permission> ", NamedTextColor.GRAY).append(Component.text("- Deny permission", NamedTextColor.WHITE)))
+        sender.sendMessage(Component.text("/perm undeny <player> <permission> ", NamedTextColor.GRAY).append(Component.text("- Undeny permission", NamedTextColor.WHITE)))
+        sender.sendMessage(Component.text("/perm check <player> <permission> ", NamedTextColor.GRAY).append(Component.text("- Check permission", NamedTextColor.WHITE)))
+        sender.sendMessage(Component.text("/perm list <player> ", NamedTextColor.GRAY).append(Component.text("- List all permissions", NamedTextColor.WHITE)))
     }
 
     override fun getTabCompletions(sender: CommandSender, args: Array<out String>): List<String> {

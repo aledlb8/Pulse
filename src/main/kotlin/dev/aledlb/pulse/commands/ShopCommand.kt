@@ -3,6 +3,8 @@ package dev.aledlb.pulse.commands
 import dev.aledlb.pulse.Pulse
 import dev.aledlb.pulse.shop.ShopGUI
 import dev.aledlb.pulse.shop.ShopManager
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 
@@ -68,7 +70,7 @@ class ShopCommand(
         val categories = shopManager.getCategories()
         val totalItems = shopManager.getShopItems().size
 
-        sendMessage(sender, "§f")
+        sender.sendMessage(Component.empty())
         sendMessage(sender, messagesManager.getMessage("shop.list-header"))
         sendMessage(sender, messagesManager.getFormattedMessage("shop.list-total-items", "count" to totalItems.toString()))
         sendMessage(sender, messagesManager.getFormattedMessage("shop.list-categories", "count" to categories.size.toString()))
@@ -79,20 +81,15 @@ class ShopCommand(
             sendMessage(sender, messagesManager.getFormattedMessage("shop.list-category-entry", "category" to category.displayName, "count" to itemCount.toString()))
         }
 
-        sendMessage(sender, "§f")
+        sender.sendMessage(Component.empty())
     }
 
     private fun showHelp(sender: CommandSender) {
-        sendMessage(sender, "§f")
-        sendMessage(sender, "§5╔════════════════════════════════╗")
-        sendMessage(sender, "§5║        §fSHOP COMMANDS§5         ║")
-        sendMessage(sender, "§5╠════════════════════════════════╣")
-        sendMessage(sender, "§5║ §f/shop §7- Open main shop")
-        sendMessage(sender, "§5║ §f/shop <category> §7- Open category")
-        sendMessage(sender, "§5║ §f/shop list §7- List all items")
-        sendMessage(sender, "§5║ §f/shop reload §7- Reload shop")
-        sendMessage(sender, "§5╚════════════════════════════════╝")
-        sendMessage(sender, "§f")
+        sender.sendMessage(Component.text("Shop Commands:").color(NamedTextColor.GOLD))
+        sender.sendMessage(Component.text("/shop ", NamedTextColor.GRAY).append(Component.text("- Open main shop", NamedTextColor.WHITE)))
+        sender.sendMessage(Component.text("/shop <category> ", NamedTextColor.GRAY).append(Component.text("- Open category", NamedTextColor.WHITE)))
+        sender.sendMessage(Component.text("/shop list ", NamedTextColor.GRAY).append(Component.text("- List all items", NamedTextColor.WHITE)))
+        sender.sendMessage(Component.text("/shop reload ", NamedTextColor.GRAY).append(Component.text("- Reload shop", NamedTextColor.WHITE)))
     }
 
     override fun getTabCompletions(sender: CommandSender, args: Array<out String>): List<String> {

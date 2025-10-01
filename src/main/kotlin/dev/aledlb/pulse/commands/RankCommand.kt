@@ -3,6 +3,8 @@ package dev.aledlb.pulse.commands
 import dev.aledlb.pulse.Pulse
 import dev.aledlb.pulse.ranks.PermissionManager
 import dev.aledlb.pulse.ranks.models.RankManager
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
@@ -182,7 +184,7 @@ class RankCommand(
             return
         }
 
-        sendMessage(sender, "§f")
+        sender.sendMessage(Component.empty())
         sendMessage(sender, messagesManager.getMessage("rank.info-header"))
         sendMessage(sender, messagesManager.getFormattedMessage("rank.info-name", "name" to rank.name))
         sendMessage(sender, messagesManager.getFormattedMessage("rank.info-prefix", "prefix" to rank.prefix))
@@ -210,7 +212,7 @@ class RankCommand(
                 sendMessage(sender, messagesManager.getFormattedMessage("rank.info-player-entry", "player" to player.name))
             }
         }
-        sendMessage(sender, "§f")
+        sender.sendMessage(Component.empty())
     }
 
     private fun handleList(sender: CommandSender) {
@@ -225,7 +227,7 @@ class RankCommand(
             return
         }
 
-        sendMessage(sender, "§f")
+        sender.sendMessage(Component.empty())
         sendMessage(sender, messagesManager.getMessage("rank.list-header"))
 
         for (rank in ranks) {
@@ -234,7 +236,7 @@ class RankCommand(
             val parentsTag = if (rank.parents.isNotEmpty()) messagesManager.getFormattedMessage("rank.list-parents-tag", "parents" to rank.parents.joinToString(", ")) else ""
             sendMessage(sender, messagesManager.getFormattedMessage("rank.list-entry", "rank" to rank.name, "default_tag" to defaultTag, "online_count" to onlineCount.toString(), "parents_tag" to parentsTag))
         }
-        sendMessage(sender, "§f")
+        sender.sendMessage(Component.empty())
     }
 
     private fun handleAddPermission(sender: CommandSender, args: Array<out String>) {
@@ -360,23 +362,18 @@ class RankCommand(
     }
 
     private fun showHelp(sender: CommandSender) {
-        sendMessage(sender, "§f")
-        sendMessage(sender, "§5╔════════════════════════════════╗")
-        sendMessage(sender, "§5║         §fRANK COMMANDS§5        ║")
-        sendMessage(sender, "§5╠════════════════════════════════╣")
-        sendMessage(sender, "§5║ §f/rank create <name> <prefix> <suffix> <weight>")
-        sendMessage(sender, "§5║ §f/rank delete <rank> §7- Delete a rank")
-        sendMessage(sender, "§5║ §f/rank set <player> <rank> §7- Set player rank")
-        sendMessage(sender, "§5║ §f/rank remove <player> <rank> §7- Remove player rank")
-        sendMessage(sender, "§5║ §f/rank info <rank> §7- View rank info")
-        sendMessage(sender, "§5║ §f/rank list §7- List all ranks")
-        sendMessage(sender, "§5║ §f/rank addperm <rank> <perm> §7- Add permission")
-        sendMessage(sender, "§5║ §f/rank removeperm <rank> <perm> §7- Remove permission")
-        sendMessage(sender, "§5║ §f/rank addparent <rank> <parent> §7- Set parent rank")
-        sendMessage(sender, "§5║ §f/rank removeparent <rank> <parent> §7- Remove parent")
-        sendMessage(sender, "§5║ §f/rank reload §7- Reload rank system")
-        sendMessage(sender, "§5╚════════════════════════════════╝")
-        sendMessage(sender, "§f")
+        sender.sendMessage(Component.text("Rank Commands:").color(NamedTextColor.GOLD))
+        sender.sendMessage(Component.text("/rank create <name> <prefix> <suffix> <weight> ", NamedTextColor.GRAY).append(Component.text("- Create new rank", NamedTextColor.WHITE)))
+        sender.sendMessage(Component.text("/rank delete <rank> ", NamedTextColor.GRAY).append(Component.text("- Delete a rank", NamedTextColor.WHITE)))
+        sender.sendMessage(Component.text("/rank set <player> <rank> ", NamedTextColor.GRAY).append(Component.text("- Set player rank", NamedTextColor.WHITE)))
+        sender.sendMessage(Component.text("/rank remove <player> <rank> ", NamedTextColor.GRAY).append(Component.text("- Remove player rank", NamedTextColor.WHITE)))
+        sender.sendMessage(Component.text("/rank info <rank> ", NamedTextColor.GRAY).append(Component.text("- View rank info", NamedTextColor.WHITE)))
+        sender.sendMessage(Component.text("/rank list ", NamedTextColor.GRAY).append(Component.text("- List all ranks", NamedTextColor.WHITE)))
+        sender.sendMessage(Component.text("/rank addperm <rank> <perm> ", NamedTextColor.GRAY).append(Component.text("- Add permission", NamedTextColor.WHITE)))
+        sender.sendMessage(Component.text("/rank removeperm <rank> <perm> ", NamedTextColor.GRAY).append(Component.text("- Remove permission", NamedTextColor.WHITE)))
+        sender.sendMessage(Component.text("/rank addparent <rank> <parent> ", NamedTextColor.GRAY).append(Component.text("- Set parent rank", NamedTextColor.WHITE)))
+        sender.sendMessage(Component.text("/rank removeparent <rank> <parent> ", NamedTextColor.GRAY).append(Component.text("- Remove parent", NamedTextColor.WHITE)))
+        sender.sendMessage(Component.text("/rank reload ", NamedTextColor.GRAY).append(Component.text("- Reload rank system", NamedTextColor.WHITE)))
     }
 
     override fun getTabCompletions(sender: CommandSender, args: Array<out String>): List<String> {

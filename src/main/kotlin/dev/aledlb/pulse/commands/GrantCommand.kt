@@ -3,6 +3,9 @@ package dev.aledlb.pulse.commands
 import dev.aledlb.pulse.Pulse
 import dev.aledlb.pulse.ranks.PermissionManager
 import dev.aledlb.pulse.ranks.models.RankManager
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.command.CommandSender
@@ -70,16 +73,21 @@ class GrantCommand(
     }
 
     private fun openMainMenu(viewer: Player, target: Player) {
-        val inv = Bukkit.createInventory(null, 27, "§5§lGrant Ranks - ${target.name}")
+        val inv = Bukkit.createInventory(null, 27, Component.text("Grant Ranks - ${target.name}")
+            .color(NamedTextColor.DARK_PURPLE)
+            .decorate(TextDecoration.BOLD))
 
         // Give Rank button
         inv.setItem(11, ItemStack(Material.EMERALD).apply {
             itemMeta = itemMeta.apply {
-                setDisplayName("§a§lGive Rank")
-                lore = listOf(
-                    "§7Click to select a rank",
-                    "§7to give to this player"
-                )
+                displayName(Component.text("Give Rank")
+                    .color(NamedTextColor.GREEN)
+                    .decorate(TextDecoration.BOLD)
+                    .decoration(TextDecoration.ITALIC, false))
+                lore(listOf(
+                    Component.text("Click to select a rank").color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false),
+                    Component.text("to give to this player").color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)
+                ))
             }
         })
 
@@ -102,8 +110,19 @@ class GrantCommand(
 
         inv.setItem(15, ItemStack(Material.BOOK).apply {
             itemMeta = itemMeta.apply {
-                setDisplayName("§e§lSee Ranks")
-                lore = seeLore
+                displayName(Component.text("See Ranks")
+                    .color(NamedTextColor.YELLOW)
+                    .decorate(TextDecoration.BOLD)
+                    .decoration(TextDecoration.ITALIC, false))
+                lore(seeLore.map { line ->
+                    Component.text(line.replace("§7", "").replace("§e", "").replace("§a", ""))
+                        .color(when {
+                            line.contains("§e") -> NamedTextColor.YELLOW
+                            line.contains("§a") -> NamedTextColor.GREEN
+                            else -> NamedTextColor.GRAY
+                        })
+                        .decoration(TextDecoration.ITALIC, false)
+                })
             }
         })
 
@@ -118,7 +137,9 @@ class GrantCommand(
     }
 
     private fun openSeeRanksMenu(viewer: Player, target: Player) {
-        val inv = Bukkit.createInventory(null, 54, "§5§lCurrent Ranks - ${target.name}")
+        val inv = Bukkit.createInventory(null, 54, Component.text("Current Ranks - ${target.name}")
+            .color(NamedTextColor.DARK_PURPLE)
+            .decorate(TextDecoration.BOLD))
 
         val playerData = rankManager.getPlayerData(target)
         val defaultRank = rankManager.getDefaultRank()
@@ -127,8 +148,14 @@ class GrantCommand(
         if (activeRanks.isEmpty()) {
             inv.setItem(22, ItemStack(Material.BARRIER).apply {
                 itemMeta = itemMeta.apply {
-                    setDisplayName("§cNo Ranks")
-                    lore = listOf("§7This player has no additional ranks")
+                    displayName(Component.text("No Ranks")
+                        .color(NamedTextColor.RED)
+                        .decoration(TextDecoration.ITALIC, false))
+                    lore(listOf(
+                        Component.text("This player has no additional ranks")
+                            .color(NamedTextColor.GRAY)
+                            .decoration(TextDecoration.ITALIC, false)
+                    ))
                 }
             })
         } else {
@@ -139,19 +166,35 @@ class GrantCommand(
 
                 inv.setItem(index, ItemStack(if (isPrimary) Material.DIAMOND else Material.NAME_TAG).apply {
                     itemMeta = itemMeta.apply {
-                        setDisplayName("${rank.name}")
-                        val lore = mutableListOf<String>()
-                        lore.add("§7Weight: §e${rank.weight}")
-                        if (isPrimary) lore.add("§aPrimary Rank")
+                        displayName(Component.text(rank.name.replace("§[0-9a-fk-or]".toRegex(), ""))
+                            .decoration(TextDecoration.ITALIC, false))
+                        val componentLore = mutableListOf<Component>()
+                        componentLore.add(Component.text("Weight: ").color(NamedTextColor.GRAY)
+                            .append(Component.text("${rank.weight}").color(NamedTextColor.YELLOW))
+                            .decoration(TextDecoration.ITALIC, false))
+                        if (isPrimary) componentLore.add(Component.text("Primary Rank")
+                            .color(NamedTextColor.GREEN)
+                            .decoration(TextDecoration.ITALIC, false))
                         if (rankEntry.expiration != null) {
                             val remaining = (rankEntry.expiration!! - System.currentTimeMillis())
-                            if (remaining > 0) lore.add("§7Duration: §e${formatDuration(remaining)}") else lore.add("§cExpired")
+                            if (remaining > 0) {
+                                componentLore.add(Component.text("Duration: ").color(NamedTextColor.GRAY)
+                                    .append(Component.text(formatDuration(remaining)).color(NamedTextColor.YELLOW))
+                                    .decoration(TextDecoration.ITALIC, false))
+                            } else {
+                                componentLore.add(Component.text("Expired").color(NamedTextColor.RED)
+                                    .decoration(TextDecoration.ITALIC, false))
+                            }
                         } else {
-                            lore.add("§7Duration: §aPermanent")
+                            componentLore.add(Component.text("Duration: ").color(NamedTextColor.GRAY)
+                                .append(Component.text("Permanent").color(NamedTextColor.GREEN))
+                                .decoration(TextDecoration.ITALIC, false))
                         }
-                        lore.add("")
-                        lore.add("§cClick to remove this rank")
-                        this.lore = lore
+                        componentLore.add(Component.empty())
+                        componentLore.add(Component.text("Click to remove this rank")
+                            .color(NamedTextColor.RED)
+                            .decoration(TextDecoration.ITALIC, false))
+                        lore(componentLore)
                     }
                 })
             }
@@ -159,7 +202,11 @@ class GrantCommand(
 
         // Back
         inv.setItem(49, ItemStack(Material.ARROW).apply {
-            itemMeta = itemMeta.apply { setDisplayName("§7« Back") }
+            itemMeta = itemMeta.apply {
+                displayName(Component.text("« Back")
+                    .color(NamedTextColor.GRAY)
+                    .decoration(TextDecoration.ITALIC, false))
+            }
         })
 
         openGuiSafely(
@@ -175,25 +222,38 @@ class GrantCommand(
     private fun openGiveRankMenu(viewer: Player, target: Player) {
         val defaultRank = rankManager.getDefaultRank()
         val ranks = rankManager.getRanksSorted().filter { it.name.lowercase() != defaultRank.lowercase() }
-        val inv = Bukkit.createInventory(null, 54, "§5§lSelect Rank - ${target.name}")
+        val inv = Bukkit.createInventory(null, 54, Component.text("Select Rank - ${target.name}")
+            .color(NamedTextColor.DARK_PURPLE)
+            .decorate(TextDecoration.BOLD))
 
         ranks.forEachIndexed { index, rank ->
             if (index >= 45) return@forEachIndexed
             inv.setItem(index, ItemStack(Material.DIAMOND).apply {
                 itemMeta = itemMeta.apply {
-                    setDisplayName("${rank.name}")
-                    lore = listOf(
-                        "§7Weight: §e${rank.weight}",
-                        "§7Permissions: §e${rank.permissions.size}",
-                        "",
-                        "§aClick to select this rank"
-                    )
+                    displayName(Component.text(rank.name.replace("§[0-9a-fk-or]".toRegex(), ""))
+                        .decoration(TextDecoration.ITALIC, false))
+                    lore(listOf(
+                        Component.text("Weight: ").color(NamedTextColor.GRAY)
+                            .append(Component.text("${rank.weight}").color(NamedTextColor.YELLOW))
+                            .decoration(TextDecoration.ITALIC, false),
+                        Component.text("Permissions: ").color(NamedTextColor.GRAY)
+                            .append(Component.text("${rank.permissions.size}").color(NamedTextColor.YELLOW))
+                            .decoration(TextDecoration.ITALIC, false),
+                        Component.empty(),
+                        Component.text("Click to select this rank")
+                            .color(NamedTextColor.GREEN)
+                            .decoration(TextDecoration.ITALIC, false)
+                    ))
                 }
             })
         }
 
         inv.setItem(49, ItemStack(Material.ARROW).apply {
-            itemMeta = itemMeta.apply { setDisplayName("§7« Back") }
+            itemMeta = itemMeta.apply {
+                displayName(Component.text("« Back")
+                    .color(NamedTextColor.GRAY)
+                    .decoration(TextDecoration.ITALIC, false))
+            }
         })
 
         openGuiSafely(
@@ -207,13 +267,22 @@ class GrantCommand(
     }
 
     private fun openDurationMenu(viewer: Player, target: Player, selectedRank: String) {
-        val inv = Bukkit.createInventory(null, 27, "§5§lSelect Duration")
+        val inv = Bukkit.createInventory(null, 27, Component.text("Select Duration")
+            .color(NamedTextColor.DARK_PURPLE)
+            .decorate(TextDecoration.BOLD))
 
         // Permanent
         inv.setItem(10, ItemStack(Material.NETHER_STAR).apply {
             itemMeta = itemMeta.apply {
-                setDisplayName("§a§lPermanent")
-                lore = listOf("§7This rank will never expire")
+                displayName(Component.text("Permanent")
+                    .color(NamedTextColor.GREEN)
+                    .decorate(TextDecoration.BOLD)
+                    .decoration(TextDecoration.ITALIC, false))
+                lore(listOf(
+                    Component.text("This rank will never expire")
+                        .color(NamedTextColor.GRAY)
+                        .decoration(TextDecoration.ITALIC, false)
+                ))
             }
         })
 
@@ -228,15 +297,26 @@ class GrantCommand(
         durations.forEach { (slot, data) ->
             inv.setItem(slot, ItemStack(Material.CLOCK).apply {
                 itemMeta = itemMeta.apply {
-                    setDisplayName("§e§l${data.first}")
-                    lore = listOf("§7Rank will expire after this time")
+                    displayName(Component.text(data.first)
+                        .color(NamedTextColor.YELLOW)
+                        .decorate(TextDecoration.BOLD)
+                        .decoration(TextDecoration.ITALIC, false))
+                    lore(listOf(
+                        Component.text("Rank will expire after this time")
+                            .color(NamedTextColor.GRAY)
+                            .decoration(TextDecoration.ITALIC, false)
+                    ))
                 }
             })
         }
 
         // Back
         inv.setItem(22, ItemStack(Material.ARROW).apply {
-            itemMeta = itemMeta.apply { setDisplayName("§7« Back") }
+            itemMeta = itemMeta.apply {
+                displayName(Component.text("« Back")
+                    .color(NamedTextColor.GRAY)
+                    .decoration(TextDecoration.ITALIC, false))
+            }
         })
 
         openGuiSafely(
@@ -251,38 +331,67 @@ class GrantCommand(
     }
 
     private fun openConfirmationMenu(viewer: Player, target: Player, selectedRank: String, duration: Long?) {
-        val inv = Bukkit.createInventory(null, 27, "§5§lConfirm Grant")
+        val inv = Bukkit.createInventory(null, 27, Component.text("Confirm Grant")
+            .color(NamedTextColor.DARK_PURPLE)
+            .decorate(TextDecoration.BOLD))
 
         val rank = rankManager.getRank(selectedRank) ?: run {
             viewer.closeInventory()
             return
         }
 
-        val durationText = if (duration == null) "§aPermanent" else "§e${formatDuration(duration)}"
+        val durationComponent = if (duration == null) {
+            Component.text("Permanent").color(NamedTextColor.GREEN)
+        } else {
+            Component.text(formatDuration(duration)).color(NamedTextColor.YELLOW)
+        }
 
         // Summary
         inv.setItem(13, ItemStack(Material.PAPER).apply {
             itemMeta = itemMeta.apply {
-                setDisplayName("§e§lGrant Summary")
-                lore = listOf(
-                    "§7Player: §e${target.name}",
-                    "§7Rank: ${rank.name}",
-                    "§7Duration: $durationText"
-                )
+                displayName(Component.text("Grant Summary")
+                    .color(NamedTextColor.YELLOW)
+                    .decorate(TextDecoration.BOLD)
+                    .decoration(TextDecoration.ITALIC, false))
+                lore(listOf(
+                    Component.text("Player: ").color(NamedTextColor.GRAY)
+                        .append(Component.text(target.name).color(NamedTextColor.YELLOW))
+                        .decoration(TextDecoration.ITALIC, false),
+                    Component.text("Rank: ").color(NamedTextColor.GRAY)
+                        .append(Component.text(rank.name.replace("§[0-9a-fk-or]".toRegex(), "")))
+                        .decoration(TextDecoration.ITALIC, false),
+                    Component.text("Duration: ").color(NamedTextColor.GRAY)
+                        .append(durationComponent)
+                        .decoration(TextDecoration.ITALIC, false)
+                ))
             }
         })
 
         // Confirm / Cancel
         inv.setItem(11, ItemStack(Material.LIME_WOOL).apply {
             itemMeta = itemMeta.apply {
-                setDisplayName("§a§lCONFIRM")
-                lore = listOf("§7Click to grant this rank")
+                displayName(Component.text("CONFIRM")
+                    .color(NamedTextColor.GREEN)
+                    .decorate(TextDecoration.BOLD)
+                    .decoration(TextDecoration.ITALIC, false))
+                lore(listOf(
+                    Component.text("Click to grant this rank")
+                        .color(NamedTextColor.GRAY)
+                        .decoration(TextDecoration.ITALIC, false)
+                ))
             }
         })
         inv.setItem(15, ItemStack(Material.RED_WOOL).apply {
             itemMeta = itemMeta.apply {
-                setDisplayName("§c§lCANCEL")
-                lore = listOf("§7Click to cancel")
+                displayName(Component.text("CANCEL")
+                    .color(NamedTextColor.RED)
+                    .decorate(TextDecoration.BOLD)
+                    .decoration(TextDecoration.ITALIC, false))
+                lore(listOf(
+                    Component.text("Click to cancel")
+                        .color(NamedTextColor.GRAY)
+                        .decoration(TextDecoration.ITALIC, false)
+                ))
             }
         })
 
@@ -379,7 +488,9 @@ class GrantCommand(
             49 -> openMainMenu(viewer, target)
             in 0..44 -> {
                 if (item.type == Material.NAME_TAG || item.type == Material.DIAMOND) {
-                    val rankName = item.itemMeta?.displayName ?: return
+                    val rankName = item.itemMeta?.displayName()?.let {
+                        (it as? net.kyori.adventure.text.TextComponent)?.content()
+                    } ?: return
                     if (rankManager.removePlayerRank(target, rankName)) {
                         permissionManager.updatePlayerPermissions(target)
                         permissionManager.updatePlayerDisplayNames()
@@ -411,7 +522,9 @@ class GrantCommand(
             49 -> openMainMenu(viewer, target)
             in 0..44 -> {
                 if (item.type == Material.DIAMOND) {
-                    val rankName = item.itemMeta?.displayName ?: return
+                    val rankName = item.itemMeta?.displayName()?.let {
+                        (it as? net.kyori.adventure.text.TextComponent)?.content()
+                    } ?: return
                     openDurationMenu(viewer, target, rankName)
                 }
             }

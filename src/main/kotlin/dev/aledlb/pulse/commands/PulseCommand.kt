@@ -1,6 +1,8 @@
 package dev.aledlb.pulse.commands
 
 import dev.aledlb.pulse.Pulse
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.command.CommandSender
 
 class PulseCommand : BaseCommand() {
@@ -66,27 +68,17 @@ class PulseCommand : BaseCommand() {
         val version = plugin.pluginMeta.version
         val isLoaded = plugin.isPluginFullyLoaded()
 
-        sendMessage(sender, "§f")
-        sendMessage(sender, "§5╔════════════════════════════════╗")
-        sendMessage(sender, "§5║          §fPULSE INFO§5            ║")
-        sendMessage(sender, "§5╠════════════════════════════════╣")
-        sendMessage(sender, "§5║ §fVersion: §a$version")
-        sendMessage(sender, "§5║ §fStatus: ${if (isLoaded) "§aLoaded" else "§cLoading..."}")
-        sendMessage(sender, "§5║ §fDeveloper: §aaledlb")
-        sendMessage(sender, "§5╚════════════════════════════════╝")
-        sendMessage(sender, "§f")
+        sender.sendMessage(Component.text("Pulse Info:").color(NamedTextColor.GOLD))
+        sender.sendMessage(Component.text("Version: ", NamedTextColor.GRAY).append(Component.text(version, NamedTextColor.GREEN)))
+        sender.sendMessage(Component.text("Status: ", NamedTextColor.GRAY).append(Component.text(if (isLoaded) "Loaded" else "Loading...", if (isLoaded) NamedTextColor.GREEN else NamedTextColor.RED)))
+        sender.sendMessage(Component.text("Developer: ", NamedTextColor.GRAY).append(Component.text("aledlb", NamedTextColor.GREEN)))
     }
 
     private fun showHelp(sender: CommandSender) {
-        sendMessage(sender, "§f")
-        sendMessage(sender, "§5╔════════════════════════════════╗")
-        sendMessage(sender, "§5║         §fPULSE COMMANDS§5         ║")
-        sendMessage(sender, "§5╠════════════════════════════════╣")
-        sendMessage(sender, "§5║ §f/pulse info §7- Show plugin info")
-        sendMessage(sender, "§5║ §f/pulse reload §7- Reload configs")
-        sendMessage(sender, "§5║ §f/pulse help §7- Show this help")
-        sendMessage(sender, "§5╚════════════════════════════════╝")
-        sendMessage(sender, "§f")
+        sender.sendMessage(Component.text("Pulse Commands:").color(NamedTextColor.GOLD))
+        sender.sendMessage(Component.text("/pulse info ", NamedTextColor.GRAY).append(Component.text("- Show plugin info", NamedTextColor.WHITE)))
+        sender.sendMessage(Component.text("/pulse reload ", NamedTextColor.GRAY).append(Component.text("- Reload configs", NamedTextColor.WHITE)))
+        sender.sendMessage(Component.text("/pulse help ", NamedTextColor.GRAY).append(Component.text("- Show this help", NamedTextColor.WHITE)))
     }
 
     override fun getTabCompletions(sender: CommandSender, args: Array<out String>): List<String> {

@@ -2,6 +2,8 @@ package dev.aledlb.pulse.commands
 
 import dev.aledlb.pulse.Pulse
 import dev.aledlb.pulse.economy.EconomyManager
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
@@ -289,7 +291,7 @@ class CoinCommand(private val economyManager: EconomyManager) : BaseCommand() {
 
         val topBalances = economyManager.getTopBalances(limit)
 
-        sendMessage(sender, "§f")
+        sender.sendMessage(Component.empty())
         sendMessage(sender, messagesManager.getMessage("coin.top-header"))
 
         if (topBalances.isEmpty()) {
@@ -299,32 +301,32 @@ class CoinCommand(private val economyManager: EconomyManager) : BaseCommand() {
                 val rank = index + 1
                 val formattedBalance = economyManager.formatBalance(balance)
                 val rankColor = when (rank) {
-                    1 -> "§6"  // Gold
-                    2 -> "§7"  // Silver
-                    3 -> "§c"  // Bronze
-                    else -> "§e"  // Yellow
+                    1 -> NamedTextColor.GOLD
+                    2 -> NamedTextColor.GRAY
+                    3 -> NamedTextColor.RED
+                    else -> NamedTextColor.YELLOW
                 }
-                sendMessage(sender, messagesManager.getFormattedMessage("coin.top-entry", "rank_color" to rankColor, "rank" to rank.toString(), "player" to player.name!!, "balance" to formattedBalance))
+                sender.sendMessage(
+                    Component.text("#$rank ", rankColor)
+                        .append(Component.text(player.name!!, NamedTextColor.WHITE))
+                        .append(Component.text(" - ", NamedTextColor.DARK_GRAY))
+                        .append(Component.text(formattedBalance, NamedTextColor.GREEN))
+                )
             }
         }
 
-        sendMessage(sender, "§f")
+        sender.sendMessage(Component.empty())
     }
 
     private fun showHelp(sender: CommandSender) {
-        sendMessage(sender, "§f")
-        sendMessage(sender, "§5╔════════════════════════════════╗")
-        sendMessage(sender, "§5║        §fCOIN COMMANDS§5         ║")
-        sendMessage(sender, "§5╠════════════════════════════════╣")
-        sendMessage(sender, "§5║ §f/coin §7- Show your balance")
-        sendMessage(sender, "§5║ §f/coin balance [player] §7- Check balance")
-        sendMessage(sender, "§5║ §f/coin add <player> <amount> §7- Add coins")
-        sendMessage(sender, "§5║ §f/coin remove <player> <amount> §7- Remove coins")
-        sendMessage(sender, "§5║ §f/coin set <player> <amount> §7- Set balance")
-        sendMessage(sender, "§5║ §f/coin pay <player> <amount> §7- Pay player")
-        sendMessage(sender, "§5║ §f/coin top [limit] §7- Top balances")
-        sendMessage(sender, "§5╚════════════════════════════════╝")
-        sendMessage(sender, "§f")
+        sender.sendMessage(Component.text("Coin Commands:").color(NamedTextColor.GOLD))
+        sender.sendMessage(Component.text("/coin ", NamedTextColor.GRAY).append(Component.text("- Show your balance", NamedTextColor.WHITE)))
+        sender.sendMessage(Component.text("/coin balance [player] ", NamedTextColor.GRAY).append(Component.text("- Check balance", NamedTextColor.WHITE)))
+        sender.sendMessage(Component.text("/coin add <player> <amount> ", NamedTextColor.GRAY).append(Component.text("- Add coins", NamedTextColor.WHITE)))
+        sender.sendMessage(Component.text("/coin remove <player> <amount> ", NamedTextColor.GRAY).append(Component.text("- Remove coins", NamedTextColor.WHITE)))
+        sender.sendMessage(Component.text("/coin set <player> <amount> ", NamedTextColor.GRAY).append(Component.text("- Set balance", NamedTextColor.WHITE)))
+        sender.sendMessage(Component.text("/coin pay <player> <amount> ", NamedTextColor.GRAY).append(Component.text("- Pay player", NamedTextColor.WHITE)))
+        sender.sendMessage(Component.text("/coin top [limit] ", NamedTextColor.GRAY).append(Component.text("- Top balances", NamedTextColor.WHITE)))
     }
 
     override fun getTabCompletions(sender: CommandSender, args: Array<out String>): List<String> {

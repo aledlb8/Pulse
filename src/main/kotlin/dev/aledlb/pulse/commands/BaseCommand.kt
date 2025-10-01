@@ -59,7 +59,7 @@ abstract class BaseCommand : CommandExecutor, TabCompleter {
     }
 
     protected fun sendMessage(sender: CommandSender, message: String) {
-        sendMessage(sender, message)
+        sender.sendMessage(message)
     }
 
     protected fun sendUsage(sender: CommandSender) {
