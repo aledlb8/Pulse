@@ -112,6 +112,15 @@ The shaded jar is created at `build/libs/Pulse-1.0-all.jar`.
 
 </details>
 
+## Playtime Permissions
+<details>
+<summary>Click to view playtime permissions</summary>
+
+- `pulse.playtime` - View own playtime
+- `pulse.playtime.others` - View other players' playtime
+
+</details>
+
 ## Placeholders
 <details>
 <summary>Click to view all placeholders</summary>
@@ -156,6 +165,13 @@ All placeholders use the format `%pulse_<placeholder>%`
 
 ### Time
 - `%pulse_last_seen%` - Time since player was last seen
+
+### Playtime
+- `%pulse_playtime%` - Player's playtime (formatted)
+- `%pulse_playtime_raw%` - Player's playtime in milliseconds
+- `%pulse_playtime_hours%` - Player's playtime in hours (2 decimals)
+- `%pulse_playtime_minutes%` - Player's playtime in minutes
+- `%pulse_playtime_seconds%` - Player's playtime in seconds
 
 ### Dynamic Placeholders
 - `%pulse_has_permission_<permission>%` - Check if player has permission (true/false)

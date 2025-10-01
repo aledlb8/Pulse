@@ -11,7 +11,8 @@ import org.bukkit.entity.Player
 class PulsePlaceholderProvider(
     private val rankManager: RankManager,
     private val permissionManager: PermissionManager,
-    private val economyManager: EconomyManager
+    private val economyManager: EconomyManager,
+    private val playtimeManager: dev.aledlb.pulse.playtime.PlaytimeManager
 ) : PlaceholderProvider {
 
     override fun onPlaceholderRequest(player: Player?, placeholder: String): String? {
@@ -140,6 +141,13 @@ class PulsePlaceholderProvider(
                 }
             }
 
+            // Playtime
+            "playtime" -> playtimeManager.getFormattedPlaytime(player.uniqueId)
+            "playtime_raw" -> playtimeManager.getPlaytime(player.uniqueId).toString()
+            "playtime_hours" -> "%.2f".format(playtimeManager.getPlaytimeHours(player.uniqueId))
+            "playtime_minutes" -> playtimeManager.getPlaytimeMinutes(player.uniqueId).toString()
+            "playtime_seconds" -> playtimeManager.getPlaytimeSeconds(player.uniqueId).toString()
+
             else -> {
                 // Handle dynamic placeholders
                 when {
@@ -234,6 +242,9 @@ class PulsePlaceholderProvider(
 
             // Time
             "last_seen",
+
+            // Playtime
+            "playtime", "playtime_raw", "playtime_hours", "playtime_minutes", "playtime_seconds",
 
             // Dynamic placeholders (examples)
             "has_permission_<permission>",

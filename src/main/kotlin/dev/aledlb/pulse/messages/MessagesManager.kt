@@ -21,26 +21,26 @@ class MessagesManager {
             return
         }
 
-        // Load general messages
-        loadMessageSection("general", messagesConfig)
-        loadMessageSection("punishment", messagesConfig)
-        loadMessageSection("economy", messagesConfig)
-        loadMessageSection("coin", messagesConfig)
-        loadMessageSection("rank", messagesConfig)
-        loadMessageSection("permission", messagesConfig)
-        loadMessageSection("shop", messagesConfig)
-        loadMessageSection("tag", messagesConfig)
-        loadMessageSection("pulse", messagesConfig)
-        loadMessageSection("gamemode", messagesConfig)
+        loadAllMessages(messagesConfig)
 
         Logger.info("Loaded ${messages.size} messages from configuration")
     }
 
-    private fun loadMessageSection(section: String, config: org.spongepowered.configurate.ConfigurationNode) {
-        val sectionNode = config.node(section)
-        for (key in sectionNode.childrenMap().keys) {
-            val message = sectionNode.node(key.toString()).getString() ?: ""
-            messages["$section.$key"] = message
+    private fun loadAllMessages(node: org.spongepowered.configurate.ConfigurationNode, prefix: String = "") {
+        val children = node.childrenMap()
+        if (children.isEmpty()) {
+            val value = node.getString()
+            if (value != null && prefix.isNotEmpty()) {
+                messages[prefix] = value
+            }
+            return
+        }
+
+        for ((key, child) in children) {
+            val keyStr = key.toString()
+            val fullKey = if (prefix.isEmpty()) keyStr else "$prefix.$keyStr"
+            // Recurse to support arbitrarily nested sections; leaf string nodes get added
+            loadAllMessages(child, fullKey)
         }
     }
 

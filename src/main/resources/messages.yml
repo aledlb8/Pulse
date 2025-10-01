@@ -305,3 +305,9 @@ gamemode:
   usage-gmsp: "§cUsage: /gmsp [player]"
   modes-list: "§cModes: §7creative, survival, adventure, spectator"
   aliases: "§cAliases: §7/gmc, /gms, /gma, /gmsp"
+
+# ==================== PLAYTIME ====================
+playtime:
+  self: "§aYour playtime: §e{playtime} §7(§e{hours} hours§7)"
+  other: "§e{player}§a's playtime: §e{playtime} §7(§e{hours} hours§7)"
+  usage: "§cUsage: /playtime [player]"

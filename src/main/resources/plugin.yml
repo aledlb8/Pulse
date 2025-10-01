@@ -116,6 +116,10 @@ commands:
     description: Grant ranks to players with a GUI
     usage: /grant <player>
     permission: pulse.grant
+  playtime:
+    description: View playtime statistics
+    usage: /playtime [player]
+    permission: pulse.playtime
 
 permissions:
   pulse.*:
@@ -129,6 +133,8 @@ permissions:
       pulse.shop: true
       pulse.tag: true
       pulse.chat.color: true
+      pulse.playtime: true
+      pulse.playtime.others: true
   pulse.admin:
     description: Administrator access to pulse
   pulse.rank:
@@ -284,3 +290,9 @@ permissions:
     description: IP ban players
   pulse.punishment.tempipban:
     description: Temporarily IP ban players
+  pulse.playtime:
+    description: View own playtime
+  pulse.playtime.others:
+    description: View other players' playtime
+  pulse.update.notify:
+    description: Receive update notifications on join

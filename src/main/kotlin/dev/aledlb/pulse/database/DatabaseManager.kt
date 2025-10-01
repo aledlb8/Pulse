@@ -117,7 +117,7 @@ class DatabaseManager {
 
     private fun createTables() {
         transaction(database) {
-            SchemaUtils.create(PlayerDataTable, PlayerRanksTable, PlayerBalanceTable, PlayerTagDataTable, PunishmentTable, ActivePunishmentTable)
+            SchemaUtils.create(PlayerDataTable, PlayerRanksTable, PlayerBalanceTable, PlayerTagDataTable, PunishmentTable, ActivePunishmentTable, PlayerPlaytimeTable)
         }
         Logger.debug("Database tables created/verified")
     }
@@ -382,6 +382,42 @@ class DatabaseManager {
         }
     }
 
+    // Playtime operations
+    suspend fun savePlaytime(uuid: UUID, playtime: Long) {
+        newSuspendedTransaction(Dispatchers.IO, database) {
+            // Try to update first, if no rows affected then insert
+            val updated = PlayerPlaytimeTable.update({ PlayerPlaytimeTable.uuid eq uuid.toString() }) {
+                it[PlayerPlaytimeTable.playtime] = playtime
+                it[PlayerPlaytimeTable.lastUpdated] = System.currentTimeMillis()
+            }
+
+            if (updated == 0) {
+                PlayerPlaytimeTable.insert {
+                    it[PlayerPlaytimeTable.uuid] = uuid.toString()
+                    it[PlayerPlaytimeTable.playtime] = playtime
+                    it[PlayerPlaytimeTable.lastUpdated] = System.currentTimeMillis()
+                }
+            }
+        }
+    }
+
+    suspend fun loadPlaytime(uuid: UUID): Long? {
+        return newSuspendedTransaction(Dispatchers.IO, database) {
+            PlayerPlaytimeTable.select { PlayerPlaytimeTable.uuid eq uuid.toString() }
+                .map { it[PlayerPlaytimeTable.playtime] }
+                .singleOrNull()
+        }
+    }
+
+    suspend fun loadAllPlaytime(): Map<UUID, Long> {
+        return newSuspendedTransaction(Dispatchers.IO, database) {
+            PlayerPlaytimeTable.selectAll()
+                .associate {
+                    UUID.fromString(it[PlayerPlaytimeTable.uuid]) to it[PlayerPlaytimeTable.playtime]
+                }
+        }
+    }
+
     fun shutdown() {
         if (::dataSource.isInitialized && !dataSource.isClosed) {
             dataSource.close()
@@ -422,6 +458,14 @@ object PlayerTagDataTable : Table("player_tag_data") {
     val name = varchar("name", 16)
     val ownedTags = text("owned_tags")
     val activeTags = text("active_tags")
+    val lastUpdated = long("last_updated")
+
+    override val primaryKey = PrimaryKey(uuid)
+}
+
+object PlayerPlaytimeTable : Table("player_playtime") {
+    val uuid = varchar("uuid", 36)
+    val playtime = long("playtime") // Total playtime in milliseconds
     val lastUpdated = long("last_updated")
 
     override val primaryKey = PrimaryKey(uuid)

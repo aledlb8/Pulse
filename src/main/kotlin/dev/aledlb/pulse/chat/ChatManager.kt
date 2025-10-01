@@ -16,6 +16,9 @@ import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.scoreboard.Scoreboard
 import org.bukkit.scoreboard.Team
 import java.util.concurrent.ConcurrentHashMap
+import net.kyori.adventure.text.event.HoverEvent
+import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextDecoration
 
 class ChatManager : Listener {
 
@@ -27,6 +30,7 @@ class ChatManager : Listener {
     private var enableRankColors = true
     private var enableChatColors = false
     private var chatColorPermission = "pulse.chat.color"
+    private var enablePlayerHover = true
 
     // Tab list settings
     private var tabEnabled = true
@@ -68,6 +72,7 @@ class ChatManager : Listener {
         enableRankColors = chatNode.node("enable-rank-colors").getBoolean(true)
         enableChatColors = chatNode.node("enable-chat-colors").getBoolean(false)
         chatColorPermission = chatNode.node("chat-color-permission").getString("pulse.chat.color") ?: "pulse.chat.color"
+        enablePlayerHover = chatNode.node("enable-player-hover").getBoolean(true)
 
         // Tab list settings
         val tabNode = chatNode.node("tab")
@@ -118,6 +123,8 @@ class ChatManager : Listener {
         val player = event.player
         val rankManager = Pulse.getPlugin().rankManager
         val tagManager = Pulse.getPlugin().tagManager
+        val economyManager = Pulse.getPlugin().economyManager
+        val playtimeManager = Pulse.getPlugin().playtimeManager
         val playerData = rankManager.getPlayerData(player)
 
         // Get rank information
@@ -137,20 +144,104 @@ class ChatManager : Listener {
             message = translateColors(message)
         }
 
-        // Format the chat message
-        val formattedMessage = chatFormat
-            .replace("{prefix}", translateColors(prefix))
-            .replace("{tags}", tags)
-            .replace("{player}", player.name)
-            .replace("{suffix}", translateColors(suffix))
-            .replace("{message}", message)
-            .replace("{rank}", rank?.name ?: "")
-            .replace("{world}", player.world.name)
-
-        // Set the renderer to use our custom format
-        event.renderer { _, displayName, _, _ ->
-            messageSerializer.deserialize(formattedMessage)
+        // Set the renderer to use our custom format with hover
+        event.renderer { _, _, _, _ ->
+            buildChatMessage(player, prefix, suffix, tags, rank?.name ?: "", message,
+                rankManager, economyManager, playtimeManager, messageSerializer)
         }
+    }
+
+    private fun buildChatMessage(
+        player: Player,
+        prefix: String,
+        suffix: String,
+        tags: String,
+        rankName: String,
+        message: String,
+        rankManager: dev.aledlb.pulse.ranks.models.RankManager,
+        economyManager: dev.aledlb.pulse.economy.EconomyManager,
+        playtimeManager: dev.aledlb.pulse.playtime.PlaytimeManager,
+        messageSerializer: LegacyComponentSerializer
+    ): Component {
+        // Build prefix component
+        val prefixComponent = if (prefix.isNotEmpty()) {
+            messageSerializer.deserialize(translateColors(prefix))
+        } else {
+            Component.empty()
+        }
+
+        // Build tags component
+        val tagsComponent = if (tags.isNotEmpty()) {
+            messageSerializer.deserialize(tags)
+        } else {
+            Component.empty()
+        }
+
+        // Build player name component with hover
+        val playerNameComponent = if (enablePlayerHover) {
+            Component.text(player.name)
+                .hoverEvent(createPlayerHoverCard(player, rankName, rankManager, economyManager, playtimeManager))
+        } else {
+            Component.text(player.name)
+        }
+
+        // Build suffix component
+        val suffixComponent = if (suffix.isNotEmpty()) {
+            messageSerializer.deserialize(translateColors(suffix))
+        } else {
+            Component.empty()
+        }
+
+        // Build message component
+        val messageComponent = messageSerializer.deserialize(message)
+
+        // Combine all components based on chat format
+        return when {
+            chatFormat.contains("{tags}") -> {
+                prefixComponent
+                    .append(tagsComponent)
+                    .append(playerNameComponent)
+                    .append(suffixComponent)
+                    .append(Component.text(": "))
+                    .append(messageComponent)
+            }
+            else -> {
+                prefixComponent
+                    .append(playerNameComponent)
+                    .append(suffixComponent)
+                    .append(Component.text(": "))
+                    .append(messageComponent)
+            }
+        }
+    }
+
+    private fun createPlayerHoverCard(
+        player: Player,
+        rankName: String,
+        rankManager: dev.aledlb.pulse.ranks.models.RankManager,
+        economyManager: dev.aledlb.pulse.economy.EconomyManager,
+        playtimeManager: dev.aledlb.pulse.playtime.PlaytimeManager
+    ): HoverEvent<Component> {
+        val balance = economyManager.formatBalance(economyManager.getBalance(player))
+        val playtime = playtimeManager.getFormattedPlaytime(player.uniqueId)
+        val rank = rankManager.getRank(rankName)
+        val rankDisplay = rank?.name ?: rankName
+
+        val hoverText = Component.text()
+            .append(Component.text("Player: ", NamedTextColor.GRAY))
+            .append(Component.text(player.name, NamedTextColor.WHITE))
+            .append(Component.newline())
+            .append(Component.text("Rank: ", NamedTextColor.GRAY))
+            .append(Component.text(rankDisplay, NamedTextColor.YELLOW))
+            .append(Component.newline())
+            .append(Component.text("Balance: ", NamedTextColor.GRAY))
+            .append(Component.text(balance, NamedTextColor.GREEN))
+            .append(Component.newline())
+            .append(Component.text("Playtime: ", NamedTextColor.GRAY))
+            .append(Component.text(playtime, NamedTextColor.AQUA))
+            .build()
+
+        return HoverEvent.showText(hoverText)
     }
 
     @EventHandler

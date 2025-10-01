@@ -22,6 +22,9 @@ chat:
   # Enable rank colors in chat
   enable-rank-colors: true
 
+  # Enable player hover in chat
+  enable-player-hover: true
+
   # Allow players to use color codes in chat (&a, &b, etc.)
   enable-chat-colors: false
   chat-color-permission: "pulse.chat.color"

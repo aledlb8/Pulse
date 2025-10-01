@@ -16,6 +16,7 @@ import dev.aledlb.pulse.shop.ShopGUI
 import dev.aledlb.pulse.shop.ShopManager
 import dev.aledlb.pulse.tags.TagManager
 import dev.aledlb.pulse.util.Logger
+import dev.aledlb.pulse.util.UpdateChecker
 import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
 import java.util.concurrent.CompletableFuture
@@ -70,7 +71,11 @@ class Pulse : JavaPlugin() {
     lateinit var shopGUI: ShopGUI
         private set
 
+    lateinit var playtimeManager: dev.aledlb.pulse.playtime.PlaytimeManager
+        private set
+
     private var placeholderAPIHook: PlaceholderAPIHook? = null
+    private var updateChecker: UpdateChecker? = null
 
     private var startupTime: Long = 0
     private var isFullyLoaded = false
@@ -113,6 +118,10 @@ class Pulse : JavaPlugin() {
 
         if (::tagManager.isInitialized) {
             tagManager.saveAllData()
+        }
+
+        if (::playtimeManager.isInitialized) {
+            playtimeManager.shutdown()
         }
 
         if (::redisManager.isInitialized) {
@@ -180,6 +189,9 @@ class Pulse : JavaPlugin() {
         tagManager = TagManager(databaseManager)
         tagManager.initialize()
 
+        playtimeManager = dev.aledlb.pulse.playtime.PlaytimeManager(databaseManager)
+        playtimeManager.initialize()
+
         // Initialize after ranks, economy and tags for placeholder support
         chatManager = ChatManager()
         chatManager.initialize()
@@ -192,7 +204,7 @@ class Pulse : JavaPlugin() {
         placeholderManager = PlaceholderManager()
         placeholderManager.initialize()
 
-        val pulsePlaceholderProvider = PulsePlaceholderProvider(rankManager, permissionManager, economyManager)
+        val pulsePlaceholderProvider = PulsePlaceholderProvider(rankManager, permissionManager, economyManager, playtimeManager)
         placeholderManager.registerProvider(pulsePlaceholderProvider)
 
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
@@ -204,15 +216,20 @@ class Pulse : JavaPlugin() {
             }
         }
 
+        // Update checker
+        updateChecker = UpdateChecker(this)
+        updateChecker?.initialize()
+
         // Start rank expiration task
         dev.aledlb.pulse.tasks.RankExpirationTask.start(this, rankManager, permissionManager)
 
-        Logger.success("Initialized 10 core modules")
+        Logger.success("Initialized 11 core modules")
     }
 
     private fun registerEvents() {
         server.pluginManager.registerEvents(permissionManager, this)
         server.pluginManager.registerEvents(shopGUI, this)
+        server.pluginManager.registerEvents(playtimeManager, this)
         server.pluginManager.registerEvents(dev.aledlb.pulse.punishment.PunishmentListener(), this)
 
         Logger.success("Registered event listeners")
@@ -320,7 +337,11 @@ class Pulse : JavaPlugin() {
         getCommand("grant")?.setExecutor(grantCommand)
         getCommand("grant")?.tabCompleter = grantCommand
 
-        Logger.success("Registered 26 commands")
+        val playtimeCommand = PlaytimeCommand(playtimeManager)
+        getCommand("playtime")?.setExecutor(playtimeCommand)
+        getCommand("playtime")?.tabCompleter = playtimeCommand
+
+        Logger.success("Registered 27 commands")
     }
 
     fun isPluginFullyLoaded(): Boolean = isFullyLoaded
