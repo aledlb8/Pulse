@@ -217,7 +217,7 @@ Quick gamemode switching with shorthand aliases and permission support.
 - `/gmsp [player]` - Spectator mode
 
 ### 💬 Chat System
-Advanced chat formatting with rank integration and color support.
+Advanced chat formatting with rank integration, color support, and customizable join/leave messages.
 
 **Features:**
 - Automatic rank prefix/suffix in chat
@@ -225,6 +225,9 @@ Advanced chat formatting with rank integration and color support.
 - PlaceholderAPI integration for chat format
 - Configurable chat format via YAML
 - Persistent display name formatting
+- Customizable join/leave messages with color support
+- Toggle join/leave messages on/off independently
+- %player% placeholder for player names in messages
 
 ## 🔧 Technical Features
 
