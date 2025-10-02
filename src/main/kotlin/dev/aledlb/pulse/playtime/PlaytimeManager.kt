@@ -7,6 +7,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
@@ -69,9 +70,21 @@ class PlaytimeManager(private val databaseManager: DatabaseManager) : Listener {
             )
             Logger.debug("Playtime autosave scheduled via AsyncScheduler")
             return
-        } catch (_: Throwable) {
-            // Fallback not available - AsyncScheduler should be available in Paper 1.20+
-            Logger.error("Failed to schedule playtime autosave - AsyncScheduler not available")
+        } catch (e: Throwable) {
+            Logger.warn("AsyncScheduler not available (${e.message}), falling back to Bukkit scheduler")
+        }
+
+        // Fallback to Bukkit scheduler for older Paper versions or Spigot
+        try {
+            autoSaveTaskBukkit = Bukkit.getScheduler().runTaskTimerAsynchronously(
+                Pulse.getPlugin(),
+                Runnable { saveAllOnlinePlayers() },
+                20L * 60 * 5, // 5 minutes initial delay
+                20L * 60 * 5  // 5 minutes interval
+            )
+            Logger.debug("Playtime autosave scheduled via Bukkit async scheduler (non-Folia)")
+        } catch (e: Exception) {
+            Logger.error("Failed to schedule playtime autosave with any method: ${e.message}", e)
         }
     }
 
