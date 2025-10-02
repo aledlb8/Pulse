@@ -34,9 +34,26 @@ class ChatManager : Listener {
 
     // Tab list settings
     private var tabEnabled = true
-    private var tabHeader = ""
-    private var tabFooter = ""
     private var updateTabInterval = 20L // ticks
+    private var headerFooterInterval = 40L // ticks
+    private var showPing = true
+    private var pingPosition = "after"
+    private var pingFormat = " &8[{ping_color}{ping}ms&8]"
+    private val pingColors = mutableMapOf(
+        "excellent" to "&a",
+        "good" to "&2",
+        "okay" to "&e",
+        "poor" to "&6",
+        "bad" to "&c",
+        "terrible" to "&4"
+    )
+    private var headerLines = mutableListOf<String>()
+    private var footerLines = mutableListOf<String>()
+    private var sortingEnabled = true
+    private var sortBy = "rank"
+    private var reverseRankOrder = false
+    private var headerEnabled = true
+    private var footerEnabled = true
 
     // Nametag settings
     private var nametagEnabled = true
@@ -51,6 +68,8 @@ class ChatManager : Listener {
     // Internal systems
     private val playerTeams = ConcurrentHashMap<String, Team>()
     private var tabUpdateTask: Int = -1
+    private var headerFooterTask: Int = -1
+    private val serverStartTime = System.currentTimeMillis()
 
     fun initialize() {
         loadConfig()
@@ -84,9 +103,43 @@ class ChatManager : Listener {
         val tabNode = chatNode.node("tab")
         tabEnabled = tabNode.node("enabled").getBoolean(true)
         tabFormat = tabNode.node("format").getString("{prefix}{player}{suffix}") ?: "{prefix}{player}{suffix}"
-        tabHeader = tabNode.node("header").getString("") ?: ""
-        tabFooter = tabNode.node("footer").getString("") ?: ""
+
+        // Ping settings
+        showPing = tabNode.node("show-ping").getBoolean(true)
+        pingPosition = tabNode.node("ping-position").getString("after") ?: "after"
+        pingFormat = tabNode.node("ping-format").getString(" &8[{ping_color}{ping}ms&8]") ?: " &8[{ping_color}{ping}ms&8]"
+
+        val pingColorsNode = tabNode.node("ping-colors")
+        if (!pingColorsNode.virtual()) {
+            pingColors["excellent"] = pingColorsNode.node("excellent").getString("&a") ?: "&a"
+            pingColors["good"] = pingColorsNode.node("good").getString("&2") ?: "&2"
+            pingColors["okay"] = pingColorsNode.node("okay").getString("&e") ?: "&e"
+            pingColors["poor"] = pingColorsNode.node("poor").getString("&6") ?: "&6"
+            pingColors["bad"] = pingColorsNode.node("bad").getString("&c") ?: "&c"
+            pingColors["terrible"] = pingColorsNode.node("terrible").getString("&4") ?: "&4"
+        }
+
+        // Header settings
+        val headerNode = tabNode.node("header")
+        headerEnabled = headerNode.node("enabled").getBoolean(true)
+        headerLines.clear()
+        headerLines.addAll(headerNode.node("lines").getList(String::class.java) ?: emptyList())
+
+        // Footer settings
+        val footerNode = tabNode.node("footer")
+        footerEnabled = footerNode.node("enabled").getBoolean(true)
+        footerLines.clear()
+        footerLines.addAll(footerNode.node("lines").getList(String::class.java) ?: emptyList())
+
+        // Sorting settings
+        val sortingNode = tabNode.node("sorting")
+        sortingEnabled = sortingNode.node("enabled").getBoolean(true)
+        sortBy = sortingNode.node("sort-by").getString("rank") ?: "rank"
+        reverseRankOrder = sortingNode.node("reverse-rank-order").getBoolean(false)
+
         updateTabInterval = tabNode.node("update-interval").getLong(20L)
+        headerFooterInterval = tabNode.node("header-footer-interval").getLong(40L)
+        if (headerFooterInterval <= 0) headerFooterInterval = updateTabInterval
 
         // Nametag settings
         val nametagNode = chatNode.node("nametag")
@@ -130,6 +183,16 @@ class ChatManager : Listener {
             updateTabInterval,
             updateTabInterval
         ).hashCode()
+
+        // Start separate header/footer update task if configured
+        if (headerFooterInterval != updateTabInterval && headerFooterInterval > 0) {
+            headerFooterTask = Bukkit.getGlobalRegionScheduler().runAtFixedRate(
+                Pulse.getPlugin(),
+                { _ -> updateAllHeaders() },
+                headerFooterInterval,
+                headerFooterInterval
+            ).hashCode()
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -193,12 +256,17 @@ class ChatManager : Listener {
             Component.empty()
         }
 
-        // Build player name component with hover
+        // Extract color before {player} placeholder to apply to player name
+        val translatedFormat = translateColors(chatFormat)
+        val playerColorMatch = Regex("((?:[§&][0-9a-fk-orA-FK-OR])+)[^§&]*\\{player}").find(translatedFormat)
+        val playerColor = playerColorMatch?.groupValues?.get(1)?.replace("&", "§") ?: ""
+
+        // Build player name component with hover and color
         val playerNameComponent = if (enablePlayerHover) {
-            Component.text(player.name)
+            messageSerializer.deserialize(playerColor + player.name)
                 .hoverEvent(createPlayerHoverCard(player, rankName, rankManager, economyManager, playtimeManager))
         } else {
-            Component.text(player.name)
+            messageSerializer.deserialize(playerColor + player.name)
         }
 
         // Build suffix component
@@ -208,27 +276,76 @@ class ChatManager : Listener {
             Component.empty()
         }
 
-        // Build message component
-        val messageComponent = messageSerializer.deserialize(message)
+        // Extract the color before {message} placeholder to apply to message
+        val messageColorMatch = Regex("((?:[§&][0-9a-fk-orA-FK-OR])+)[^§&]*\\{message}").find(translatedFormat)
+        val messageColor = messageColorMatch?.groupValues?.get(1) ?: ""
 
-        // Combine all components based on chat format
-        return when {
-            chatFormat.contains("{tags}") -> {
-                prefixComponent
-                    .append(tagsComponent)
-                    .append(playerNameComponent)
-                    .append(suffixComponent)
-                    .append(Component.text(": "))
-                    .append(messageComponent)
-            }
-            else -> {
-                prefixComponent
-                    .append(playerNameComponent)
-                    .append(suffixComponent)
-                    .append(Component.text(": "))
-                    .append(messageComponent)
+        // Build message component with inherited color if needed
+        val messageWithColor = if (messageColor.isNotEmpty() && !message.contains('§') && !message.contains('&')) {
+            messageColor + message
+        } else {
+            message
+        }
+        val messageComponent = messageSerializer.deserialize(messageWithColor)
+
+        // Build component by directly replacing placeholders
+        var result: Component = Component.empty()
+
+        // Split format into parts and build component
+        var currentFormat = translatedFormat
+
+        // Process each placeholder in order
+        val parts = mutableListOf<Component>()
+        var remaining = currentFormat
+
+        while (remaining.isNotEmpty()) {
+            when {
+                remaining.startsWith("{prefix}") -> {
+                    parts.add(prefixComponent)
+                    remaining = remaining.removePrefix("{prefix}")
+                }
+                remaining.startsWith("{tags}") -> {
+                    parts.add(tagsComponent)
+                    remaining = remaining.removePrefix("{tags}")
+                }
+                remaining.startsWith("{player}") -> {
+                    parts.add(playerNameComponent)
+                    remaining = remaining.removePrefix("{player}")
+                }
+                remaining.startsWith("{suffix}") -> {
+                    parts.add(suffixComponent)
+                    remaining = remaining.removePrefix("{suffix}")
+                }
+                remaining.startsWith("{message}") -> {
+                    parts.add(messageComponent)
+                    remaining = remaining.removePrefix("{message}")
+                }
+                else -> {
+                    // Find next placeholder or end of string
+                    val nextPlaceholder = listOf(
+                        remaining.indexOf("{prefix}"),
+                        remaining.indexOf("{tags}"),
+                        remaining.indexOf("{player}"),
+                        remaining.indexOf("{suffix}"),
+                        remaining.indexOf("{message}")
+                    ).filter { it > 0 }.minOrNull() ?: remaining.length
+
+                    val text = remaining.substring(0, nextPlaceholder)
+                    if (text.isNotEmpty()) {
+                        parts.add(messageSerializer.deserialize(text))
+                    }
+                    remaining = remaining.substring(nextPlaceholder)
+                }
             }
         }
+
+        // Combine all parts
+        result = parts.firstOrNull() ?: Component.empty()
+        parts.drop(1).forEach { part ->
+            result = result.append(part)
+        }
+
+        return result
     }
 
     private fun createPlayerHoverCard(
@@ -328,35 +445,41 @@ class ChatManager : Listener {
         var team = scoreboard.getTeam(teamName)
         if (team == null) {
             team = scoreboard.registerNewTeam(teamName)
-
-            // Set team prefix and suffix
-            val prefix = rank?.prefix ?: ""
-            val suffix = rank?.suffix ?: ""
-            val tags = tagManager.getFormattedTagsForPlayer(player, "display")
-
-            val formattedPrefix = nametagFormat
-                .replace("{prefix}", translateColors(prefix))
-                .replace("{tags}", tags)
-                .replace("{player}", "")
-                .replace("{suffix}", "")
-                .replace("{rank}", rank?.name ?: "")
-
-            val formattedSuffix = nametagFormat
-                .replace("{prefix}", "")
-                .replace("{tags}", "")
-                .replace("{player}", "")
-                .replace("{suffix}", translateColors(suffix))
-                .replace("{rank}", "")
-
-            // Set team prefix/suffix using Adventure API
-            val serializer = LegacyComponentSerializer.legacySection()
-            team.prefix(serializer.deserialize(formattedPrefix.take(64)))
-            team.suffix(serializer.deserialize(formattedSuffix.take(64)))
-
             // Configure team settings
             team.setAllowFriendlyFire(true)
             team.setCanSeeFriendlyInvisibles(true)
         }
+
+        // Always update team prefix and suffix (in case format or rank changed)
+        val prefix = rank?.prefix ?: ""
+        val suffix = rank?.suffix ?: ""
+        val tags = tagManager.getFormattedTagsForPlayer(player, "display")
+
+        // Process the format string
+        val translatedFormat = nametagFormat
+            .replace("{prefix}", translateColors(prefix))
+            .replace("{tags}", tags)
+            .replace("{suffix}", translateColors(suffix))
+            .replace("{rank}", rank?.name ?: "")
+
+        // Split at {player} placeholder
+        val playerIndex = translatedFormat.indexOf("{player}")
+        val formattedPrefix = if (playerIndex >= 0) {
+            translatedFormat.substring(0, playerIndex)
+        } else {
+            translatedFormat
+        }
+
+        val formattedSuffix = if (playerIndex >= 0) {
+            translatedFormat.substring(playerIndex + "{player}".length)
+        } else {
+            ""
+        }
+
+        // Set team prefix/suffix using Adventure API
+        val serializer = LegacyComponentSerializer.legacySection()
+        team.prefix(serializer.deserialize(formattedPrefix.take(64)))
+        team.suffix(serializer.deserialize(formattedSuffix.take(64)))
 
         // Add player to team
         team.addEntry(player.name)
@@ -378,13 +501,36 @@ class ChatManager : Listener {
         val suffix = rank?.suffix ?: ""
         val tags = tagManager.getFormattedTagsForPlayer(player, "display")
 
-        val formattedName = tabFormat
+        // Get ping
+        val ping = player.ping
+        val pingColor = getPingColor(ping)
+        val pingBars = getPingBars(ping)
+
+        // Format ping display
+        val pingDisplay = if (showPing && pingPosition != "none") {
+            pingFormat
+                .replace("{ping}", ping.toString())
+                .replace("{ping_color}", pingColor)
+                .replace("{ping_bars}", pingBars)
+        } else ""
+
+        var formattedName = translateColors(tabFormat)
             .replace("{prefix}", translateColors(prefix))
             .replace("{tags}", tags)
             .replace("{player}", player.name)
             .replace("{suffix}", translateColors(suffix))
             .replace("{rank}", rank?.name ?: "")
             .replace("{world}", player.world.name)
+            .replace("{ping}", ping.toString())
+            .replace("{ping_color}", translateColors(pingColor))
+            .replace("{ping_bars}", pingBars)
+
+        // Add ping display based on position
+        formattedName = when (pingPosition.lowercase()) {
+            "before" -> translateColors(pingDisplay) + formattedName
+            "after" -> formattedName + translateColors(pingDisplay)
+            else -> formattedName
+        }
 
         // Update player list name using Adventure API
         val serializer = LegacyComponentSerializer.legacySection()
@@ -392,16 +538,63 @@ class ChatManager : Listener {
     }
 
     private fun updateTabHeader(player: Player) {
-        if (!tabEnabled || (tabHeader.isEmpty() && tabFooter.isEmpty())) return
+        if (!tabEnabled) return
 
-        val processedHeader = processPlaceholders(tabHeader, player)
-        val processedFooter = processPlaceholders(tabFooter, player)
+        // Build header
+        val headerText = if (headerEnabled && headerLines.isNotEmpty()) {
+            buildHeaderFooter(headerLines, player)
+        } else ""
+
+        // Build footer
+        val footerText = if (footerEnabled && footerLines.isNotEmpty()) {
+            buildHeaderFooter(footerLines, player)
+        } else ""
 
         val serializer = LegacyComponentSerializer.legacySection()
         player.sendPlayerListHeaderAndFooter(
-            serializer.deserialize(translateColors(processedHeader)),
-            serializer.deserialize(translateColors(processedFooter))
+            serializer.deserialize(translateColors(headerText)),
+            serializer.deserialize(translateColors(footerText))
         )
+    }
+
+    private fun buildHeaderFooter(lines: List<String>, player: Player): String {
+        return lines.joinToString("\n") { line ->
+            val processed = processPlaceholders(line, player)
+            processed
+        }
+    }
+
+    private fun centerText(text: String, width: Int): String {
+        // Remove both & and § color codes for length calculation
+        val cleanText = text.replace(Regex("[&§][0-9a-fk-orA-FK-OR]"), "")
+
+        // Calculate pixel width for better centering (Minecraft default font)
+        val pixelWidth = calculatePixelWidth(cleanText)
+        val maxPixels = width * 4 // Approximate: ~4 pixels per character for average
+        val pixelPadding = ((maxPixels - pixelWidth) / 2).coerceAtLeast(0)
+        val spaces = (pixelPadding / 4).coerceAtLeast(0) // Convert pixels to spaces
+
+        return " ".repeat(spaces) + text
+    }
+
+    private fun calculatePixelWidth(text: String): Int {
+        // Approximate pixel widths for Minecraft's default font
+        var pixels = 0
+        for (char in text) {
+            pixels += when (char) {
+                'i', 'I', '!', '|', '.', ',', ':', ';', '\'' -> 2
+                'l', 't', 'f', 'k' -> 3
+                ' ' -> 3
+                'I' -> 4
+                in "abcdefghjmnopqrsuvwxyz" -> 5
+                in "ABCDEFGHJKLMNOPQRSTUVWXYZ" -> 5
+                in "0123456789" -> 5
+                '@' -> 6
+                else -> 5
+            }
+            pixels += 1 // Character spacing
+        }
+        return pixels
     }
 
     private fun updateAllTabLists() {
@@ -412,13 +605,40 @@ class ChatManager : Listener {
         }
     }
 
+    private fun updateAllHeaders() {
+        if (!tabEnabled) return
+
+        Bukkit.getOnlinePlayers().forEach { player ->
+            updateTabHeader(player)
+        }
+    }
+
     private fun processPlaceholders(text: String, player: Player): String {
         val rankManager = Pulse.getPlugin().rankManager
         val tagManager = Pulse.getPlugin().tagManager
         val economyManager = Pulse.getPlugin().economyManager
+        val playtimeManager = Pulse.getPlugin().playtimeManager
         val playerData = rankManager.getPlayerData(player)
         val rank = rankManager.getRank(playerData.rank)
         val tags = tagManager.getFormattedTagsForPlayer(player, "display")
+
+        // Get ping
+        val ping = player.ping
+        val pingColor = getPingColor(ping)
+
+        // Get TPS
+        val tps = String.format("%.2f", Bukkit.getTPS()[0])
+
+        // Get server uptime
+        val uptime = formatDuration((System.currentTimeMillis() - serverStartTime) / 1000)
+
+        // Get current time and date
+        val now = java.time.LocalDateTime.now()
+        val time = now.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"))
+        val date = now.format(java.time.format.DateTimeFormatter.ofPattern("MM/dd/yyyy"))
+
+        // Get playtime
+        val playtime = playtimeManager.getFormattedPlaytime(player.uniqueId)
 
         return text
             .replace("{player}", player.name)
@@ -431,7 +651,27 @@ class ChatManager : Listener {
             .replace("{balance}", economyManager.formatBalance(economyManager.getBalance(player)))
             .replace("{online}", Bukkit.getOnlinePlayers().size.toString())
             .replace("{max}", Bukkit.getMaxPlayers().toString())
+            .replace("{ping}", ping.toString())
+            .replace("{ping_color}", pingColor)
+            .replace("{tps}", tps)
+            .replace("{server_uptime}", uptime)
+            .replace("{time}", time)
+            .replace("{date}", date)
+            .replace("{playtime}", playtime)
             .replace("\\n", "\n")
+    }
+
+    private fun formatDuration(seconds: Long): String {
+        val days = seconds / 86400
+        val hours = (seconds % 86400) / 3600
+        val minutes = (seconds % 3600) / 60
+
+        return buildString {
+            if (days > 0) append("${days}d ")
+            if (hours > 0) append("${hours}h ")
+            if (minutes > 0) append("${minutes}m")
+            if (isEmpty()) append("0m")
+        }.trim()
     }
 
     private fun cleanupPlayer(player: Player) {
@@ -446,6 +686,29 @@ class ChatManager : Listener {
 
     private fun translateColors(text: String): String {
         return text.replace('&', '§')
+    }
+
+    private fun getPingColor(ping: Int): String {
+        return when {
+            ping < 50 -> pingColors["excellent"] ?: "&a"
+            ping < 100 -> pingColors["good"] ?: "&2"
+            ping < 150 -> pingColors["okay"] ?: "&e"
+            ping < 200 -> pingColors["poor"] ?: "&6"
+            ping < 300 -> pingColors["bad"] ?: "&c"
+            else -> pingColors["terrible"] ?: "&4"
+        }
+    }
+
+    private fun getPingBars(ping: Int): String {
+        val bars = when {
+            ping < 50 -> "▌▌▌▌▌"
+            ping < 100 -> "▌▌▌▌"
+            ping < 150 -> "▌▌▌"
+            ping < 200 -> "▌▌"
+            else -> "▌"
+        }
+        val color = getPingColor(ping)
+        return "$color$bars"
     }
 
     fun updatePlayerFormats(player: Player) {
@@ -468,6 +731,7 @@ class ChatManager : Listener {
         // Stop existing tasks
         // Note: Cannot directly cancel global region tasks by ID in Folia
         tabUpdateTask = -1
+        headerFooterTask = -1
 
         // Cleanup
         setupScoreboard()
@@ -487,6 +751,7 @@ class ChatManager : Listener {
         // Note: Cannot directly cancel global region tasks by ID in Folia
         // The task will be automatically cancelled when the plugin is disabled
         tabUpdateTask = -1
+        headerFooterTask = -1
 
         // Clean up all teams
         val scoreboard = Bukkit.getScoreboardManager()?.mainScoreboard

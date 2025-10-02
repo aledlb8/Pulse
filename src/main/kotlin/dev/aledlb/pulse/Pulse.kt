@@ -6,6 +6,7 @@ import dev.aledlb.pulse.config.ConfigManager
 import dev.aledlb.pulse.database.DatabaseManager
 import dev.aledlb.pulse.database.RedisManager
 import dev.aledlb.pulse.economy.EconomyManager
+import dev.aledlb.pulse.listeners.CommandBlockerListener
 import dev.aledlb.pulse.messages.MessagesManager
 import dev.aledlb.pulse.placeholders.PlaceholderAPIHook
 import dev.aledlb.pulse.placeholders.PlaceholderManager
@@ -220,7 +221,8 @@ class Pulse : JavaPlugin() {
             playtimeManager,
             profileGUI,
             punishmentHistoryGUI,
-            PunishmentListener()
+            PunishmentListener(),
+            CommandBlockerListener()
         )
         Logger.success("Registered event listeners")
 

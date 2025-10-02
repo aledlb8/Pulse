@@ -29,7 +29,8 @@ chat:
 
   # Chat format
   # Placeholders: {prefix}, {tags}, {player}, {suffix}, {message}, {rank}, {world}
-  format: "{prefix}{tags}{player}{suffix}: {message}"
+  # Supports color codes using & (e.g., &7, &a, &l, etc.)
+  format: "{prefix}{tags}&7{player}&r{suffix} &7» {message}"
 
   # Enable rank colors in chat
   enable-rank-colors: true
@@ -53,22 +54,116 @@ chat:
   # Tab list settings
   tab:
     enabled: true
+
     # Tab format for player names
-    # Placeholders: {prefix}, {tags}, {player}, {suffix}, {rank}, {world}
-    format: "{prefix}{tags}{player}{suffix}"
+    # Placeholders: {prefix}, {tags}, {player}, {suffix}, {rank}, {world}, {ping}, {ping_color}, {ping_bars}
+    # Supports color codes using & (e.g., &7, &a, &l, etc.)
+    format: "{prefix}{tags}&f{player}{suffix}"
+
+    # Show ping in tab list
+    show-ping: true
+    # Ping position: "before", "after", or "none"
+    ping-position: "after"
+    # Ping format: {ping_color}{ping}ms or {ping_bars}
+    ping-format: " &8[{ping_color}{ping}ms&8]"
+    # Ping colors based on latency
+    ping-colors:
+      excellent: "&a"  # < 50ms
+      good: "&2"       # 50-100ms
+      okay: "&e"       # 100-150ms
+      poor: "&6"       # 150-200ms
+      bad: "&c"        # 200-300ms
+      terrible: "&4"   # > 300ms
 
     # Tab header and footer
-    # Placeholders: {player}, {prefix}, {tags}, {suffix}, {rank}, {world}, {balance}, {online}, {max}
+    # Placeholders: {player}, {prefix}, {tags}, {suffix}, {rank}, {world}, {balance}, {online}, {max},
+    #               {tps}, {ping}, {playtime}, {server_uptime}, {time}, {date}
     # Use \n for new lines
-    header: "&d&l◆ &5&lPULSE SERVER &d&l◆\n&7Welcome {player}!"
-    footer: "\n&7Rank: {rank} &8| &7Balance: {balance}\n&7Online: &a{online}&7/&a{max}"
+    header:
+      enabled: true
+      # Multiple lines for header
+      lines:
+        - ""
+        - "&d&l◆━━━━━━━━━━━━━━━━━━━━━━━━━◆"
+        - "&5&lPULSE SERVER"
+        - "&d&l◆━━━━━━━━━━━━━━━━━━━━━━━━━◆"
+        - ""
+
+    footer:
+      enabled: true
+      # Multiple lines for footer
+      lines:
+        - ""
+        - "&7&m                                                  "
+        - "&7Rank: &f{rank} &8| &7Balance: &a{balance}"
+        - "&7Online: &a{online}&7/&a{max} &8| &7Ping: {ping_color}{ping}ms"
+        - "&7&m                                                  "
+        - ""
+
+    # Sorting options
+    sorting:
+      enabled: true
+      # Sort by: "rank", "name", "ping", "playtime"
+      sort-by: "rank"
+      # If sort by rank, use rank weight (higher weight = higher position)
+      reverse-rank-order: false
 
     # Update interval in ticks (20 ticks = 1 second)
     update-interval: 20
+    # Update header/footer interval separately (set higher for better performance)
+    # Set to 0 to update at same rate as player list
+    header-footer-interval: 40
 
   # Nametag settings (name above player head)
   nametag:
     enabled: true
     # Nametag format
     # Placeholders: {prefix}, {tags}, {player}, {suffix}, {rank}
+    # Note: Nametag does NOT support "&" color codes in the format string
+    # Colors come from rank prefix/suffix only
     format: "{prefix}{tags}{player}{suffix}"
+
+# ==================== COMMAND BLOCKER ====================
+# Block specific commands from being executed
+command-blocker:
+  enabled: true
+  # List of commands to block (without the /)
+  # These commands will be intercepted at the lowest priority
+  blocked-commands:
+    - "plugins"
+    - "pl"
+    - "bukkit:plugins"
+    - "bukkit:pl"
+    - "bukkit:?"
+    - "bukkit:help"
+    - "bukkit:ver"
+    - "bukkit:version"
+    - "bukkit:about"
+    - "??"
+    - "?"
+    - "about"
+    - "ver"
+    - "version"
+  # Message to send when a blocked command is executed
+  # Supports MiniMessage format
+  blocked-message: "<red>Unknown command. Type \"/help\" for help."
+
+# ==================== CUSTOM HELP COMMAND ====================
+# Configure the custom /help command
+help-command:
+  enabled: true
+  # Help message lines (supports MiniMessage format)
+  # Placeholders: {player}, {prefix}, {tags}, {suffix}, {rank}, {world}, {balance}
+  message:
+    - "<gradient:#5e4fa2:#f79459>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</gradient>"
+    - "<gradient:#f79459:#5e4fa2><bold>                    SERVER HELP</bold></gradient>"
+    - "<gradient:#5e4fa2:#f79459>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</gradient>"
+    - ""
+    - "  <yellow>/tag</yellow> <gray>- Manage your tags</gray>"
+    - "  <yellow>/shop</yellow> <gray>- Open the server shop</gray>"
+    - "  <yellow>/balance</yellow> <gray>- Check your coin balance</gray>"
+    - "  <yellow>/playtime</yellow> <gray>- View your playtime statistics</gray>"
+    - "  <yellow>/profile</yellow> <gray>- View your player profile</gray>"
+    - "  <yellow>/report</yellow> <gray>- Report a player</gray>"
+    - ""
+    - "<gradient:#5e4fa2:#f79459>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</gradient>"
