@@ -114,6 +114,18 @@ The shaded jar is created at `build/libs/Pulse-1.0-all.jar`.
 - `pulse.playtime` - View own playtime
 - `pulse.playtime.others` - View other players' playtime
 
+### Profile Permissions
+- `pulse.profile` - View own profile
+- `pulse.profile.others` - View other players' profiles
+- `pulse.profile.staff` - Access staff-only features in profiles
+
+### Report Permissions
+- `pulse.report` - Report players
+- `pulse.reports.notify` - Receive notifications when players are reported
+
+### Miscellaneous Permissions
+- `pulse.update.notify` - Receive update notifications on join
+
 </details>
 
 ## Placeholders

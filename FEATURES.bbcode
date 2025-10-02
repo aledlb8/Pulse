@@ -147,6 +147,43 @@ Track, display, and persist player playtime with Folia-safe scheduling and datab
 [*][font=courier]/playtime <player>[/font] - View another player's playtime (requires [font=courier]pulse.playtime.others[/font])
 [/list]
 
+[size=4][b]👤 Profile System[/b][/size]
+View comprehensive player profiles with stats, ranks, playtime, economy, and tags in a GUI.
+
+[b]Features:[/b]
+[list]
+[*]Interactive GUI-based player profiles
+[*]Display player head with UUID and online/offline status
+[*]Show current rank and balance with currency name
+[*]Display total playtime (formatted as days/hours/minutes)
+[*]View active and owned tags (up to 5 shown, with counter for more)
+[*]Staff button to view punishment history (requires [font=courier]pulse.profile.staff[/font])
+[*]View own profile or other players' profiles with permission
+[/list]
+
+[b]Commands:[/b]
+[list]
+[*][font=courier]/profile[/font] - View your own profile
+[*][font=courier]/profile <player>[/font] - View another player's profile (requires [font=courier]pulse.profile.others[/font])
+[/list]
+
+[size=4][b]📢 Report System[/b][/size]
+Command-based player reporting system with staff notifications and database logging.
+
+[b]Features:[/b]
+[list]
+[*]Report online or offline players with [font=courier]/report <player> <reason>[/font]
+[*]Minimum 5-character reason required
+[*]Assigns unique report ID for tracking
+[*]Sends confirmation message to reporter with report ID
+[*]Notifies all online staff members with [font=courier]pulse.reports.notify[/font] permission
+[/list]
+
+[b]Commands:[/b]
+[list]
+[*][font=courier]/report <player> <reason>[/font] - Report a player for staff review
+[/list]
+
 [size=4][b]🏷️ Tag System[/b][/size]
 Player name tags with prefixes, suffixes, colors, and decorations.
 
