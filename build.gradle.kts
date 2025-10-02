@@ -36,7 +36,7 @@ dependencies {
     implementation("com.zaxxer:HikariCP:5.0.1")
     implementation("org.xerial:sqlite-jdbc:3.44.1.0")
     implementation("com.mysql:mysql-connector-j:8.2.0")
-    implementation("org.postgresql:postgresql:42.7.1")
+    implementation("org.postgresql:postgresql:42.7.7")
 
     // Redis for network sync
     implementation("redis.clients:jedis:5.1.0")
@@ -45,7 +45,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 
     // Logging
-    implementation("ch.qos.logback:logback-classic:1.4.11")
+    implementation("ch.qos.logback:logback-classic:1.5.13")
 
     // JSON for data serialization
     implementation("com.google.code.gson:gson:2.10.1")
