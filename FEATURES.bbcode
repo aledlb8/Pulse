@@ -275,6 +275,40 @@ Advanced chat formatting with rank integration, color support, and customizable 
 [*][font=courier]%player%[/font] placeholder for player names in messages
 [/list]
 
+[size=4][b]🚫 Command Blocker System[/b][/size]
+Block unwanted commands and provide custom help messages with full tab completion filtering.
+
+[b]Features:[/b]
+[list]
+[*]Block any command from being executed by players
+[*]Configurable list of blocked commands in [font=courier]config.yml[/font]
+[*]Custom blocked command message with MiniMessage support
+[*]Remove blocked commands from tab completions automatically
+[*]Custom help command system that overrides default [font=courier]/help[/font]
+[*]Multi-line help messages with full formatting support
+[*]Toggle help command on/off independently
+[*]Case-insensitive command matching for reliability
+[*]Lowest priority event handling to intercept before other plugins
+[/list]
+
+[b]Configuration:[/b]
+[code]
+command-blocker:
+  blocked-commands:
+    - "plugins"
+    - "pl"
+    - "version"
+    - "ver"
+  blocked-message: "<red>Unknown command. Type \"/help\" for help."
+
+help-command:
+  enabled: true
+  message:
+    - "<yellow>Available Commands:"
+    - "<gray>• <white>/spawn <gray>- Teleport to spawn"
+    - "<gray>• <white>/home <gray>- Teleport home"
+[/code]
+
 [size=5][b]🔧 Technical Features[/b][/size]
 
 [size=4][b]🗄️ Database[/b][/size]
