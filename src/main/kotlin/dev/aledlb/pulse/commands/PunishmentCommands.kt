@@ -1,6 +1,9 @@
 package dev.aledlb.pulse.commands
 
 import dev.aledlb.pulse.Pulse
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.command.ConsoleCommandSender
@@ -263,19 +266,26 @@ class UnbanCommand : BasePunishmentCommand("unban", "pulse.punishment.unban", re
     override fun executePunishment(sender: CommandSender, target: Player?, targetOffline: UUID, targetName: String, args: Array<out String>) {
         val (punisherUuid, punisherName) = getPunisherInfo(sender)
 
-        val success = Pulse.getPlugin().punishmentManager.service.unban(targetOffline, targetName, punisherUuid, punisherName)
-        if (success) {
-            val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
-                "punishment.unban-success",
-                "player" to targetName
-            )
-            sendMessage(sender, msg)
-        } else {
-            val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
-                "punishment.unban-not-banned",
-                "player" to targetName
-            )
-            sendMessage(sender, msg)
+        Pulse.getPlugin().punishmentManager.service.unban(targetOffline, targetName, punisherUuid, punisherName) { success ->
+            val msg = if (success) {
+                Pulse.getPlugin().messagesManager.getFormattedMessage(
+                    "punishment.unban-success",
+                    "player" to targetName
+                )
+            } else {
+                Pulse.getPlugin().messagesManager.getFormattedMessage(
+                    "punishment.unban-not-banned",
+                    "player" to targetName
+                )
+            }
+
+            if (sender is Player) {
+                sender.scheduler.run(Pulse.getPlugin(), { _ ->
+                    sendMessage(sender, msg)
+                }, null)
+            } else {
+                sendMessage(sender, msg)
+            }
         }
     }
 }
@@ -320,19 +330,26 @@ class UnmuteCommand : BasePunishmentCommand("unmute", "pulse.punishment.unmute",
     override fun executePunishment(sender: CommandSender, target: Player?, targetOffline: UUID, targetName: String, args: Array<out String>) {
         val (punisherUuid, _) = getPunisherInfo(sender)
 
-        val success = Pulse.getPlugin().punishmentManager.service.unmute(targetOffline, targetName, punisherUuid)
-        if (success) {
-            val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
-                "punishment.unmute-success",
-                "player" to targetName
-            )
-            sendMessage(sender, msg)
-        } else {
-            val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
-                "punishment.unmute-not-muted",
-                "player" to targetName
-            )
-            sendMessage(sender, msg)
+        Pulse.getPlugin().punishmentManager.service.unmute(targetOffline, targetName, punisherUuid) { success ->
+            val msg = if (success) {
+                Pulse.getPlugin().messagesManager.getFormattedMessage(
+                    "punishment.unmute-success",
+                    "player" to targetName
+                )
+            } else {
+                Pulse.getPlugin().messagesManager.getFormattedMessage(
+                    "punishment.unmute-not-muted",
+                    "player" to targetName
+                )
+            }
+
+            if (sender is Player) {
+                sender.scheduler.run(Pulse.getPlugin(), { _ ->
+                    sendMessage(sender, msg)
+                }, null)
+            } else {
+                sendMessage(sender, msg)
+            }
         }
     }
 }
@@ -395,30 +412,39 @@ class WarnCommand : BasePunishmentCommand("warn", "pulse.punishment.warn") {
 // Warns command (view warnings)
 class WarnsCommand : BasePunishmentCommand("warns", "pulse.punishment.warns", requiresReason = false) {
     override fun executePunishment(sender: CommandSender, target: Player?, targetOffline: UUID, targetName: String, args: Array<out String>) {
-        val warns = Pulse.getPlugin().punishmentManager.service.getWarns(targetOffline)
+        Pulse.getPlugin().punishmentManager.service.getWarns(targetOffline) { warns ->
+            val sendResponse = {
+                if (warns.isEmpty()) {
+                    val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                        "punishment.warns-none",
+                        "player" to targetName
+                    )
+                    sendMessage(sender, msg)
+                } else {
+                    val header = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                        "punishment.warns-header",
+                        "player" to targetName,
+                        "count" to warns.size.toString()
+                    )
+                    sendMessage(sender, header)
+                    warns.take(5).forEach { warn ->
+                        val entry = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                            "punishment.warns-entry",
+                            "reason" to warn.reason,
+                            "punisher" to warn.punisherName
+                        )
+                        sendMessage(sender, entry)
+                    }
+                }
+            }
 
-        if (warns.isEmpty()) {
-            val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
-                "punishment.warns-none",
-                "player" to targetName
-            )
-            sendMessage(sender, msg)
-            return
-        }
-
-        val header = Pulse.getPlugin().messagesManager.getFormattedMessage(
-            "punishment.warns-header",
-            "player" to targetName,
-            "count" to warns.size.toString()
-        )
-        sendMessage(sender, header)
-        warns.take(5).forEach { warn ->
-            val entry = Pulse.getPlugin().messagesManager.getFormattedMessage(
-                "punishment.warns-entry",
-                "reason" to warn.reason,
-                "punisher" to warn.punisherName
-            )
-            sendMessage(sender, entry)
+            if (sender is Player) {
+                sender.scheduler.run(Pulse.getPlugin(), { _ ->
+                    sendResponse()
+                }, null)
+            } else {
+                sendResponse()
+            }
         }
     }
 }
@@ -426,30 +452,39 @@ class WarnsCommand : BasePunishmentCommand("warns", "pulse.punishment.warns", re
 // Unwarn command (remove latest warning)
 class UnwarnCommand : BasePunishmentCommand("unwarn", "pulse.punishment.unwarn", requiresReason = false) {
     override fun executePunishment(sender: CommandSender, target: Player?, targetOffline: UUID, targetName: String, args: Array<out String>) {
-        val warns = Pulse.getPlugin().punishmentManager.service.getWarns(targetOffline)
+        Pulse.getPlugin().punishmentManager.service.getWarns(targetOffline) { warns ->
+            val sendResponse: (String) -> Unit = { message ->
+                if (sender is Player) {
+                    sender.scheduler.run(Pulse.getPlugin(), { _ ->
+                        sendMessage(sender, message)
+                    }, null)
+                } else {
+                    sendMessage(sender, message)
+                }
+            }
 
-        if (warns.isEmpty()) {
-            val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
-                "punishment.unwarn-no-warnings",
-                "player" to targetName
-            )
-            sendMessage(sender, msg)
-            return
+            if (warns.isEmpty()) {
+                val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                    "punishment.unwarn-no-warnings",
+                    "player" to targetName
+                )
+                sendResponse(msg)
+                return@getWarns
+            }
+
+            val (punisherUuid, _) = getPunisherInfo(sender)
+            val latestWarn = warns.first()
+
+            // Deactivate the latest warn asynchronously
+            CoroutineScope(Dispatchers.IO).launch {
+                Pulse.getPlugin().databaseManager.deactivatePunishment(latestWarn.id, punisherUuid)
+
+                val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                    "punishment.unwarn-success",
+                    "player" to targetName
+                )
+                sendResponse(msg)
+            }
         }
-
-        val (punisherUuid, _) = getPunisherInfo(sender)
-        val latestWarn = warns.first()
-        Pulse.getPlugin().punishmentManager.service.getPunishments(targetOffline)
-
-        // Deactivate the latest warn
-        kotlinx.coroutines.runBlocking {
-            Pulse.getPlugin().databaseManager.deactivatePunishment(latestWarn.id, punisherUuid)
-        }
-
-        val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
-            "punishment.unwarn-success",
-            "player" to targetName
-        )
-        sendMessage(sender, msg)
     }
 }

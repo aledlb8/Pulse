@@ -65,7 +65,7 @@ class PunishmentListener : Listener {
     fun onPlayerChat(event: AsyncChatEvent) {
         val service = Pulse.getPlugin().punishmentManager.service
 
-        if (service.isMuted(event.player.uniqueId)) {
+        if (service.isMutedSync(event.player.uniqueId)) {
             event.isCancelled = true
             val muteMsg = Pulse.getPlugin().messagesManager.getMessage("punishment.mute-chat-blocked")
             event.player.sendMessage(Component.text(muteMsg))

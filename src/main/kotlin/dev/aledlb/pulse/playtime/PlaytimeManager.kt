@@ -70,16 +70,9 @@ class PlaytimeManager(private val databaseManager: DatabaseManager) : Listener {
             Logger.debug("Playtime autosave scheduled via AsyncScheduler")
             return
         } catch (_: Throwable) {
-            // Ignore and try Bukkit scheduler
+            // Fallback not available - AsyncScheduler should be available in Paper 1.20+
+            Logger.error("Failed to schedule playtime autosave - AsyncScheduler not available")
         }
-
-        autoSaveTaskBukkit = Pulse.getPlugin().server.scheduler.runTaskTimerAsynchronously(
-            Pulse.getPlugin(),
-            Runnable { saveAllOnlinePlayers() },
-            20L * 60 * 5, // 5 minutes
-            20L * 60 * 5  // 5 minutes
-        )
-        Logger.debug("Playtime autosave scheduled via Bukkit async scheduler")
     }
 
     @EventHandler

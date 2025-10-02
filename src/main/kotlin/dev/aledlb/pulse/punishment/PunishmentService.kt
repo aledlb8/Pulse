@@ -155,8 +155,8 @@ class PunishmentService {
         }
     }
 
-    fun unban(target: UUID, targetName: String, removedBy: UUID, removedByName: String): Boolean {
-        return runBlocking {
+    fun unban(target: UUID, targetName: String, removedBy: UUID, removedByName: String, callback: (Boolean) -> Unit) {
+        CoroutineScope(Dispatchers.IO).launch {
             try {
                 val db = Pulse.getPlugin().databaseManager
                 val active = db.getActivePunishment(target, "BAN")
@@ -172,13 +172,13 @@ class PunishmentService {
                             Bukkit.getIPBans().remove(punishment.ip)
                         })
                     }
-                    true
+                    callback(true)
                 } else {
-                    false
+                    callback(false)
                 }
             } catch (e: Exception) {
                 Logger.error("Failed to unban player $targetName", e)
-                false
+                callback(false)
             }
         }
     }
@@ -218,8 +218,8 @@ class PunishmentService {
         }
     }
 
-    fun unmute(target: UUID, targetName: String, removedBy: UUID): Boolean {
-        return runBlocking {
+    fun unmute(target: UUID, targetName: String, removedBy: UUID, callback: (Boolean) -> Unit) {
+        CoroutineScope(Dispatchers.IO).launch {
             try {
                 val db = Pulse.getPlugin().databaseManager
                 val active = db.getActivePunishment(target, "MUTE")
@@ -232,19 +232,19 @@ class PunishmentService {
                         val unmuteMsg = Pulse.getPlugin().messagesManager.getMessage("punishment.unmute-screen")
                         player.sendMessage(Component.text(unmuteMsg))
                     }, null)
-                    true
+                    callback(true)
                 } else {
-                    false
+                    callback(false)
                 }
             } catch (e: Exception) {
                 Logger.error("Failed to unmute player $targetName", e)
-                false
+                callback(false)
             }
         }
     }
 
-    fun isMuted(target: UUID): Boolean {
-        return runBlocking {
+    fun isMuted(target: UUID, callback: (Boolean) -> Unit) {
+        CoroutineScope(Dispatchers.IO).launch {
             val db = Pulse.getPlugin().databaseManager
             val active = db.getActivePunishment(target, "MUTE")
             if (active != null) {
@@ -252,13 +252,37 @@ class PunishmentService {
                 if (active.expires != null && System.currentTimeMillis() > active.expires) {
                     db.removeActivePunishment(target, "MUTE")
                     db.deactivatePunishment(active.punishmentId, UUID.fromString("00000000-0000-0000-0000-000000000000"))
-                    false
+                    callback(false)
                 } else {
-                    true
+                    callback(true)
                 }
             } else {
-                false
+                callback(false)
             }
+        }
+    }
+
+    // Synchronous version for event listeners - checks cached data
+    fun isMutedSync(target: UUID): Boolean {
+        return try {
+            val db = Pulse.getPlugin().databaseManager
+            runBlocking {
+                val active = db.getActivePunishment(target, "MUTE")
+                if (active != null) {
+                    // Check if expired
+                    if (active.expires != null && System.currentTimeMillis() > active.expires) {
+                        db.removeActivePunishment(target, "MUTE")
+                        db.deactivatePunishment(active.punishmentId, UUID.fromString("00000000-0000-0000-0000-000000000000"))
+                        false
+                    } else {
+                        true
+                    }
+                } else {
+                    false
+                }
+            }
+        } catch (e: Exception) {
+            false
         }
     }
 
@@ -304,25 +328,27 @@ class PunishmentService {
         }
     }
 
-    fun getWarns(target: UUID): List<PunishmentRow> {
-        return runBlocking {
+    fun getWarns(target: UUID, callback: (List<PunishmentRow>) -> Unit) {
+        CoroutineScope(Dispatchers.IO).launch {
             try {
                 val db = Pulse.getPlugin().databaseManager
-                db.getPlayerPunishments(target).filter { it.type == "WARN" && it.active }
+                val warns = db.getPlayerPunishments(target).filter { it.type == "WARN" && it.active }
+                callback(warns)
             } catch (e: Exception) {
                 Logger.error("Failed to get warns for player", e)
-                emptyList()
+                callback(emptyList())
             }
         }
     }
 
-    fun getPunishments(target: UUID): List<PunishmentRow> {
-        return runBlocking {
+    fun getPunishments(target: UUID, callback: (List<PunishmentRow>) -> Unit) {
+        CoroutineScope(Dispatchers.IO).launch {
             try {
-                Pulse.getPlugin().databaseManager.getPlayerPunishments(target)
+                val punishments = Pulse.getPlugin().databaseManager.getPlayerPunishments(target)
+                callback(punishments)
             } catch (e: Exception) {
                 Logger.error("Failed to get punishments for player", e)
-                emptyList()
+                callback(emptyList())
             }
         }
     }
