@@ -1,25 +1,32 @@
 package dev.aledlb.pulse
 
+import dev.aledlb.pulse.chat.ChatManager
 import dev.aledlb.pulse.commands.*
 import dev.aledlb.pulse.config.ConfigManager
-import dev.aledlb.pulse.chat.ChatManager
 import dev.aledlb.pulse.database.DatabaseManager
+import dev.aledlb.pulse.database.RedisManager
 import dev.aledlb.pulse.economy.EconomyManager
 import dev.aledlb.pulse.messages.MessagesManager
 import dev.aledlb.pulse.placeholders.PlaceholderAPIHook
 import dev.aledlb.pulse.placeholders.PlaceholderManager
 import dev.aledlb.pulse.placeholders.PulsePlaceholderProvider
+import dev.aledlb.pulse.playtime.PlaytimeManager
+import dev.aledlb.pulse.punishment.PunishmentListener
 import dev.aledlb.pulse.punishment.PunishmentManager
 import dev.aledlb.pulse.ranks.PermissionManager
 import dev.aledlb.pulse.ranks.models.RankManager
 import dev.aledlb.pulse.shop.ShopGUI
 import dev.aledlb.pulse.shop.ShopManager
 import dev.aledlb.pulse.tags.TagManager
+import dev.aledlb.pulse.tasks.RankExpirationTask
 import dev.aledlb.pulse.util.Logger
 import dev.aledlb.pulse.util.UpdateChecker
 import org.bukkit.Bukkit
+import org.bukkit.command.CommandExecutor
+import org.bukkit.command.TabCompleter
+import org.bukkit.event.Listener
 import org.bukkit.plugin.java.JavaPlugin
-import java.util.concurrent.CompletableFuture
+import kotlin.system.measureTimeMillis
 
 class Pulse : JavaPlugin() {
 
@@ -32,317 +39,256 @@ class Pulse : JavaPlugin() {
         fun getPlugin(): Pulse = instance
     }
 
-    lateinit var configManager: ConfigManager
-        private set
-
-    lateinit var databaseManager: DatabaseManager
-        private set
-
-    lateinit var redisManager: dev.aledlb.pulse.database.RedisManager
-        private set
-
-    lateinit var messagesManager: MessagesManager
-        private set
-
-    lateinit var chatManager: ChatManager
-        private set
-
-    lateinit var punishmentManager: PunishmentManager
-        private set
-
-    lateinit var rankManager: RankManager
-        private set
-
-    lateinit var permissionManager: PermissionManager
-        private set
-
-    lateinit var placeholderManager: PlaceholderManager
-        private set
-
-    lateinit var economyManager: EconomyManager
-        private set
-
-    lateinit var tagManager: TagManager
-        private set
-
-    lateinit var shopManager: ShopManager
-        private set
-
-    lateinit var shopGUI: ShopGUI
-        private set
-
-    lateinit var playtimeManager: dev.aledlb.pulse.playtime.PlaytimeManager
-        private set
+    // ------------------------
+    // Managers (kept as lateinit to preserve public API)
+    // ------------------------
+    lateinit var configManager: ConfigManager;              private set
+    lateinit var databaseManager: DatabaseManager;          private set
+    lateinit var redisManager: RedisManager;                private set
+    lateinit var messagesManager: MessagesManager;          private set
+    lateinit var chatManager: ChatManager;                  private set
+    lateinit var punishmentManager: PunishmentManager;      private set
+    lateinit var rankManager: RankManager;                  private set
+    lateinit var permissionManager: PermissionManager;      private set
+    lateinit var placeholderManager: PlaceholderManager;    private set
+    lateinit var economyManager: EconomyManager;            private set
+    lateinit var tagManager: TagManager;                    private set
+    lateinit var shopManager: ShopManager;                  private set
+    lateinit var shopGUI: ShopGUI;                          private set
+    lateinit var playtimeManager: PlaytimeManager;          private set
 
     private var placeholderAPIHook: PlaceholderAPIHook? = null
     private var updateChecker: UpdateChecker? = null
 
-    private var startupTime: Long = 0
-    private var isFullyLoaded = false
+    private var startupTime: Long = 0L
+    @Volatile private var isFullyLoaded = false
+    fun isPluginFullyLoaded(): Boolean = isFullyLoaded
+
+    // Config file list centralized
+    private val CONFIG_FILES = listOf(
+        "config.yml",
+        "database.yml",
+        "messages.yml",
+        "punishment.yml",
+        "ranks.yml",
+        "shop.yml",
+        "tags.yml"
+    )
 
     override fun onEnable() {
         instance = this
         startupTime = System.currentTimeMillis()
-
         Logger.initialize(logger)
 
-        CompletableFuture.runAsync {
-            try {
-                initializePlugin()
-                isFullyLoaded = true
-                val loadTime = System.currentTimeMillis() - startupTime
-                Logger.success("Pulse fully loaded in ${loadTime}ms")
-            } catch (e: Exception) {
-                Logger.error("Failed to initialize plugin", e)
-                server.pluginManager.disablePlugin(this)
-            }
+        try {
+            Logger.logStartup(pluginMeta.version)
+            initializeConfig()                 // Sync: file I/O is fine here and simple
+            initializeCoreAsyncThenWireSync()  // Async heavy init, then sync Bukkit bindings
+        } catch (t: Throwable) {
+            Logger.error("Failed during early startup", t)
+            server.pluginManager.disablePlugin(this)
         }
     }
 
     override fun onDisable() {
         Logger.logShutdown()
 
-        placeholderAPIHook?.unregisterExpansion()
+        // Unregister external hooks
+        runCatching { placeholderAPIHook?.unregisterExpansion() }
+            .onFailure { Logger.warn("Error unregistering PlaceholderAPI: ${it.message}") }
 
-        if (::chatManager.isInitialized) {
-            chatManager.shutdown()
-        }
-
-        if (::rankManager.isInitialized) {
-            rankManager.saveAllData()
-        }
-
-        if (::economyManager.isInitialized) {
-            economyManager.saveAllData()
-        }
-
-        if (::tagManager.isInitialized) {
-            tagManager.saveAllData()
-        }
-
-        if (::playtimeManager.isInitialized) {
-            playtimeManager.shutdown()
-        }
-
-        if (::redisManager.isInitialized) {
-            redisManager.shutdown()
-        }
-
-        if (::databaseManager.isInitialized) {
-            databaseManager.shutdown()
-        }
+        // Shut down subsystems if they were initialized
+        runCatching { updateChecker?.shutdown() }
+        if (::chatManager.isInitialized)       runCatching { chatManager.shutdown() }
+        if (::rankManager.isInitialized)       runCatching { rankManager.saveAllData() }
+        if (::economyManager.isInitialized)    runCatching { economyManager.saveAllData() }
+        if (::tagManager.isInitialized)        runCatching { tagManager.saveAllData() }
+        if (::playtimeManager.isInitialized)   runCatching { playtimeManager.shutdown() }
+        if (::redisManager.isInitialized)      runCatching { redisManager.shutdown() }
+        if (::databaseManager.isInitialized)   runCatching { databaseManager.shutdown() }
 
         Logger.info("Pulse disabled successfully")
     }
 
-    private fun initializePlugin() {
-        Logger.logStartup(pluginMeta.version)
-
-        initializeConfig()
-        initializeModules()
-        registerEvents()
-        registerCommands()
-    }
+    // ------------------------
+    // Startup Phases
+    // ------------------------
 
     private fun initializeConfig() {
-        configManager = ConfigManager(dataFolder)
-
-        val configs = listOf(
-            "config.yml",
-            "database.yml",
-            "messages.yml",
-            "punishment.yml",
-            "ranks.yml",
-            "shop.yml",
-            "tags.yml"
-        )
-
-        configs.forEach { config ->
-            configManager.loadConfig(config)
+        val took = measureTimeMillis {
+            configManager = ConfigManager(dataFolder)
+            CONFIG_FILES.forEach { configManager.loadConfig(it) }
         }
-
-        Logger.success("Loaded ${configs.size} configuration files")
+        Logger.success("Loaded ${CONFIG_FILES.size} configuration files in ${took}ms")
     }
 
-    private fun initializeModules() {
-        databaseManager = DatabaseManager()
-        databaseManager.initialize()
+    /**
+     * Initializes heavy services asynchronously using Folia/Paper async scheduler,
+     * then hops back to the global (main) scheduler to bind Bukkit listeners/commands.
+     */
+    private fun initializeCoreAsyncThenWireSync() {
+        // Async phase
+        Bukkit.getAsyncScheduler().runNow(this) { _ ->
+            val tookAsync = measureTimeMillis {
+                try {
+                    initializeCoreAsyncOnly()
+                } catch (e: Exception) {
+                    Logger.error("Async core initialization failed", e)
+                    // Hop back to global/main to disable safely
+                    Bukkit.getGlobalRegionScheduler().execute(this) {
+                        server.pluginManager.disablePlugin(this)
+                    }
+                    return@runNow
+                }
+            }
+            Logger.success("Initialized core services (async) in ${tookAsync}ms")
 
-        redisManager = dev.aledlb.pulse.database.RedisManager()
-        redisManager.initialize()
+            // Sync/global phase
+            Bukkit.getGlobalRegionScheduler().execute(this) {
+                try {
+                    val tookSync = measureTimeMillis {
+                        wireBukkitAndHooksSync()
+                        startBackgroundTasksSync()
+                    }
+                    isFullyLoaded = true
+                    val total = System.currentTimeMillis() - startupTime
+                    Logger.success("Pulse fully loaded in ${total}ms (sync wire-up ${tookSync}ms)")
+                } catch (e: Exception) {
+                    Logger.error("Failed during sync wire-up", e)
+                    server.pluginManager.disablePlugin(this)
+                }
+            }
+        }
+    }
 
-        messagesManager = MessagesManager()
-        messagesManager.initialize()
+    /**
+     * Only non-Bukkit, heavy I/O work here.
+     * DO NOT access Bukkit API in this method.
+     */
+    private fun initializeCoreAsyncOnly() {
+        databaseManager = DatabaseManager().also { it.initialize() }
+        redisManager = RedisManager().also { it.initialize() }
 
-        punishmentManager = PunishmentManager()
-        punishmentManager.initialize()
+        messagesManager = MessagesManager().also { it.initialize() }
+        punishmentManager = PunishmentManager().also { it.initialize() }
 
-        rankManager = RankManager(databaseManager)
-        rankManager.initialize()
+        rankManager = RankManager(databaseManager).also { it.initialize() }
+        permissionManager = PermissionManager(rankManager).also { it.initialize() }
 
-        permissionManager = PermissionManager(rankManager)
-        permissionManager.initialize()
+        economyManager = EconomyManager(databaseManager).also { it.initialize() }
+        tagManager = TagManager(databaseManager).also { it.initialize() }
 
-        economyManager = EconomyManager(databaseManager)
-        economyManager.initialize()
+        playtimeManager = PlaytimeManager(databaseManager).also { it.initialize() }
 
-        tagManager = TagManager(databaseManager)
-        tagManager.initialize()
-
-        playtimeManager = dev.aledlb.pulse.playtime.PlaytimeManager(databaseManager)
-        playtimeManager.initialize()
-
-        // Initialize after ranks, economy and tags for placeholder support
+        // Pure-core constructions; any Bukkit-touching init happens later on the global thread
         chatManager = ChatManager()
-        chatManager.initialize()
-
-        shopManager = ShopManager(economyManager, rankManager, permissionManager)
-        shopManager.initialize()
-
+        shopManager = ShopManager(economyManager, rankManager, permissionManager).also { it.initialize() }
         shopGUI = ShopGUI(shopManager, economyManager)
 
-        placeholderManager = PlaceholderManager()
-        placeholderManager.initialize()
+        placeholderManager = PlaceholderManager().also { it.initialize() }
+    }
 
-        val pulsePlaceholderProvider = PulsePlaceholderProvider(rankManager, permissionManager, economyManager, playtimeManager)
+    /**
+     * Global/main-thread work: Bukkit events, commands, hooks that must be registered on the server thread.
+     */
+    private fun wireBukkitAndHooksSync() {
+        chatManager.initialize()
+
+        val pulsePlaceholderProvider = PulsePlaceholderProvider(
+            rankManager, permissionManager, economyManager, playtimeManager
+        )
         placeholderManager.registerProvider(pulsePlaceholderProvider)
 
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
-            try {
-                placeholderAPIHook = PlaceholderAPIHook()
-                placeholderAPIHook?.registerExpansion()
-            } catch (e: Exception) {
-                Logger.warn("PlaceholderAPI found but failed to initialize: ${e.message}")
+            runCatching {
+                placeholderAPIHook = PlaceholderAPIHook().also { it.registerExpansion() }
+            }.onFailure {
+                Logger.warn("PlaceholderAPI found but failed to initialize: ${it.message}")
             }
         }
 
-        // Update checker
-        updateChecker = UpdateChecker(this)
-        updateChecker?.initialize()
+        // Events & Commands
+        registerEvents(
+            permissionManager,
+            shopGUI,
+            playtimeManager,
+            PunishmentListener()
+        )
+        Logger.success("Registered event listeners")
 
-        // Start rank expiration task
-        dev.aledlb.pulse.tasks.RankExpirationTask.start(this, rankManager, permissionManager)
-
-        Logger.success("Initialized 11 core modules")
+        registerCommands()
     }
 
-    private fun registerEvents() {
-        server.pluginManager.registerEvents(permissionManager, this)
-        server.pluginManager.registerEvents(shopGUI, this)
-        server.pluginManager.registerEvents(playtimeManager, this)
-        server.pluginManager.registerEvents(dev.aledlb.pulse.punishment.PunishmentListener(), this)
+    private fun startBackgroundTasksSync() {
+        updateChecker = UpdateChecker(this).also { it.initialize() }
 
-        Logger.success("Registered event listeners")
+        // Rank expiration task
+        RankExpirationTask.start(this, rankManager, permissionManager)
+    }
+
+    // ------------------------
+    // Wiring Helpers
+    // ------------------------
+
+    private fun registerEvents(vararg listeners: Listener) {
+        val pm = server.pluginManager
+        listeners.forEach { pm.registerEvents(it, this) }
+    }
+
+    private fun bindCommand(name: String, executor: CommandExecutor, tab: TabCompleter? = executor as? TabCompleter) {
+        val cmd = getCommand(name)
+        if (cmd == null) {
+            Logger.warn("Command '/$name' is not defined in plugin.yml")
+            return
+        }
+        cmd.setExecutor(executor)
+        cmd.tabCompleter = tab
     }
 
     private fun registerCommands() {
-        val pulseCommand = PulseCommand()
-        getCommand("pulse")?.setExecutor(pulseCommand)
-        getCommand("pulse")?.tabCompleter = pulseCommand
+        bindCommand("pulse", PulseCommand())
 
-        val rankCommand = RankCommand(rankManager, permissionManager)
-        getCommand("rank")?.setExecutor(rankCommand)
-        getCommand("rank")?.tabCompleter = rankCommand
+        val rankCmd = RankCommand(rankManager, permissionManager)
+        bindCommand("rank", rankCmd)
 
-        val permissionCommand = PermissionCommand(rankManager, permissionManager)
-        getCommand("permission")?.setExecutor(permissionCommand)
-        getCommand("permission")?.tabCompleter = permissionCommand
+        val permCmd = PermissionCommand(rankManager, permissionManager)
+        bindCommand("permission", permCmd)
 
-        val coinCommand = CoinCommand(economyManager)
-        getCommand("coin")?.setExecutor(coinCommand)
-        getCommand("coin")?.tabCompleter = coinCommand
+        val coinCmd = CoinCommand(economyManager)
+        bindCommand("coin", coinCmd)
 
-        val shopCommand = ShopCommand(shopManager, shopGUI)
-        getCommand("shop")?.setExecutor(shopCommand)
-        getCommand("shop")?.tabCompleter = shopCommand
+        val shopCmd = ShopCommand(shopManager, shopGUI)
+        bindCommand("shop", shopCmd)
 
-        val tagCommand = TagCommand()
-        getCommand("tag")?.setExecutor(tagCommand)
-        getCommand("tag")?.tabCompleter = tagCommand
+        val tagCmd = TagCommand()
+        bindCommand("tag", tagCmd)
 
-        val gamemodeCommand = GamemodeCommand()
-        getCommand("gamemode")?.setExecutor(gamemodeCommand)
-        getCommand("gamemode")?.tabCompleter = gamemodeCommand
+        val gmCmd = GamemodeCommand()
+        bindCommand("gamemode", gmCmd)
 
-        val gmcCommand = GamemodeCreativeCommand()
-        getCommand("gmc")?.setExecutor(gmcCommand)
-        getCommand("gmc")?.tabCompleter = gmcCommand
+        bindCommand("gmc", GamemodeCreativeCommand())
+        bindCommand("gms", GamemodeSurvivalCommand())
+        bindCommand("gma", GamemodeAdventureCommand())
+        bindCommand("gmsp", GamemodeSpectatorCommand())
 
-        val gmsCommand = GamemodeSurvivalCommand()
-        getCommand("gms")?.setExecutor(gmsCommand)
-        getCommand("gms")?.tabCompleter = gmsCommand
+        // Punishment
+        bindCommand("kick",   KickCommand())
+        bindCommand("ban",    BanCommand())
+        bindCommand("tempban",TempbanCommand())
+        bindCommand("ipban",  IpbanCommand())
+        bindCommand("tempipban", TempipbanCommand())
+        bindCommand("unban",  UnbanCommand())
+        bindCommand("mute",   MuteCommand())
+        bindCommand("unmute", UnmuteCommand())
+        bindCommand("freeze", FreezeCommand())
+        bindCommand("unfreeze", UnfreezeCommand())
+        bindCommand("warn",   WarnCommand())
+        bindCommand("warns",  WarnsCommand())
+        bindCommand("unwarn", UnwarnCommand())
 
-        val gmaCommand = GamemodeAdventureCommand()
-        getCommand("gma")?.setExecutor(gmaCommand)
-        getCommand("gma")?.tabCompleter = gmaCommand
+        bindCommand("grant",  GrantCommand(rankManager, permissionManager))
 
-        val gmspCommand = GamemodeSpectatorCommand()
-        getCommand("gmsp")?.setExecutor(gmspCommand)
-        getCommand("gmsp")?.tabCompleter = gmspCommand
-
-        // Punishment commands
-        val kickCommand = KickCommand()
-        getCommand("kick")?.setExecutor(kickCommand)
-        getCommand("kick")?.tabCompleter = kickCommand
-
-        val banCommand = BanCommand()
-        getCommand("ban")?.setExecutor(banCommand)
-        getCommand("ban")?.tabCompleter = banCommand
-
-        val tempbanCommand = TempbanCommand()
-        getCommand("tempban")?.setExecutor(tempbanCommand)
-        getCommand("tempban")?.tabCompleter = tempbanCommand
-
-        val ipbanCommand = IpbanCommand()
-        getCommand("ipban")?.setExecutor(ipbanCommand)
-        getCommand("ipban")?.tabCompleter = ipbanCommand
-
-        val tempipbanCommand = TempipbanCommand()
-        getCommand("tempipban")?.setExecutor(tempipbanCommand)
-        getCommand("tempipban")?.tabCompleter = tempipbanCommand
-
-        val unbanCommand = UnbanCommand()
-        getCommand("unban")?.setExecutor(unbanCommand)
-        getCommand("unban")?.tabCompleter = unbanCommand
-
-        val muteCommand = MuteCommand()
-        getCommand("mute")?.setExecutor(muteCommand)
-        getCommand("mute")?.tabCompleter = muteCommand
-
-        val unmuteCommand = UnmuteCommand()
-        getCommand("unmute")?.setExecutor(unmuteCommand)
-        getCommand("unmute")?.tabCompleter = unmuteCommand
-
-        val freezeCommand = FreezeCommand()
-        getCommand("freeze")?.setExecutor(freezeCommand)
-        getCommand("freeze")?.tabCompleter = freezeCommand
-
-        val unfreezeCommand = UnfreezeCommand()
-        getCommand("unfreeze")?.setExecutor(unfreezeCommand)
-        getCommand("unfreeze")?.tabCompleter = unfreezeCommand
-
-        val warnCommand = WarnCommand()
-        getCommand("warn")?.setExecutor(warnCommand)
-        getCommand("warn")?.tabCompleter = warnCommand
-
-        val warnsCommand = WarnsCommand()
-        getCommand("warns")?.setExecutor(warnsCommand)
-        getCommand("warns")?.tabCompleter = warnsCommand
-
-        val unwarnCommand = UnwarnCommand()
-        getCommand("unwarn")?.setExecutor(unwarnCommand)
-        getCommand("unwarn")?.tabCompleter = unwarnCommand
-
-        val grantCommand = GrantCommand(rankManager, permissionManager)
-        getCommand("grant")?.setExecutor(grantCommand)
-        getCommand("grant")?.tabCompleter = grantCommand
-
-        val playtimeCommand = PlaytimeCommand(playtimeManager)
-        getCommand("playtime")?.setExecutor(playtimeCommand)
-        getCommand("playtime")?.tabCompleter = playtimeCommand
-
-        Logger.success("Registered 27 commands")
+        val playtimeCmd = PlaytimeCommand(playtimeManager)
+        bindCommand("playtime", playtimeCmd)
     }
-
-    fun isPluginFullyLoaded(): Boolean = isFullyLoaded
 }

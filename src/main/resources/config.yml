@@ -2,6 +2,18 @@
 # Pulse Core Configuration
 # ============================================================
 
+# ==================== UPDATE CHECKER ====================
+# Automatic update checking and installation
+update-checker:
+  # Enable checking for updates on startup
+  enabled: true
+  # Automatically download and install updates
+  # Downloads to plugins/update folder - update applies on server restart
+  auto-update: true
+  # How often to check for updates (in hours)
+  # Set to 0 to only check on startup
+  check-interval: 6
+
 # ==================== CURRENCY ====================
 # Economy and currency settings
 currency:
