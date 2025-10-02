@@ -120,6 +120,14 @@ commands:
     description: View playtime statistics
     usage: /playtime [player]
     permission: pulse.playtime
+  profile:
+    description: View player profile
+    usage: /profile [player]
+    permission: pulse.profile
+  report:
+    description: Report a player
+    usage: /report <player> <reason>
+    permission: pulse.report
 
 permissions:
   pulse.*:
@@ -296,3 +304,13 @@ permissions:
     description: View other players' playtime
   pulse.update.notify:
     description: Receive update notifications on join
+  pulse.profile:
+    description: View own profile
+  pulse.profile.others:
+    description: View other players' profiles
+  pulse.profile.staff:
+    description: Access staff-only features in profiles
+  pulse.report:
+    description: Report players
+  pulse.reports.notify:
+    description: Receive notifications when players are reported

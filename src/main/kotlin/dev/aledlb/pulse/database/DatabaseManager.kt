@@ -117,7 +117,7 @@ class DatabaseManager {
 
     private fun createTables() {
         transaction(database) {
-            SchemaUtils.create(PlayerDataTable, PlayerRanksTable, PlayerBalanceTable, PlayerTagDataTable, PunishmentTable, ActivePunishmentTable, PlayerPlaytimeTable)
+            SchemaUtils.create(PlayerDataTable, PlayerRanksTable, PlayerBalanceTable, PlayerTagDataTable, PunishmentTable, ActivePunishmentTable, PlayerPlaytimeTable, ReportTable)
         }
         Logger.debug("Database tables created/verified")
     }
@@ -382,6 +382,81 @@ class DatabaseManager {
         }
     }
 
+    // Report operations
+    suspend fun saveReport(reportedUuid: UUID, reportedName: String, reporterUuid: UUID, reporterName: String, reason: String): Int {
+        return newSuspendedTransaction(Dispatchers.IO, database) {
+            ReportTable.insert {
+                it[ReportTable.reportedUuid] = reportedUuid.toString()
+                it[ReportTable.reportedName] = reportedName
+                it[ReportTable.reporterUuid] = reporterUuid.toString()
+                it[ReportTable.reporterName] = reporterName
+                it[ReportTable.reason] = reason
+                it[timestamp] = System.currentTimeMillis()
+                it[status] = "PENDING"
+                it[handledBy] = null
+                it[handledAt] = null
+                it[notes] = null
+            }[ReportTable.id]
+        }
+    }
+
+    suspend fun getPlayerReports(uuid: UUID): List<ReportRow> {
+        return newSuspendedTransaction(Dispatchers.IO, database) {
+            ReportTable.select { ReportTable.reportedUuid eq uuid.toString() }
+                .orderBy(ReportTable.timestamp, SortOrder.DESC)
+                .map {
+                    ReportRow(
+                        id = it[ReportTable.id],
+                        reportedUuid = UUID.fromString(it[ReportTable.reportedUuid]),
+                        reportedName = it[ReportTable.reportedName],
+                        reporterUuid = UUID.fromString(it[ReportTable.reporterUuid]),
+                        reporterName = it[ReportTable.reporterName],
+                        reason = it[ReportTable.reason],
+                        timestamp = it[ReportTable.timestamp],
+                        status = it[ReportTable.status],
+                        handledBy = it[ReportTable.handledBy]?.let { h -> UUID.fromString(h) },
+                        handledAt = it[ReportTable.handledAt],
+                        notes = it[ReportTable.notes]
+                    )
+                }
+        }
+    }
+
+    suspend fun updateReportStatus(reportId: Int, status: String, handledBy: UUID, notes: String?) {
+        newSuspendedTransaction(Dispatchers.IO, database) {
+            ReportTable.update({ ReportTable.id eq reportId }) {
+                it[ReportTable.status] = status
+                it[ReportTable.handledBy] = handledBy.toString()
+                it[ReportTable.handledAt] = System.currentTimeMillis()
+                if (notes != null) {
+                    it[ReportTable.notes] = notes
+                }
+            }
+        }
+    }
+
+    suspend fun getAllPendingReports(): List<ReportRow> {
+        return newSuspendedTransaction(Dispatchers.IO, database) {
+            ReportTable.select { ReportTable.status eq "PENDING" }
+                .orderBy(ReportTable.timestamp, SortOrder.DESC)
+                .map {
+                    ReportRow(
+                        id = it[ReportTable.id],
+                        reportedUuid = UUID.fromString(it[ReportTable.reportedUuid]),
+                        reportedName = it[ReportTable.reportedName],
+                        reporterUuid = UUID.fromString(it[ReportTable.reporterUuid]),
+                        reporterName = it[ReportTable.reporterName],
+                        reason = it[ReportTable.reason],
+                        timestamp = it[ReportTable.timestamp],
+                        status = it[ReportTable.status],
+                        handledBy = it[ReportTable.handledBy]?.let { h -> UUID.fromString(h) },
+                        handledAt = it[ReportTable.handledAt],
+                        notes = it[ReportTable.notes]
+                    )
+                }
+        }
+    }
+
     // Playtime operations
     suspend fun savePlaytime(uuid: UUID, playtime: Long) {
         newSuspendedTransaction(Dispatchers.IO, database) {
@@ -540,4 +615,34 @@ data class ActivePunishmentRow(
     val type: String,
     val expires: Long?,
     val punishmentId: Int
+)
+
+object ReportTable : Table("reports") {
+    val id = integer("id").autoIncrement()
+    val reportedUuid = varchar("reported_uuid", 36)
+    val reportedName = varchar("reported_name", 16)
+    val reporterUuid = varchar("reporter_uuid", 36)
+    val reporterName = varchar("reporter_name", 16)
+    val reason = text("reason")
+    val timestamp = long("timestamp")
+    val status = varchar("status", 16) // PENDING, REVIEWED, CLOSED
+    val handledBy = varchar("handled_by", 36).nullable()
+    val handledAt = long("handled_at").nullable()
+    val notes = text("notes").nullable()
+
+    override val primaryKey = PrimaryKey(id)
+}
+
+data class ReportRow(
+    val id: Int,
+    val reportedUuid: UUID,
+    val reportedName: String,
+    val reporterUuid: UUID,
+    val reporterName: String,
+    val reason: String,
+    val timestamp: Long,
+    val status: String,
+    val handledBy: UUID?,
+    val handledAt: Long?,
+    val notes: String?
 )

@@ -56,6 +56,8 @@ class Pulse : JavaPlugin() {
     lateinit var shopManager: ShopManager;                  private set
     lateinit var shopGUI: ShopGUI;                          private set
     lateinit var playtimeManager: PlaytimeManager;          private set
+    lateinit var profileGUI: dev.aledlb.pulse.profile.ProfileGUI; private set
+    lateinit var punishmentHistoryGUI: dev.aledlb.pulse.profile.PunishmentHistoryGUI; private set
 
     private var placeholderAPIHook: PlaceholderAPIHook? = null
     private var updateChecker: UpdateChecker? = null
@@ -186,6 +188,10 @@ class Pulse : JavaPlugin() {
         shopGUI = ShopGUI(shopManager, economyManager)
 
         placeholderManager = PlaceholderManager().also { it.initialize() }
+
+        // Initialize profile GUIs
+        profileGUI = dev.aledlb.pulse.profile.ProfileGUI()
+        punishmentHistoryGUI = dev.aledlb.pulse.profile.PunishmentHistoryGUI()
     }
 
     /**
@@ -212,6 +218,8 @@ class Pulse : JavaPlugin() {
             permissionManager,
             shopGUI,
             playtimeManager,
+            profileGUI,
+            punishmentHistoryGUI,
             PunishmentListener()
         )
         Logger.success("Registered event listeners")
@@ -290,5 +298,11 @@ class Pulse : JavaPlugin() {
 
         val playtimeCmd = PlaytimeCommand(playtimeManager)
         bindCommand("playtime", playtimeCmd)
+
+        // Profile and Reports
+        val profileCmd = dev.aledlb.pulse.commands.ProfileCommand(profileGUI)
+        bindCommand("profile", profileCmd)
+
+        bindCommand("report", dev.aledlb.pulse.commands.ReportCommand())
     }
 }

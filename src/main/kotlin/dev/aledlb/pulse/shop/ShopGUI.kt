@@ -35,8 +35,26 @@ class ShopGUI(
 
         val inventory = Bukkit.createInventory(null, 54, serializer.deserialize("§5§lShop"))
 
-        // Calculate centered positions with 1 slot gap
-        val slots = calculateCenteredSlots(categories.size, 45)
+        // Center categories in rows 2-3 (slots 18-35)
+        val slots = when {
+            categories.size <= 5 -> {
+                // Single row centered (row 2)
+                val startSlot = 20 - (categories.size / 2)
+                (0 until categories.size).map { startSlot + it }
+            }
+            categories.size <= 9 -> {
+                // Single row (row 2)
+                (0 until categories.size).map { 18 + it }
+            }
+            else -> {
+                // Two rows (rows 2-3), up to 18 categories
+                val firstRowCount = minOf(9, categories.size)
+                val secondRowCount = categories.size - firstRowCount
+                val firstRow = (0 until firstRowCount).map { 18 + it }
+                val secondRow = (0 until secondRowCount).map { 27 + it }
+                firstRow + secondRow
+            }
+        }
 
         // Add categories
         categories.forEachIndexed { index, category ->
@@ -44,7 +62,7 @@ class ShopGUI(
             inventory.setItem(slots[index], categoryItem)
         }
 
-        // Add player info item (bottom row)
+        // Add player info item (bottom right)
         val playerInfo = createPlayerInfoItem(player)
         inventory.setItem(53, playerInfo)
 
@@ -69,15 +87,20 @@ class ShopGUI(
 
         val serializer = LegacyComponentSerializer.legacySection()
 
-        // We always use 54 for consistent layout; show up to 28 items (with gaps)
-        val maxItemsPerPage = 28
+        // Show up to 21 items (3 rows of 7, with 1-block border)
+        val maxItemsPerPage = 21
         val itemsToShow = items.take(maxItemsPerPage)
         val inventory = Bukkit.createInventory(null, 54, serializer.deserialize("§5§l${categoryObj?.displayName ?: category}"))
 
-        // Positions within top 45 slots (leave bottom row for UI)
-        val slots = calculateCenteredSlots(itemsToShow.size, 45)
+        // Items in rows 2-4, columns 1-7 (with 1-block border)
+        val slots = mutableListOf<Int>()
+        for (row in 2..4) {
+            for (col in 1..7) {
+                slots.add(row * 9 + col)
+            }
+        }
 
-        // Add items at calculated positions
+        // Add items in grid layout
         itemsToShow.forEachIndexed { index, item ->
             val shopItem = item.createItemStack()
             inventory.setItem(slots[index], shopItem)
