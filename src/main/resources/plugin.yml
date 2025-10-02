@@ -9,6 +9,28 @@ description: Advanced server core plugin with modular architecture
 website: https://github.com/aledlb8/pulse
 softdepend: [ PlaceholderAPI, Vault ]
 
+libraries:
+  # Kotlin
+  - org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.20
+  # Configuration
+  - org.spongepowered:configurate-yaml:4.1.2
+  - org.spongepowered:configurate-extra-kotlin:4.1.2
+  # Database
+  - org.jetbrains.exposed:exposed-core:0.44.1
+  - org.jetbrains.exposed:exposed-dao:0.44.1
+  - org.jetbrains.exposed:exposed-jdbc:0.44.1
+  - org.jetbrains.exposed:exposed-java-time:0.44.1
+  - com.zaxxer:HikariCP:5.0.1
+  - org.xerial:sqlite-jdbc:3.44.1.0
+  - com.mysql:mysql-connector-j:8.2.0
+  - org.postgresql:postgresql:42.7.7
+  # Redis
+  - redis.clients:jedis:5.1.0
+  # Coroutines
+  - org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3
+  # Logging
+  - ch.qos.logback:logback-classic:1.5.13
+
 commands:
   pulse:
     description: Main pulse command

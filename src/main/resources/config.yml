@@ -22,7 +22,7 @@ currency:
   starting-balance: 1000.0
 
 # ==================== CHAT SYSTEM ====================
-# Chat formatting, tab list, and nametag settings
+# Chat formatting, join messages, tab list, and nametag settings
 chat:
   # Enable/disable chat formatting
   enabled: true
@@ -40,6 +40,15 @@ chat:
   # Allow players to use color codes in chat (&a, &b, etc.)
   enable-chat-colors: false
   chat-color-permission: "pulse.chat.color"
+
+  # Join/Quit Messages
+  messages:
+    join:
+      enabled: true
+      message: '&8[&a+&8] &a%player%'
+    quit:
+      enabled: true
+      message: '&8[&c-&8] &c%player%'
 
   # Tab list settings
   tab:

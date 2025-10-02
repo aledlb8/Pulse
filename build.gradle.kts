@@ -22,38 +22,26 @@ repositories {
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.9-R0.1-SNAPSHOT")
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 
-    // Configuration
-    implementation("org.spongepowered:configurate-yaml:4.1.2")
-    implementation("org.spongepowered:configurate-extra-kotlin:4.1.2")
+    compileOnly("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    compileOnly("org.spongepowered:configurate-yaml:4.1.2")
+    compileOnly("org.spongepowered:configurate-extra-kotlin:4.1.2")
+    compileOnly("org.jetbrains.exposed:exposed-core:0.44.1")
+    compileOnly("org.jetbrains.exposed:exposed-dao:0.44.1")
+    compileOnly("org.jetbrains.exposed:exposed-jdbc:0.44.1")
+    compileOnly("org.jetbrains.exposed:exposed-java-time:0.44.1")
+    compileOnly("com.zaxxer:HikariCP:5.0.1")
+    compileOnly("org.xerial:sqlite-jdbc:3.44.1.0")
+    compileOnly("com.mysql:mysql-connector-j:8.2.0")
+    compileOnly("org.postgresql:postgresql:42.7.7")
+    compileOnly("redis.clients:jedis:5.1.0")
+    compileOnly("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    compileOnly("ch.qos.logback:logback-classic:1.5.13")
 
-    // Database
-    implementation("org.jetbrains.exposed:exposed-core:0.44.1")
-    implementation("org.jetbrains.exposed:exposed-dao:0.44.1")
-    implementation("org.jetbrains.exposed:exposed-jdbc:0.44.1")
-    implementation("org.jetbrains.exposed:exposed-java-time:0.44.1")
-    implementation("com.zaxxer:HikariCP:5.0.1")
-    implementation("org.xerial:sqlite-jdbc:3.44.1.0")
-    implementation("com.mysql:mysql-connector-j:8.2.0")
-    implementation("org.postgresql:postgresql:42.7.7")
+    compileOnly("com.google.code.gson:gson:2.10.1")
 
-    // Redis for network sync
-    implementation("redis.clients:jedis:5.1.0")
-
-    // Coroutines for async operations
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
-
-    // Logging
-    implementation("ch.qos.logback:logback-classic:1.5.13")
-
-    // JSON for data serialization
-    implementation("com.google.code.gson:gson:2.10.1")
-
-    // PlaceholderAPI (optional)
     compileOnly("me.clip:placeholderapi:2.11.5")
 
-    // Vault (optional)
     compileOnly("com.github.MilkBowl:VaultAPI:1.7") {
         exclude(group = "org.bukkit", module = "bukkit")
     }

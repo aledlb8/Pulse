@@ -42,6 +42,12 @@ class ChatManager : Listener {
     private var nametagEnabled = true
     private var nametagDistance = 64.0
 
+    // Join/Quit message settings
+    private var joinMessageEnabled = true
+    private var joinMessage = "&8[&a+&8] &a%player%"
+    private var quitMessageEnabled = true
+    private var quitMessage = "&8[&c-&8] &c%player%"
+
     // Internal systems
     private val playerTeams = ConcurrentHashMap<String, Team>()
     private var tabUpdateTask: Int = -1
@@ -87,6 +93,16 @@ class ChatManager : Listener {
         nametagEnabled = nametagNode.node("enabled").getBoolean(true)
         nametagFormat = nametagNode.node("format").getString("{prefix}{player}{suffix}") ?: "{prefix}{player}{suffix}"
         nametagDistance = nametagNode.node("distance").getDouble(64.0)
+
+        // Join/Quit message settings
+        val messagesNode = chatNode.node("messages")
+        val joinNode = messagesNode.node("join")
+        joinMessageEnabled = joinNode.node("enabled").getBoolean(true)
+        joinMessage = joinNode.node("message").getString("&8[&a+&8] &a%player%") ?: "&8[&a+&8] &a%player%"
+
+        val quitNode = messagesNode.node("quit")
+        quitMessageEnabled = quitNode.node("enabled").getBoolean(true)
+        quitMessage = quitNode.node("message").getString("&8[&c-&8] &c%player%") ?: "&8[&c-&8] &c%player%"
 
     }
 
@@ -248,6 +264,15 @@ class ChatManager : Listener {
     fun onPlayerJoin(event: PlayerJoinEvent) {
         val player = event.player
 
+        // Set join message
+        if (joinMessageEnabled) {
+            val message = joinMessage.replace("%player%", player.name)
+            val serializer = LegacyComponentSerializer.legacySection()
+            event.joinMessage(serializer.deserialize(translateColors(message)))
+        } else {
+            event.joinMessage(null)
+        }
+
         // Update nametag
         if (nametagEnabled) {
             updatePlayerNametag(player)
@@ -265,6 +290,16 @@ class ChatManager : Listener {
     @EventHandler
     fun onPlayerQuit(event: PlayerQuitEvent) {
         val player = event.player
+
+        // Set quit message
+        if (quitMessageEnabled) {
+            val message = quitMessage.replace("%player%", player.name)
+            val serializer = LegacyComponentSerializer.legacySection()
+            event.quitMessage(serializer.deserialize(translateColors(message)))
+        } else {
+            event.quitMessage(null)
+        }
+
         cleanupPlayer(player)
     }
 
