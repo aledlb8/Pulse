@@ -243,7 +243,10 @@ class ShopManager(
                     .replace("{player}", player.name)
                     .replace("{uuid}", player.uniqueId.toString())
 
-                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), processedCommand)
+                // Execute command on global region scheduler for Folia compatibility
+                Bukkit.getGlobalRegionScheduler().run(Pulse.getPlugin(), { _ ->
+                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), processedCommand)
+                })
                 true
             }
 

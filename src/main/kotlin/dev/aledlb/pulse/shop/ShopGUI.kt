@@ -138,8 +138,8 @@ class ShopGUI(
     private fun openGuiSafely(player: Player, inv: Inventory, session: ShopSession) {
         val uuid = player.uniqueId
         switchingMenu.add(uuid)
-        player.openInventory(inv) // fires close for previous, synchronously
-        openGuis[uuid] = session  // install session immediately (Folia-safe, no scheduler)
+        player.openInventory(inv)
+        openGuis[uuid] = session
         switchingMenu.remove(uuid)
     }
 
