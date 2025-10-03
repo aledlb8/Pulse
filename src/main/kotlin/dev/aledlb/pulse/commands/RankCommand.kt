@@ -19,7 +19,7 @@ class RankCommand(
     override val name = "rank"
     override val permission = "pulse.rank"
     override val description = "Manage player ranks"
-    override val usage = "/rank <create|delete|set|remove|info|list|addperm|removeperm|addparent|removeparent> [args...]"
+    override val usage = "/rank <create|delete|set|remove|info|list|addperm|removeperm|addparent|removeparent> [args...]\n  Duration formats: 1d, 7d, 1w, 1m (month), 3m, 6m, 1y (minimum: 1 day)"
 
     override fun execute(sender: CommandSender, args: Array<out String>) {
         if (args.isEmpty()) {
@@ -97,6 +97,7 @@ class RankCommand(
 
         val playerName = args[1]
         val rankName = args[2]
+        val durationStr = if (args.size >= 4) args[3] else null
 
         val targetPlayer = getOnlinePlayer(sender, playerName) ?: return
 
@@ -106,9 +107,27 @@ class RankCommand(
             return
         }
 
-        if (permissionManager.setPlayerRank(targetPlayer, rankName)) {
-            sendMessage(sender, messagesManager.getFormattedMessage("rank.set-success", "player" to targetPlayer.name, "rank" to rank.name))
-            sendMessage(targetPlayer, messagesManager.getFormattedMessage("rank.set-notification", "rank" to rank.name))
+        // Parse duration if provided
+        val expiration = if (durationStr != null) {
+            val duration = parseDuration(durationStr)
+            if (duration == null) {
+                sender.sendMessage(Component.text("Invalid duration format! Use: 1d, 7d, 1w, 1m, 3m, 6m, 1y, etc. (minimum: 1 day)").color(NamedTextColor.RED))
+                return
+            }
+            System.currentTimeMillis() + duration
+        } else {
+            null
+        }
+
+        if (rankManager.setPlayerRank(targetPlayer, rankName, expiration)) {
+            val durationMsg = if (expiration != null) {
+                " for ${formatDuration(expiration - System.currentTimeMillis())}"
+            } else {
+                " permanently"
+            }
+            sendMessage(sender, messagesManager.getFormattedMessage("rank.set-success", "player" to targetPlayer.name, "rank" to rank.name) + durationMsg)
+            sendMessage(targetPlayer, messagesManager.getFormattedMessage("rank.set-notification", "rank" to rank.name) + durationMsg)
+            permissionManager.updatePlayerPermissions(targetPlayer)
             permissionManager.updatePlayerDisplayNames()
         } else {
             sendUsage(sender)
@@ -320,11 +339,46 @@ class RankCommand(
         sendMessage(sender, messagesManager.getFormattedMessage("rank.reload-success"))
     }
 
+    private fun parseDuration(input: String): Long? {
+        val regex = "(\\d+)([dwy])".toRegex()
+        val match = regex.matchEntire(input.lowercase()) ?: return null
+        
+        val amount = match.groupValues[1].toLongOrNull() ?: return null
+        val unit = match.groupValues[2]
+        
+        return when (unit) {
+            "d" -> amount * 24 * 60 * 60 * 1000
+            "w" -> amount * 7 * 24 * 60 * 60 * 1000
+            "y" -> amount * 365 * 24 * 60 * 60 * 1000
+            else -> null
+        }
+    }
+
+    private fun formatDuration(millis: Long): String {
+        val seconds = millis / 1000
+        val minutes = seconds / 60
+        val hours = minutes / 60
+        val days = hours / 24
+        val weeks = days / 7
+        val months = days / 30
+        val years = days / 365
+
+        return when {
+            years > 0 -> "${years}y"
+            months > 0 -> "${months}m"
+            weeks > 0 -> "${weeks}w"
+            days > 0 -> "${days}d"
+            hours > 0 -> "${hours}h"
+            minutes > 0 -> "${minutes}m"
+            else -> "${seconds}s"
+        }
+    }
+
     private fun showHelp(sender: CommandSender) {
         sender.sendMessage(Component.text("Rank Commands:").color(NamedTextColor.GOLD))
         sender.sendMessage(Component.text("/rank create <name> <prefix> <suffix> <weight> ", NamedTextColor.GRAY).append(Component.text("- Create new rank", NamedTextColor.WHITE)))
         sender.sendMessage(Component.text("/rank delete <rank> ", NamedTextColor.GRAY).append(Component.text("- Delete a rank", NamedTextColor.WHITE)))
-        sender.sendMessage(Component.text("/rank set <player> <rank> ", NamedTextColor.GRAY).append(Component.text("- Set player rank", NamedTextColor.WHITE)))
+        sender.sendMessage(Component.text("/rank set <player> <rank> [duration] ", NamedTextColor.GRAY).append(Component.text("- Set player rank", NamedTextColor.WHITE)))
         sender.sendMessage(Component.text("/rank remove <player> <rank> ", NamedTextColor.GRAY).append(Component.text("- Remove player rank", NamedTextColor.WHITE)))
         sender.sendMessage(Component.text("/rank info <rank> ", NamedTextColor.GRAY).append(Component.text("- View rank info", NamedTextColor.WHITE)))
         sender.sendMessage(Component.text("/rank list ", NamedTextColor.GRAY).append(Component.text("- List all ranks", NamedTextColor.WHITE)))
@@ -349,8 +403,11 @@ class RankCommand(
             }
 
             3 -> when (args[0].lowercase()) {
-                "set" -> rankManager.getRankNames()
-                    .filter { it.startsWith(args[2].lowercase()) }
+                "set" -> {
+                    val defaultRank = rankManager.getDefaultRank()
+                    rankManager.getRankNames()
+                        .filter { it.lowercase() != defaultRank.lowercase() && it.startsWith(args[2].lowercase()) }
+                }
                 "remove" -> {
                     // Show only the rank the player currently has
                     val targetPlayer = Bukkit.getPlayer(args[1])
@@ -400,6 +457,21 @@ class RankCommand(
                     // Show only the parents of this rank
                     val rank = rankManager.getRank(args[1])
                     rank?.parents?.filter { it.startsWith(args[2].lowercase()) }?.toList() ?: emptyList()
+                }
+                else -> emptyList()
+            }
+
+            4 -> when (args[0].lowercase()) {
+                "set" -> {
+                    val input = args[3].lowercase()
+                    // If user is typing a custom duration (starts with a digit), don't suggest anything
+                    if (input.isNotEmpty() && input[0].isDigit()) {
+                        emptyList()
+                    } else {
+                        // Suggest duration formats only if not typing a custom one
+                        listOf("1d", "7d", "1w", "1m", "3m", "6m", "1y", "permanent")
+                            .filter { it.startsWith(input) }
+                    }
                 }
                 else -> emptyList()
             }
