@@ -150,6 +150,10 @@ commands:
     description: Report a player
     usage: /report <player> <reason>
     permission: pulse.report
+  motd:
+    description: Manage MOTD settings
+    usage: /motd <reload|maintenance>
+    permission: pulse.motd
 
 permissions:
   pulse.*:
@@ -173,6 +177,8 @@ permissions:
       pulse.report: true
       pulse.reports.notify: true
       pulse.update.notify: true
+      pulse.motd: true
+      pulse.maintenance.bypass: true
   pulse.admin:
     description: Administrator access to pulse
   pulse.rank:
@@ -347,3 +353,14 @@ permissions:
     description: Report players
   pulse.reports.notify:
     description: Receive notifications when players are reported
+  pulse.motd:
+    description: Access to MOTD commands
+    children:
+      pulse.motd.reload: true
+      pulse.motd.maintenance: true
+  pulse.motd.reload:
+    description: Reload MOTD configuration
+  pulse.motd.maintenance:
+    description: Toggle maintenance mode
+  pulse.maintenance.bypass:
+    description: Bypass maintenance mode and join the server

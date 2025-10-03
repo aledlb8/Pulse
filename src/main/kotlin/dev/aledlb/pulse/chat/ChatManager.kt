@@ -4,6 +4,7 @@ import dev.aledlb.pulse.Pulse
 import dev.aledlb.pulse.util.Logger
 import org.bukkit.Bukkit
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.minimessage.MiniMessage
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -525,14 +526,17 @@ class ChatManager : Listener {
         val pingColor = getPingColor(ping)
         val pingBars = getPingBars(ping)
 
-        // Format ping display
+        // Format ping display with MiniMessage support
         val pingDisplay = if (showPing && pingPosition != "none") {
-            pingFormat
+            val miniMessage = MiniMessage.miniMessage()
+            val pingFormatProcessed = pingFormat
                 .replace("{ping}", ping.toString())
-                .replace("{ping_color}", pingColor)
+                .replace("{ping_color}", translateColors(pingColor))
                 .replace("{ping_bars}", pingBars)
-        } else ""
+            miniMessage.deserialize(pingFormatProcessed)
+        } else Component.empty()
 
+        // Format player name with legacy colors only
         var formattedName = translateColors(tabFormat)
             .replace("{prefix}", translateColors(prefix))
             .replace("{tags}", tags)
@@ -544,16 +548,18 @@ class ChatManager : Listener {
             .replace("{ping_color}", translateColors(pingColor))
             .replace("{ping_bars}", pingBars)
 
+        // Parse player name with legacy serializer
+        val serializer = LegacyComponentSerializer.legacySection()
+        var nameComponent: Component = serializer.deserialize(formattedName)
+
         // Add ping display based on position
-        formattedName = when (pingPosition.lowercase()) {
-            "before" -> translateColors(pingDisplay) + formattedName
-            "after" -> formattedName + translateColors(pingDisplay)
-            else -> formattedName
+        nameComponent = when (pingPosition.lowercase()) {
+            "before" -> pingDisplay.append(nameComponent)
+            "after" -> nameComponent.append(pingDisplay)
+            else -> nameComponent
         }
 
-        // Update player list name using Adventure API
-        val serializer = LegacyComponentSerializer.legacySection()
-        player.playerListName(serializer.deserialize(formattedName))
+        player.playerListName(nameComponent)
     }
 
     private fun updateTabHeader(player: Player) {
@@ -569,10 +575,11 @@ class ChatManager : Listener {
             buildHeaderFooter(footerLines, player)
         } else ""
 
-        val serializer = LegacyComponentSerializer.legacySection()
+        // Parse with MiniMessage (supports both MiniMessage and legacy colors)
+        val miniMessage = MiniMessage.miniMessage()
         player.sendPlayerListHeaderAndFooter(
-            serializer.deserialize(translateColors(headerText)),
-            serializer.deserialize(translateColors(footerText))
+            if (headerText.isNotEmpty()) miniMessage.deserialize(headerText) else Component.empty(),
+            if (footerText.isNotEmpty()) miniMessage.deserialize(footerText) else Component.empty()
         )
     }
 

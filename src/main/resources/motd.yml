@@ -1,0 +1,43 @@
+# MOTD Configuration
+# Supports MiniMessage formatting: https://docs.advntr.dev/minimessage/format.html
+
+# Enable/Disable MOTD system
+enabled: true
+
+# Maintenance mode
+maintenance:
+  enabled: false
+  # Players with this permission can join during maintenance
+  bypass-permission: "pulse.maintenance.bypass"
+  # Kick message for players without bypass permission
+  kick-message: "<red><bold>SERVER MAINTENANCE</bold></red>\n\n<gray>We're currently performing maintenance.\n\n<yellow>Please check back later!</yellow>"
+  # MOTD to show during maintenance
+  motd:
+    line1: "             <red><bold>⚠ ᴍᴀɪɴᴛᴇɴᴀɴᴄᴇ ᴍᴏᴅᴇ ⚠</bold></red>"
+    line2: "                 <gray>ᴡᴇ'ʟʟ ʙᴇ ʙᴀᴄᴋ ѕᴏᴏɴ!</gray>"
+  # Icon during maintenance (relative to server directory)
+  icon: "server-icon-maintenance.png"
+
+# You can use https://mcutils.com/small-text-converter to convert text to that mini font
+
+# Normal MOTD configuration
+motd:
+  # Line 1 of the MOTD
+  line1: "                      <gradient:#00ffff:#0080ff><bold>⚡ ѕᴇʀᴠᴇʀ ⚡</bold></gradient>"
+  # Line 2 of the MOTD
+  line2: "              <gradient:#ff0000:#ff00ff><bold>ѕᴜʀᴠɪᴠᴀʟ / ᴀɴᴀʀᴄʜʏ</bold></gradient>"
+
+# Max players display
+max-players:
+  # Use custom max players (overrides server.properties)
+  enabled: false
+  # Custom max player count
+  amount: 100
+
+# Server icon
+icon:
+  # Enable custom icon
+  enabled: false
+  # Path to icon file (relative to server directory)
+  # Must be 64x64 PNG file
+  path: "server-icon.png"

@@ -57,7 +57,7 @@ chat:
 
     # Tab format for player names
     # Placeholders: {prefix}, {tags}, {player}, {suffix}, {rank}, {world}, {ping}, {ping_color}, {ping_bars}
-    # Supports color codes using & (e.g., &7, &a, &l, etc.)
+    # Supports legacy color codes using & (e.g., &7, &a, &l, etc.)
     format: "{prefix}{tags}&f{player}{suffix}"
 
     # Show ping in tab list
@@ -65,8 +65,9 @@ chat:
     # Ping position: "before", "after", or "none"
     ping-position: "after"
     # Ping format: {ping_color}{ping}ms or {ping_bars}
-    ping-format: " &8[{ping_color}{ping}ms&8]"
-    # Ping colors based on latency
+    # Supports MiniMessage format (e.g., <gradient:#00ffff:#0080ff>text</gradient>, <bold>, <italic>, etc.)
+    ping-format: " <dark_gray>[</dark_gray>{ping_color}{ping}ms<dark_gray>]</dark_gray>"
+    # Ping colors based on latency (use legacy colors for placeholders)
     ping-colors:
       excellent: "&a"  # < 50ms
       good: "&2"       # 50-100ms
@@ -78,26 +79,32 @@ chat:
     # Tab header and footer
     # Placeholders: {player}, {prefix}, {tags}, {suffix}, {rank}, {world}, {balance}, {online}, {max},
     #               {tps}, {ping}, {playtime}, {server_uptime}, {time}, {date}
+    # Supports MiniMessage format (e.g., <gradient:#00ffff:#0080ff>text</gradient>)
+    # Also supports legacy color codes using & (e.g., &7, &a, &l, etc.)
     # Use \n for new lines
+    #
+    # NOTE: Tab width is determined by the longest line. Add spaces or use the width-spacer line to control width.
     header:
       enabled: true
       # Multiple lines for header
       lines:
         - ""
-        - "&d&l◆━━━━━━━━━━━━━━━━━━━━━━━━━◆"
-        - "&5&lPULSE SERVER"
-        - "&d&l◆━━━━━━━━━━━━━━━━━━━━━━━━━◆"
+        - "<gradient:#d946ef:#a855f7>◆━━━━━━━━━━━━━━━━━━━━━━━━━◆</gradient>"
+        - "<gradient:#a855f7:#d946ef><bold>PULSE SERVER</bold></gradient>"
+        - "<gradient:#d946ef:#a855f7>◆━━━━━━━━━━━━━━━━━━━━━━━━━◆</gradient>"
         - ""
+        # Width spacer - keeps tab list wide (invisible, just spaces)
+        - "                                                            "
 
     footer:
       enabled: true
       # Multiple lines for footer
       lines:
         - ""
-        - "&7&m                                                  "
-        - "&7Rank: &f{rank} &8| &7Balance: &a{balance}"
-        - "&7Online: &a{online}&7/&a{max} &8| &7Ping: {ping_color}{ping}ms"
-        - "&7&m                                                  "
+        - "<gray><strikethrough>                                                  </strikethrough></gray>"
+        - "<gray>Rank: <white>{rank}</white> <dark_gray>|</dark_gray> Balance: <green>{balance}</green></gray>"
+        - "<gray>Online: <green>{online}</green><gray>/</gray><green>{max}</green> <dark_gray>|</dark_gray> Ping: {ping_color}{ping}ms</gray>"
+        - "<gray><strikethrough>                                                  </strikethrough></gray>"
         - ""
 
     # Sorting options

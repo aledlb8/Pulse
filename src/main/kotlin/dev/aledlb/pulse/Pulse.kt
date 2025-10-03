@@ -8,6 +8,8 @@ import dev.aledlb.pulse.database.RedisManager
 import dev.aledlb.pulse.economy.EconomyManager
 import dev.aledlb.pulse.listeners.CommandBlockerListener
 import dev.aledlb.pulse.messages.MessagesManager
+import dev.aledlb.pulse.motd.MOTDManager
+import dev.aledlb.pulse.motd.ServerListPingListener
 import dev.aledlb.pulse.placeholders.PlaceholderAPIHook
 import dev.aledlb.pulse.placeholders.PlaceholderManager
 import dev.aledlb.pulse.placeholders.PulsePlaceholderProvider
@@ -59,6 +61,7 @@ class Pulse : JavaPlugin() {
     lateinit var playtimeManager: PlaytimeManager;          private set
     lateinit var profileGUI: dev.aledlb.pulse.profile.ProfileGUI; private set
     lateinit var punishmentHistoryGUI: dev.aledlb.pulse.profile.PunishmentHistoryGUI; private set
+    lateinit var motdManager: MOTDManager;                  private set
 
     private var placeholderAPIHook: PlaceholderAPIHook? = null
     private var updateChecker: UpdateChecker? = null
@@ -75,7 +78,8 @@ class Pulse : JavaPlugin() {
         "punishment.yml",
         "ranks.yml",
         "shop.yml",
-        "tags.yml"
+        "tags.yml",
+        "motd.yml"
     )
 
     override fun onEnable() {
@@ -190,9 +194,10 @@ class Pulse : JavaPlugin() {
 
         placeholderManager = PlaceholderManager().also { it.initialize() }
 
-        // Initialize profile GUIs
         profileGUI = dev.aledlb.pulse.profile.ProfileGUI()
         punishmentHistoryGUI = dev.aledlb.pulse.profile.PunishmentHistoryGUI()
+
+        motdManager = MOTDManager(this).also { it.initialize() }
     }
 
     /**
@@ -222,7 +227,8 @@ class Pulse : JavaPlugin() {
             profileGUI,
             punishmentHistoryGUI,
             PunishmentListener(),
-            CommandBlockerListener()
+            CommandBlockerListener(),
+            ServerListPingListener(motdManager)
         )
         Logger.success("Registered event listeners")
 
@@ -301,10 +307,11 @@ class Pulse : JavaPlugin() {
         val playtimeCmd = PlaytimeCommand(playtimeManager)
         bindCommand("playtime", playtimeCmd)
 
-        // Profile and Reports
-        val profileCmd = dev.aledlb.pulse.commands.ProfileCommand(profileGUI)
+        val profileCmd = ProfileCommand(profileGUI)
         bindCommand("profile", profileCmd)
 
-        bindCommand("report", dev.aledlb.pulse.commands.ReportCommand())
+        bindCommand("report", ReportCommand())
+
+        bindCommand("motd", MOTDCommand())
     }
 }

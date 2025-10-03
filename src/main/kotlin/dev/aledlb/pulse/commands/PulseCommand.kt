@@ -47,6 +47,7 @@ class PulseCommand : BaseCommand() {
             plugin.chatManager.reload()
             plugin.messagesManager.reload()
             plugin.punishmentManager.reload()
+            plugin.motdManager.reload()
 
             sendMessage(sender, messagesManager.getFormattedMessage("pulse.reload-success"))
             sendMessage(sender, messagesManager.getFormattedMessage("pulse.reload-managers-refreshed"))
