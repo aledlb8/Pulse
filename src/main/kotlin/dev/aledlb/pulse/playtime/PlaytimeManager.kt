@@ -47,23 +47,10 @@ class PlaytimeManager(private val databaseManager: DatabaseManager) : Listener {
 
     private fun scheduleAutoSave() {
         try {
-            val bukkitClass = Class.forName("org.bukkit.Bukkit")
-            val getAsyncScheduler = bukkitClass.getMethod("getAsyncScheduler")
-            val asyncScheduler = getAsyncScheduler.invoke(null)
-
-            val runAtFixedRate = asyncScheduler.javaClass.getMethod(
-                "runAtFixedRate",
-                org.bukkit.plugin.Plugin::class.java,
-                Runnable::class.java,
-                java.lang.Long.TYPE,
-                java.lang.Long.TYPE,
-                TimeUnit::class.java
-            )
-
-            autoSaveTaskAsyncScheduler = runAtFixedRate.invoke(
-                asyncScheduler,
+            val asyncScheduler = Bukkit.getAsyncScheduler()
+            autoSaveTaskAsyncScheduler = asyncScheduler.runAtFixedRate(
                 Pulse.getPlugin(),
-                Runnable { saveAllOnlinePlayers() },
+                { _ -> saveAllOnlinePlayers() },
                 5L,
                 5L,
                 TimeUnit.MINUTES
@@ -71,7 +58,7 @@ class PlaytimeManager(private val databaseManager: DatabaseManager) : Listener {
             Logger.debug("Playtime autosave scheduled via AsyncScheduler")
             return
         } catch (e: Throwable) {
-            Logger.warn("AsyncScheduler not available (${e.message}), falling back to Bukkit scheduler")
+            Logger.debug("AsyncScheduler not available (${e.message}), trying Bukkit scheduler")
         }
 
         // Fallback to Bukkit scheduler for older Paper versions or Spigot
@@ -84,7 +71,8 @@ class PlaytimeManager(private val databaseManager: DatabaseManager) : Listener {
             )
             Logger.debug("Playtime autosave scheduled via Bukkit async scheduler (non-Folia)")
         } catch (e: Exception) {
-            Logger.error("Failed to schedule playtime autosave with any method: ${e.message}", e)
+            Logger.error("Failed to schedule playtime autosave: ${e.message}", e)
+            Logger.error("If you are using Folia, please ensure you are running Paper 1.20.5+ with AsyncScheduler support")
         }
     }
 

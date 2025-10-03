@@ -423,70 +423,89 @@ class ChatManager : Listener {
     private fun updatePlayerNametag(player: Player) {
         if (!nametagEnabled) return
 
-        val scoreboard = Bukkit.getScoreboardManager()?.mainScoreboard ?: return
-        val rankManager = Pulse.getPlugin().rankManager
-        val tagManager = Pulse.getPlugin().tagManager
-        val playerData = rankManager.getPlayerData(player)
-        val rank = rankManager.getRank(playerData.rank)
+        // Folia doesn't support scoreboard teams, skip silently
+        try {
+            // Try to detect if we're on Folia by checking if newScoreboard throws UnsupportedOperationException
+            Bukkit.getScoreboardManager()?.newScoreboard
+        } catch (e: UnsupportedOperationException) {
+            // Running on Folia, nametags are not supported
+            return
+        }
 
-        // Create team name based on rank weight (for proper sorting)
-        val weight = rank?.weight ?: 0
-        val teamName = "pulse_${String.format("%03d", 999 - weight)}_${rank?.name ?: "default"}"
+        // Schedule on player's entity scheduler for Folia compatibility
+        player.scheduler.run(Pulse.getPlugin(), { _ ->
+            try {
+                val rankManager = Pulse.getPlugin().rankManager
+                val tagManager = Pulse.getPlugin().tagManager
+                val playerData = rankManager.getPlayerData(player)
+                val rank = rankManager.getRank(playerData.rank)
 
-        // Clean up old team
-        playerTeams[player.name]?.let { oldTeam ->
-            oldTeam.removeEntry(player.name)
-            if (oldTeam.entries.isEmpty()) {
-                oldTeam.unregister()
+                // Create team name based on rank weight (for proper sorting)
+                val weight = rank?.weight ?: 0
+                val teamName = "pulse_${String.format("%03d", 999 - weight)}_${rank?.name ?: "default"}"
+
+                // Get or create player's own scoreboard (required for Folia)
+                var scoreboard = player.scoreboard
+                if (scoreboard == Bukkit.getScoreboardManager()?.mainScoreboard) {
+                    scoreboard = Bukkit.getScoreboardManager()?.newScoreboard ?: return@run
+                    player.scoreboard = scoreboard
+                }
+
+                // Clean up old team
+                playerTeams[player.name]?.let { oldTeam ->
+                    oldTeam.removeEntry(player.name)
+                    if (oldTeam.entries.isEmpty()) {
+                        oldTeam.unregister()
+                    }
+                }
+
+                // Get or create team
+                var team = scoreboard.getTeam(teamName)
+                if (team == null) {
+                    team = scoreboard.registerNewTeam(teamName)
+                    // Configure team settings
+                    team.setAllowFriendlyFire(true)
+                    team.setCanSeeFriendlyInvisibles(true)
+                }
+
+                // Always update team prefix and suffix (in case format or rank changed)
+                val prefix = rank?.prefix ?: ""
+                val suffix = rank?.suffix ?: ""
+                val tags = tagManager.getFormattedTagsForPlayer(player, "display")
+
+                // Process the format string
+                val translatedFormat = nametagFormat
+                    .replace("{prefix}", translateColors(prefix))
+                    .replace("{tags}", tags)
+                    .replace("{suffix}", translateColors(suffix))
+                    .replace("{rank}", rank?.name ?: "")
+
+                // Split at {player} placeholder
+                val playerIndex = translatedFormat.indexOf("{player}")
+                val formattedPrefix = if (playerIndex >= 0) {
+                    translatedFormat.substring(0, playerIndex)
+                } else {
+                    translatedFormat
+                }
+
+                val formattedSuffix = if (playerIndex >= 0) {
+                    translatedFormat.substring(playerIndex + "{player}".length)
+                } else {
+                    ""
+                }
+
+                // Set team prefix/suffix using Adventure API
+                val serializer = LegacyComponentSerializer.legacySection()
+                team.prefix(serializer.deserialize(formattedPrefix.take(64)))
+                team.suffix(serializer.deserialize(formattedSuffix.take(64)))
+
+                // Add player to team
+                team.addEntry(player.name)
+                playerTeams[player.name] = team
+            } catch (e: Exception) {
+                Logger.error("Failed to update nametag for ${player.name}: ${e.message}", e)
             }
-        }
-
-        // Get or create team
-        var team = scoreboard.getTeam(teamName)
-        if (team == null) {
-            team = scoreboard.registerNewTeam(teamName)
-            // Configure team settings
-            team.setAllowFriendlyFire(true)
-            team.setCanSeeFriendlyInvisibles(true)
-        }
-
-        // Always update team prefix and suffix (in case format or rank changed)
-        val prefix = rank?.prefix ?: ""
-        val suffix = rank?.suffix ?: ""
-        val tags = tagManager.getFormattedTagsForPlayer(player, "display")
-
-        // Process the format string
-        val translatedFormat = nametagFormat
-            .replace("{prefix}", translateColors(prefix))
-            .replace("{tags}", tags)
-            .replace("{suffix}", translateColors(suffix))
-            .replace("{rank}", rank?.name ?: "")
-
-        // Split at {player} placeholder
-        val playerIndex = translatedFormat.indexOf("{player}")
-        val formattedPrefix = if (playerIndex >= 0) {
-            translatedFormat.substring(0, playerIndex)
-        } else {
-            translatedFormat
-        }
-
-        val formattedSuffix = if (playerIndex >= 0) {
-            translatedFormat.substring(playerIndex + "{player}".length)
-        } else {
-            ""
-        }
-
-        // Set team prefix/suffix using Adventure API
-        val serializer = LegacyComponentSerializer.legacySection()
-        team.prefix(serializer.deserialize(formattedPrefix.take(64)))
-        team.suffix(serializer.deserialize(formattedSuffix.take(64)))
-
-        // Add player to team
-        team.addEntry(player.name)
-        playerTeams[player.name] = team
-
-        // Set player's scoreboard
-        player.scoreboard = scoreboard
+        }, null)
     }
 
     private fun updatePlayerTab(player: Player) {
