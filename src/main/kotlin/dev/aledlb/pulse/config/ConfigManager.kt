@@ -23,8 +23,9 @@ class ConfigManager(private val dataFolder: File) {
 
     fun loadConfig(fileName: String, createDefault: Boolean = true): ConfigurationNode {
         val configFile = File(dataFolder, fileName)
+        val isNewFile = !configFile.exists()
 
-        if (!configFile.exists() && createDefault) {
+        if (isNewFile && createDefault) {
             createDefaultConfig(fileName, configFile)
         }
 
@@ -42,12 +43,12 @@ class ConfigManager(private val dataFolder: File) {
         return try {
             val node = loader.load()
 
-            // Merge in any new defaults from the bundled resource without overwriting user values
-            val changed = mergeDefaultsFromResource(fileName, node)
+            // Only merge defaults for brand new files, not existing customized configs
+            if (isNewFile && createDefault) {
+                mergeDefaultsFromResource(fileName, node)
+            }
 
             configNodes[fileName] = node
-
-            // Note: mergeDefaultsFromResource now handles file writing to preserve comments
 
             node
         } catch (e: Exception) {
@@ -76,7 +77,31 @@ class ConfigManager(private val dataFolder: File) {
     }
 
     fun reloadConfig(fileName: String): ConfigurationNode {
-        return loadConfig(fileName, false)
+        val configFile = File(dataFolder, fileName)
+        
+        if (!configFile.exists()) {
+            return loadConfig(fileName, false)
+        }
+
+        val loader = configs[fileName] ?: YamlConfigurationLoader.builder()
+            .path(configFile.toPath())
+            .indent(2)
+            .nodeStyle(NodeStyle.BLOCK)
+            .defaultOptions { opts ->
+                opts.shouldCopyDefaults(false)
+            }
+            .build()
+
+        configs[fileName] = loader
+
+        return try {
+            val node = loader.load()
+            configNodes[fileName] = node
+            node
+        } catch (e: Exception) {
+            Logger.error("Failed to reload configuration: $fileName", e)
+            loader.createNode()
+        }
     }
 
     fun reloadAllConfigs() {
