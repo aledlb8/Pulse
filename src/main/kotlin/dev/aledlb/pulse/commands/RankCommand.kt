@@ -154,11 +154,11 @@ class RankCommand(
         }
 
         val defaultRank = rankManager.getDefaultRank()
-        val rank = rankManager.getRank(defaultRank)
 
-        if (permissionManager.setPlayerRank(targetPlayer, defaultRank)) {
+        if (rankManager.setPlayerRank(targetPlayer, defaultRank, null)) {
             sendMessage(sender, messagesManager.getFormattedMessage("rank.remove-success", "player" to targetPlayer.name, "rank" to rankName))
             sendMessage(targetPlayer, messagesManager.getFormattedMessage("rank.remove-notification", "rank" to rankName))
+            permissionManager.updatePlayerPermissions(targetPlayer)
             permissionManager.updatePlayerDisplayNames()
         } else {
             sendUsage(sender)
@@ -340,7 +340,7 @@ class RankCommand(
     }
 
     private fun parseDuration(input: String): Long? {
-        val regex = "(\\d+)([dwy])".toRegex()
+        val regex = "(\\d+)([dwmy])".toRegex()
         val match = regex.matchEntire(input.lowercase()) ?: return null
         
         val amount = match.groupValues[1].toLongOrNull() ?: return null
@@ -349,6 +349,7 @@ class RankCommand(
         return when (unit) {
             "d" -> amount * 24 * 60 * 60 * 1000
             "w" -> amount * 7 * 24 * 60 * 60 * 1000
+            "m" -> amount * 30 * 24 * 60 * 60 * 1000
             "y" -> amount * 365 * 24 * 60 * 60 * 1000
             else -> null
         }
