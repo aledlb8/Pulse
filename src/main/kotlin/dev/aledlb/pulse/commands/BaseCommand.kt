@@ -43,6 +43,10 @@ abstract class BaseCommand : CommandExecutor, TabCompleter {
         label: String,
         args: Array<out String>
     ): List<String>? {
+        // Check permission for tab completion
+        if (permission != null && !sender.hasPermission(permission!!)) {
+            return emptyList()
+        }
         return getTabCompletions(sender, args)
     }
 

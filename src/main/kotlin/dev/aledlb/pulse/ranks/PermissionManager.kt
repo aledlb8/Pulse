@@ -63,8 +63,9 @@ class PermissionManager(private val rankManager: RankManager) : Listener {
         val attachment = attachments[player.uniqueId] ?: return
         val playerData = rankManager.getOrCreatePlayerData(player.uniqueId, player.name)
 
-        // Clear existing permissions
-        attachment.permissions.clear()
+        for (permission in attachment.permissions.keys.toList()) {
+            attachment.unsetPermission(permission)
+        }
 
         // Get all permissions for the player (rank + player-specific)
         val allPermissions = playerData.getAllPermissions(rankManager)

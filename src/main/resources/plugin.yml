@@ -163,8 +163,16 @@ permissions:
       pulse.shop: true
       pulse.tag: true
       pulse.chat.color: true
+      pulse.gamemode: true
+      pulse.punishment: true
       pulse.playtime: true
       pulse.playtime.others: true
+      pulse.profile: true
+      pulse.profile.others: true
+      pulse.profile.staff: true
+      pulse.report: true
+      pulse.reports.notify: true
+      pulse.update.notify: true
   pulse.admin:
     description: Administrator access to pulse
   pulse.rank:
@@ -172,6 +180,7 @@ permissions:
     children:
       pulse.rank.create: true
       pulse.rank.delete: true
+      pulse.rank.remove: true
       pulse.rank.set: true
       pulse.rank.info: true
       pulse.rank.list: true
@@ -181,6 +190,8 @@ permissions:
     description: Create new ranks
   pulse.rank.delete:
     description: Delete existing ranks
+  pulse.rank.remove:
+    description: Remove player ranks
   pulse.rank.set:
     description: Set player ranks
   pulse.rank.info:
