@@ -3,9 +3,8 @@ package dev.aledlb.pulse.ranks.models
 import dev.aledlb.pulse.Pulse
 import dev.aledlb.pulse.database.DatabaseManager
 import dev.aledlb.pulse.util.Logger
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import dev.aledlb.pulse.util.SyncHelper
+import dev.aledlb.pulse.util.AsyncHelper
 import kotlinx.coroutines.runBlocking
 import org.bukkit.entity.Player
 import java.util.*
@@ -180,13 +179,9 @@ class RankManager(private val databaseManager: DatabaseManager) {
             )
 
             // Save new player to database asynchronously
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    databaseManager.savePlayerData(uuid, name, defaultRank)
-                    databaseManager.savePlayerRanks(uuid, newData.ranks)
-                } catch (e: Exception) {
-                    Logger.error("Failed to save new player data to database: $name", e)
-                }
+            AsyncHelper.saveAsync("new player data for $name") {
+                databaseManager.savePlayerData(uuid, name, defaultRank)
+                databaseManager.savePlayerRanks(uuid, newData.ranks)
             }
 
             newData
@@ -209,20 +204,13 @@ class RankManager(private val databaseManager: DatabaseManager) {
         updatePlayerPrimaryRank(data)
 
         // Save to database asynchronously
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                databaseManager.savePlayerRanks(uuid, data.ranks)
-                databaseManager.savePlayerData(uuid, data.name, data.rank, data.rankExpiration)
-            } catch (e: Exception) {
-                Logger.error("Failed to save player ranks to database: ${data.name}", e)
-            }
+        AsyncHelper.saveAsync("player ranks for ${data.name}") {
+            databaseManager.savePlayerRanks(uuid, data.ranks)
+            databaseManager.savePlayerData(uuid, data.name, data.rank, data.rankExpiration)
         }
 
         // Sync to Redis
-        val redisManager = Pulse.getPlugin().redisManager
-        if (redisManager.isEnabled()) {
-            redisManager.syncRankAdd(uuid, rankName, expiration)
-        }
+        SyncHelper.syncRankAdd(uuid, rankName, expiration)
 
         return true
     }
@@ -235,20 +223,13 @@ class RankManager(private val databaseManager: DatabaseManager) {
         updatePlayerPrimaryRank(data)
 
         // Save to database asynchronously
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                databaseManager.savePlayerRanks(player.uniqueId, data.ranks)
-                databaseManager.savePlayerData(player.uniqueId, player.name, data.rank, data.rankExpiration)
-            } catch (e: Exception) {
-                Logger.error("Failed to save player ranks to database: ${player.name}", e)
-            }
+        AsyncHelper.saveAsync("player ranks for ${player.name}") {
+            databaseManager.savePlayerRanks(player.uniqueId, data.ranks)
+            databaseManager.savePlayerData(player.uniqueId, player.name, data.rank, data.rankExpiration)
         }
 
         // Sync to Redis
-        val redisManager = Pulse.getPlugin().redisManager
-        if (redisManager.isEnabled()) {
-            redisManager.syncRankAdd(player.uniqueId, rankName, expiration)
-        }
+        SyncHelper.syncRankAdd(player.uniqueId, rankName, expiration)
 
         return true
     }
@@ -261,20 +242,13 @@ class RankManager(private val databaseManager: DatabaseManager) {
             updatePlayerPrimaryRank(data)
 
             // Save to database asynchronously
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    databaseManager.savePlayerRanks(uuid, data.ranks)
-                    databaseManager.savePlayerData(uuid, data.name, data.rank, data.rankExpiration)
-                } catch (e: Exception) {
-                    Logger.error("Failed to save player ranks to database: ${data.name}", e)
-                }
+            AsyncHelper.saveAsync("player ranks for ${data.name}") {
+                databaseManager.savePlayerRanks(uuid, data.ranks)
+                databaseManager.savePlayerData(uuid, data.name, data.rank, data.rankExpiration)
             }
 
             // Sync to Redis
-            val redisManager = Pulse.getPlugin().redisManager
-            if (redisManager.isEnabled()) {
-                redisManager.syncRankRemove(uuid, rankName)
-            }
+            SyncHelper.syncRankRemove(uuid, rankName)
         }
 
         return removed
@@ -288,20 +262,13 @@ class RankManager(private val databaseManager: DatabaseManager) {
             updatePlayerPrimaryRank(data)
 
             // Save to database asynchronously
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    databaseManager.savePlayerRanks(player.uniqueId, data.ranks)
-                    databaseManager.savePlayerData(player.uniqueId, player.name, data.rank, data.rankExpiration)
-                } catch (e: Exception) {
-                    Logger.error("Failed to save player ranks to database: ${player.name}", e)
-                }
+            AsyncHelper.saveAsync("player ranks for ${player.name}") {
+                databaseManager.savePlayerRanks(player.uniqueId, data.ranks)
+                databaseManager.savePlayerData(player.uniqueId, player.name, data.rank, data.rankExpiration)
             }
 
             // Sync to Redis
-            val redisManager = Pulse.getPlugin().redisManager
-            if (redisManager.isEnabled()) {
-                redisManager.syncRankRemove(player.uniqueId, rankName)
-            }
+            SyncHelper.syncRankRemove(player.uniqueId, rankName)
         }
 
         return removed
@@ -363,39 +330,21 @@ class RankManager(private val databaseManager: DatabaseManager) {
     fun addPlayerPermission(uuid: UUID, permission: String): Boolean {
         val data = playerData[uuid] ?: return false
         data.addPermission(permission)
-        
-        // Sync to Redis
-        val redisManager = Pulse.getPlugin().redisManager
-        if (redisManager.isEnabled()) {
-            redisManager.syncPermissionAdd(uuid, permission)
-        }
-        
+        SyncHelper.syncPermissionAdd(uuid, permission)
         return true
     }
 
     fun removePlayerPermission(uuid: UUID, permission: String): Boolean {
         val data = playerData[uuid] ?: return false
         data.removePermission(permission)
-        
-        // Sync to Redis
-        val redisManager = Pulse.getPlugin().redisManager
-        if (redisManager.isEnabled()) {
-            redisManager.syncPermissionRemove(uuid, permission)
-        }
-        
+        SyncHelper.syncPermissionRemove(uuid, permission)
         return true
     }
 
     fun denyPlayerPermission(uuid: UUID, permission: String): Boolean {
         val data = playerData[uuid] ?: return false
         data.denyPermission(permission)
-        
-        // Sync to Redis
-        val redisManager = Pulse.getPlugin().redisManager
-        if (redisManager.isEnabled()) {
-            redisManager.syncPermissionDeny(uuid, permission)
-        }
-        
+        SyncHelper.syncPermissionDeny(uuid, permission)
         return true
     }
 
@@ -523,7 +472,6 @@ class RankManager(private val databaseManager: DatabaseManager) {
     }
 
     fun checkExpiredRanks() {
-        val currentTime = System.currentTimeMillis()
         playerData.values.forEach { data ->
             // Get expired ranks from the ranks set
             val expiredRanks = data.getExpiredRanks()
@@ -543,13 +491,9 @@ class RankManager(private val databaseManager: DatabaseManager) {
                 updatePlayerPrimaryRank(data)
 
                 // Save to database
-                CoroutineScope(Dispatchers.IO).launch {
-                    try {
-                        databaseManager.savePlayerRanks(data.uuid, data.ranks)
-                        databaseManager.savePlayerData(data.uuid, data.name, data.rank, data.rankExpiration)
-                    } catch (e: Exception) {
-                        Logger.error("Failed to save expired rank changes for ${data.name}", e)
-                    }
+                AsyncHelper.saveAsync("expired rank changes for ${data.name}") {
+                    databaseManager.savePlayerRanks(data.uuid, data.ranks)
+                    databaseManager.savePlayerData(data.uuid, data.name, data.rank, data.rankExpiration)
                 }
             }
         }

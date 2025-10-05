@@ -1,9 +1,7 @@
 package dev.aledlb.pulse.commands
 
 import dev.aledlb.pulse.Pulse
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import dev.aledlb.pulse.util.AsyncHelper
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.command.ConsoleCommandSender
@@ -476,15 +474,22 @@ class UnwarnCommand : BasePunishmentCommand("unwarn", "pulse.punishment.unwarn",
             val latestWarn = warns.first()
 
             // Deactivate the latest warn asynchronously
-            CoroutineScope(Dispatchers.IO).launch {
-                Pulse.getPlugin().databaseManager.deactivatePunishment(latestWarn.id, punisherUuid)
-
-                val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
-                    "punishment.unwarn-success",
-                    "player" to targetName
-                )
-                sendResponse(msg)
-            }
+            AsyncHelper.executeAsync(
+                operation = {
+                    Pulse.getPlugin().databaseManager.deactivatePunishment(latestWarn.id, punisherUuid)
+                },
+                errorMessage = "Failed to remove warning for $targetName",
+                onError = {
+                    val errorMsg = Pulse.getPlugin().messagesManager.getMessage("general.command-error")
+                    sendResponse(errorMsg)
+                }
+            )
+            
+            val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                "punishment.unwarn-success",
+                "player" to targetName
+            )
+            sendResponse(msg)
         }
     }
 }

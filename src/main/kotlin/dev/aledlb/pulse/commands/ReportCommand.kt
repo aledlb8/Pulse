@@ -2,9 +2,8 @@ package dev.aledlb.pulse.commands
 
 import dev.aledlb.pulse.Pulse
 import dev.aledlb.pulse.util.Logger
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import dev.aledlb.pulse.util.AsyncHelper
+import dev.aledlb.pulse.util.SchedulerHelper
 import org.bukkit.Bukkit
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
@@ -17,6 +16,11 @@ class ReportCommand : CommandExecutor, TabCompleter {
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
         if (sender !is Player) {
             sender.sendMessage("§cThis command can only be used by players.")
+            return true
+        }
+
+        if (!sender.hasPermission("pulse.report")) {
+            sender.sendMessage("§cYou don't have permission to use this command.")
             return true
         }
 
@@ -57,23 +61,25 @@ class ReportCommand : CommandExecutor, TabCompleter {
         }
 
         // Save report asynchronously
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
+        AsyncHelper.loadAsync(
+            entityName = "report",
+            operation = {
                 val db = Pulse.getPlugin().databaseManager
-                val reportId = db.saveReport(
+                db.saveReport(
                     reportedUuid = targetUuid,
                     reportedName = targetDisplayName,
                     reporterUuid = sender.uniqueId,
                     reporterName = sender.name,
                     reason = reason
                 )
-
+            },
+            onSuccess = { reportId ->
                 // Notify player
-                sender.scheduler.run(Pulse.getPlugin(), { _ ->
+                SchedulerHelper.runForPlayer(sender) {
                     sender.sendMessage("§aYour report has been submitted successfully.")
                     sender.sendMessage("§7Report ID: §e#$reportId")
                     sender.sendMessage("§7Staff will review it shortly.")
-                }, null)
+                }
 
                 // Notify staff
                 Bukkit.getGlobalRegionScheduler().run(Pulse.getPlugin(), { _ ->
@@ -87,13 +93,13 @@ class ReportCommand : CommandExecutor, TabCompleter {
                 })
 
                 Logger.info("${sender.name} reported $targetDisplayName: $reason")
-            } catch (e: Exception) {
-                Logger.error("Failed to save report", e)
-                sender.scheduler.run(Pulse.getPlugin(), { _ ->
+            },
+            onError = {
+                SchedulerHelper.runForPlayer(sender) {
                     sender.sendMessage("§cAn error occurred while submitting your report.")
-                }, null)
+                }
             }
-        }
+        )
 
         return true
     }

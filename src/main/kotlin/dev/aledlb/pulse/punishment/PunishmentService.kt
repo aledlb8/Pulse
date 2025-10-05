@@ -3,12 +3,11 @@ package dev.aledlb.pulse.punishment
 import dev.aledlb.pulse.Pulse
 import dev.aledlb.pulse.database.PunishmentRow
 import dev.aledlb.pulse.util.Logger
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import dev.aledlb.pulse.util.SyncHelper
+import dev.aledlb.pulse.util.AsyncHelper
+import dev.aledlb.pulse.util.SchedulerHelper
 import kotlinx.coroutines.runBlocking
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.minimessage.MiniMessage
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import java.util.*
@@ -19,28 +18,25 @@ class PunishmentService {
 
     // Ban operations
     fun ban(target: UUID, targetName: String, reason: String, punisher: UUID, punisherName: String, broadcast: Boolean = true) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
+        AsyncHelper.executeAsync(
+            operation = {
                 val db = Pulse.getPlugin().databaseManager
                 val punishmentId = db.savePunishment(target, "BAN", reason, punisher, punisherName, null, null)
                 db.setActivePunishment(target, "BAN", null, punishmentId)
 
                 // Sync to Redis
-                val redisManager = Pulse.getPlugin().redisManager
-                if (redisManager.isEnabled()) {
-                    redisManager.syncBan(target, punishmentId.toString())
-                }
+                SyncHelper.syncBan(target, punishmentId.toString())
 
                 // Kick player if online
                 val player = Bukkit.getPlayer(target)
-                player?.scheduler?.run(Pulse.getPlugin(), { _ ->
+                if (player != null) {
                     val kickMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
                         "punishment.ban-screen",
                         "reason" to reason,
                         "punisher" to punisherName
                     )
-                    player.kick(Component.text(kickMsg))
-                }, null)
+                    SchedulerHelper.kickPlayer(player, kickMsg)
+                }
 
                 if (broadcast && Pulse.getPlugin().punishmentManager.shouldBroadcastBans()) {
                     val broadcastMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
@@ -50,36 +46,32 @@ class PunishmentService {
                     )
                     Bukkit.getServer().sendMessage(Component.text(broadcastMsg))
                 }
-            } catch (e: Exception) {
-                Logger.error("Failed to ban player $targetName", e)
-            }
-        }
+            },
+            errorMessage = "Failed to ban player $targetName"
+        )
     }
 
     fun tempban(target: UUID, targetName: String, reason: String, punisher: UUID, punisherName: String, duration: Long, broadcast: Boolean = true) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
+        AsyncHelper.executeAsync(
+            operation = {
                 val db = Pulse.getPlugin().databaseManager
                 val expires = System.currentTimeMillis() + (duration * 1000)
                 val punishmentId = db.savePunishment(target, "TEMPBAN", reason, punisher, punisherName, duration, null)
                 db.setActivePunishment(target, "BAN", expires, punishmentId)
 
                 // Sync to Redis
-                val redisManager = Pulse.getPlugin().redisManager
-                if (redisManager.isEnabled()) {
-                    redisManager.syncBan(target, punishmentId.toString())
-                }
+                SyncHelper.syncBan(target, punishmentId.toString())
 
                 val player = Bukkit.getPlayer(target)
-                player?.scheduler?.run(Pulse.getPlugin(), { _ ->
+                if (player != null) {
                     val kickMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
                         "punishment.tempban-screen",
                         "reason" to reason,
                         "duration" to formatDuration(duration),
                         "punisher" to punisherName
                     )
-                    player.kick(Component.text(kickMsg))
-                }, null)
+                    SchedulerHelper.kickPlayer(player, kickMsg)
+                }
 
                 if (broadcast && Pulse.getPlugin().punishmentManager.shouldBroadcastBans()) {
                     val broadcastMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
@@ -90,37 +82,34 @@ class PunishmentService {
                     )
                     Bukkit.getServer().sendMessage(Component.text(broadcastMsg))
                 }
-            } catch (e: Exception) {
-                Logger.error("Failed to tempban player $targetName", e)
-            }
-        }
+            },
+            errorMessage = "Failed to tempban player $targetName"
+        )
     }
 
     fun ipban(target: UUID, targetName: String, ip: String, reason: String, punisher: UUID, punisherName: String, broadcast: Boolean = true) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
+        AsyncHelper.executeAsync(
+            operation = {
                 val db = Pulse.getPlugin().databaseManager
                 val punishmentId = db.savePunishment(target, "IPBAN", reason, punisher, punisherName, null, ip)
                 db.setActivePunishment(target, "BAN", null, punishmentId)
 
                 // Sync to Redis
-                val redisManager = Pulse.getPlugin().redisManager
-                if (redisManager.isEnabled()) {
-                    redisManager.syncBan(target, punishmentId.toString())
-                }
+                SyncHelper.syncBan(target, punishmentId.toString())
 
                 Bukkit.getGlobalRegionScheduler().run(Pulse.getPlugin(), { _ ->
                     Bukkit.getIPBans().add(ip)
                 })
+                
                 val player = Bukkit.getPlayer(target)
-                player?.scheduler?.run(Pulse.getPlugin(), { _ ->
+                if (player != null) {
                     val kickMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
                         "punishment.ipban-screen",
                         "reason" to reason,
                         "punisher" to punisherName
                     )
-                    player.kick(Component.text(kickMsg))
-                }, null)
+                    SchedulerHelper.kickPlayer(player, kickMsg)
+                }
 
                 if (broadcast && Pulse.getPlugin().punishmentManager.shouldBroadcastBans()) {
                     val broadcastMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
@@ -130,39 +119,36 @@ class PunishmentService {
                     )
                     Bukkit.getServer().sendMessage(Component.text(broadcastMsg))
                 }
-            } catch (e: Exception) {
-                Logger.error("Failed to IP ban player $targetName", e)
-            }
-        }
+            },
+            errorMessage = "Failed to IP ban player $targetName"
+        )
     }
 
     fun tempipban(target: UUID, targetName: String, ip: String, reason: String, punisher: UUID, punisherName: String, duration: Long, broadcast: Boolean = true) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
+        AsyncHelper.executeAsync(
+            operation = {
                 val db = Pulse.getPlugin().databaseManager
                 val expires = System.currentTimeMillis() + (duration * 1000)
                 val punishmentId = db.savePunishment(target, "TEMPIPBAN", reason, punisher, punisherName, duration, ip)
                 db.setActivePunishment(target, "BAN", expires, punishmentId)
 
                 // Sync to Redis
-                val redisManager = Pulse.getPlugin().redisManager
-                if (redisManager.isEnabled()) {
-                    redisManager.syncBan(target, punishmentId.toString())
-                }
+                SyncHelper.syncBan(target, punishmentId.toString())
 
                 Bukkit.getGlobalRegionScheduler().run(Pulse.getPlugin(), { _ ->
                     Bukkit.getIPBans().add(ip)
                 })
+                
                 val player = Bukkit.getPlayer(target)
-                player?.scheduler?.run(Pulse.getPlugin(), { _ ->
+                if (player != null) {
                     val kickMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
                         "punishment.tempipban-screen",
                         "reason" to reason,
                         "duration" to formatDuration(duration),
                         "punisher" to punisherName
                     )
-                    player.kick(Component.text(kickMsg))
-                }, null)
+                    SchedulerHelper.kickPlayer(player, kickMsg)
+                }
 
                 if (broadcast && Pulse.getPlugin().punishmentManager.shouldBroadcastBans()) {
                     val broadcastMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
@@ -173,15 +159,15 @@ class PunishmentService {
                     )
                     Bukkit.getServer().sendMessage(Component.text(broadcastMsg))
                 }
-            } catch (e: Exception) {
-                Logger.error("Failed to temp IP ban player $targetName", e)
-            }
-        }
+            },
+            errorMessage = "Failed to temp IP ban player $targetName"
+        )
     }
 
     fun unban(target: UUID, targetName: String, removedBy: UUID, removedByName: String, callback: (Boolean) -> Unit) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
+        AsyncHelper.loadAsync(
+            entityName = "ban status for $targetName",
+            operation = {
                 val db = Pulse.getPlugin().databaseManager
                 val active = db.getActivePunishment(target, "BAN")
                 if (active != null) {
@@ -189,10 +175,7 @@ class PunishmentService {
                     db.removeActivePunishment(target, "BAN")
 
                     // Sync to Redis
-                    val redisManager = Pulse.getPlugin().redisManager
-                    if (redisManager.isEnabled()) {
-                        redisManager.syncUnban(target)
-                    }
+                    SyncHelper.syncUnban(target)
 
                     // Get punishment details to remove IP ban if needed
                     val punishments = db.getPlayerPunishments(target)
@@ -202,34 +185,30 @@ class PunishmentService {
                             Bukkit.getIPBans().remove(punishment.ip)
                         })
                     }
-                    callback(true)
+                    true
                 } else {
-                    callback(false)
+                    false
                 }
-            } catch (e: Exception) {
-                Logger.error("Failed to unban player $targetName", e)
-                callback(false)
-            }
-        }
+            },
+            onSuccess = callback,
+            onError = { callback(false) }
+        )
     }
 
     // Mute operations
     fun mute(target: UUID, targetName: String, reason: String, punisher: UUID, punisherName: String, duration: Long?, broadcast: Boolean = false) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
+        AsyncHelper.executeAsync(
+            operation = {
                 val db = Pulse.getPlugin().databaseManager
                 val expires = duration?.let { System.currentTimeMillis() + (it * 1000) }
                 val punishmentId = db.savePunishment(target, "MUTE", reason, punisher, punisherName, duration, null)
                 db.setActivePunishment(target, "MUTE", expires, punishmentId)
 
                 // Sync to Redis
-                val redisManager = Pulse.getPlugin().redisManager
-                if (redisManager.isEnabled()) {
-                    redisManager.syncMute(target, punishmentId.toString())
-                }
+                SyncHelper.syncMute(target, punishmentId.toString())
 
                 val player = Bukkit.getPlayer(target)
-                player?.scheduler?.run(Pulse.getPlugin(), { _ ->
+                if (player != null) {
                     val durationText = duration?.let { formatDuration(it) } ?: "Permanent"
                     val muteMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
                         "punishment.mute-screen",
@@ -237,8 +216,8 @@ class PunishmentService {
                         "duration" to durationText,
                         "punisher" to punisherName
                     )
-                    player.sendMessage(Component.text(muteMsg))
-                }, null)
+                    SchedulerHelper.sendMessage(player, muteMsg)
+                }
 
                 if (broadcast && Pulse.getPlugin().punishmentManager.shouldBroadcastMutes()) {
                     val broadcastMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
@@ -248,15 +227,15 @@ class PunishmentService {
                     )
                     Bukkit.getServer().sendMessage(Component.text(broadcastMsg))
                 }
-            } catch (e: Exception) {
-                Logger.error("Failed to mute player $targetName", e)
-            }
-        }
+            },
+            errorMessage = "Failed to mute player $targetName"
+        )
     }
 
     fun unmute(target: UUID, targetName: String, removedBy: UUID, callback: (Boolean) -> Unit) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
+        AsyncHelper.loadAsync(
+            entityName = "mute status for $targetName",
+            operation = {
                 val db = Pulse.getPlugin().databaseManager
                 val active = db.getActivePunishment(target, "MUTE")
                 if (active != null) {
@@ -264,44 +243,45 @@ class PunishmentService {
                     db.removeActivePunishment(target, "MUTE")
 
                     // Sync to Redis
-                    val redisManager = Pulse.getPlugin().redisManager
-                    if (redisManager.isEnabled()) {
-                        redisManager.syncUnmute(target)
-                    }
+                    SyncHelper.syncUnmute(target)
 
                     val player = Bukkit.getPlayer(target)
-                    player?.scheduler?.run(Pulse.getPlugin(), { _ ->
+                    if (player != null) {
                         val unmuteMsg = Pulse.getPlugin().messagesManager.getMessage("punishment.unmute-screen")
-                        player.sendMessage(Component.text(unmuteMsg))
-                    }, null)
-                    callback(true)
+                        SchedulerHelper.sendMessage(player, unmuteMsg)
+                    }
+                    true
                 } else {
-                    callback(false)
+                    false
                 }
-            } catch (e: Exception) {
-                Logger.error("Failed to unmute player $targetName", e)
-                callback(false)
-            }
-        }
+            },
+            onSuccess = callback,
+            onError = { callback(false) }
+        )
     }
 
     fun isMuted(target: UUID, callback: (Boolean) -> Unit) {
-        CoroutineScope(Dispatchers.IO).launch {
-            val db = Pulse.getPlugin().databaseManager
-            val active = db.getActivePunishment(target, "MUTE")
-            if (active != null) {
-                // Check if expired
-                if (active.expires != null && System.currentTimeMillis() > active.expires) {
-                    db.removeActivePunishment(target, "MUTE")
-                    db.deactivatePunishment(active.punishmentId, UUID.fromString("00000000-0000-0000-0000-000000000000"))
-                    callback(false)
+        AsyncHelper.loadAsync(
+            entityName = "mute check",
+            operation = {
+                val db = Pulse.getPlugin().databaseManager
+                val active = db.getActivePunishment(target, "MUTE")
+                if (active != null) {
+                    // Check if expired
+                    if (active.expires != null && System.currentTimeMillis() > active.expires) {
+                        db.removeActivePunishment(target, "MUTE")
+                        db.deactivatePunishment(active.punishmentId, UUID.fromString("00000000-0000-0000-0000-000000000000"))
+                        false
+                    } else {
+                        true
+                    }
                 } else {
-                    callback(true)
+                    false
                 }
-            } else {
-                callback(false)
-            }
-        }
+            },
+            onSuccess = callback,
+            onError = { callback(false) }
+        )
     }
 
     // Synchronous version for event listeners - checks cached data
@@ -331,48 +311,35 @@ class PunishmentService {
     // Freeze operations
     fun freeze(target: UUID) {
         frozenPlayers[target] = true
-        
-        // Sync to Redis
-        val redisManager = Pulse.getPlugin().redisManager
-        if (redisManager.isEnabled()) {
-            redisManager.syncFreeze(target)
-        }
+        SyncHelper.syncFreeze(target)
     }
 
     fun unfreeze(target: UUID) {
         frozenPlayers.remove(target)
-        
-        // Sync to Redis
-        val redisManager = Pulse.getPlugin().redisManager
-        if (redisManager.isEnabled()) {
-            redisManager.syncUnfreeze(target)
-        }
+        SyncHelper.syncUnfreeze(target)
     }
 
     fun isFrozen(target: UUID): Boolean = frozenPlayers.containsKey(target)
 
     // Warn operations
     fun warn(target: UUID, targetName: String, reason: String, punisher: UUID, punisherName: String, broadcast: Boolean = false) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
+        AsyncHelper.executeAsync(
+            operation = {
                 val db = Pulse.getPlugin().databaseManager
                 val punishmentId = db.savePunishment(target, "WARN", reason, punisher, punisherName, null, null)
 
                 // Sync to Redis
-                val redisManager = Pulse.getPlugin().redisManager
-                if (redisManager.isEnabled()) {
-                    redisManager.syncWarn(target, punishmentId.toString())
-                }
+                SyncHelper.syncWarn(target, punishmentId.toString())
 
                 val player = Bukkit.getPlayer(target)
-                player?.scheduler?.run(Pulse.getPlugin(), { _ ->
+                if (player != null) {
                     val warnMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
                         "punishment.warn-screen",
                         "reason" to reason,
                         "punisher" to punisherName
                     )
-                    player.sendMessage(Component.text(warnMsg))
-                }, null)
+                    SchedulerHelper.sendMessage(player, warnMsg)
+                }
 
                 if (broadcast && Pulse.getPlugin().punishmentManager.shouldBroadcastWarns()) {
                     val broadcastMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
@@ -382,52 +349,47 @@ class PunishmentService {
                     )
                     Bukkit.getServer().sendMessage(Component.text(broadcastMsg))
                 }
-            } catch (e: Exception) {
-                Logger.error("Failed to warn player $targetName", e)
-            }
-        }
+            },
+            errorMessage = "Failed to warn player $targetName"
+        )
     }
 
     fun getWarns(target: UUID, callback: (List<PunishmentRow>) -> Unit) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
+        AsyncHelper.loadAsync(
+            entityName = "warns",
+            operation = {
                 val db = Pulse.getPlugin().databaseManager
-                val warns = db.getPlayerPunishments(target).filter { it.type == "WARN" && it.active }
-                callback(warns)
-            } catch (e: Exception) {
-                Logger.error("Failed to get warns for player", e)
-                callback(emptyList())
-            }
-        }
+                db.getPlayerPunishments(target).filter { it.type == "WARN" && it.active }
+            },
+            onSuccess = callback,
+            onError = { callback(emptyList()) }
+        )
     }
 
     fun getPunishments(target: UUID, callback: (List<PunishmentRow>) -> Unit) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val punishments = Pulse.getPlugin().databaseManager.getPlayerPunishments(target)
-                callback(punishments)
-            } catch (e: Exception) {
-                Logger.error("Failed to get punishments for player", e)
-                callback(emptyList())
-            }
-        }
+        AsyncHelper.loadAsync(
+            entityName = "punishments",
+            operation = {
+                Pulse.getPlugin().databaseManager.getPlayerPunishments(target)
+            },
+            onSuccess = callback,
+            onError = { callback(emptyList()) }
+        )
     }
 
     // Kick operation
     fun kick(target: Player, reason: String, punisher: UUID, punisherName: String, broadcast: Boolean = true) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
+        AsyncHelper.executeAsync(
+            operation = {
                 val db = Pulse.getPlugin().databaseManager
                 db.savePunishment(target.uniqueId, "KICK", reason, punisher, punisherName, null, null)
 
-                target.scheduler.run(Pulse.getPlugin(), { _ ->
-                    val kickMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
-                        "punishment.kick-screen",
-                        "reason" to reason,
-                        "punisher" to punisherName
-                    )
-                    target.kick(Component.text(kickMsg))
-                }, null)
+                val kickMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
+                    "punishment.kick-screen",
+                    "reason" to reason,
+                    "punisher" to punisherName
+                )
+                SchedulerHelper.kickPlayer(target, kickMsg)
 
                 if (broadcast && Pulse.getPlugin().punishmentManager.shouldBroadcastKicks()) {
                     val broadcastMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
@@ -437,10 +399,9 @@ class PunishmentService {
                     )
                     Bukkit.getServer().sendMessage(Component.text(broadcastMsg))
                 }
-            } catch (e: Exception) {
-                Logger.error("Failed to kick player ${target.name}", e)
-            }
-        }
+            },
+            errorMessage = "Failed to kick player ${target.name}"
+        )
     }
 
     private fun formatDuration(seconds: Long): String {

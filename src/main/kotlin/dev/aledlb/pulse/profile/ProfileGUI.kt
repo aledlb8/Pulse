@@ -1,9 +1,8 @@
 package dev.aledlb.pulse.profile
 
 import dev.aledlb.pulse.Pulse
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import dev.aledlb.pulse.util.AsyncHelper
+import dev.aledlb.pulse.util.GUIHelper
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import org.bukkit.Bukkit
@@ -21,6 +20,16 @@ import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import java.util.*
 
+/**
+ * Data class to hold profile information
+ */
+private data class ProfileData(
+    val playerData: dev.aledlb.pulse.ranks.models.PlayerData?,
+    val balance: Double,
+    val playtime: Long,
+    val tagData: dev.aledlb.pulse.tags.models.PlayerTagData?
+)
+
 class ProfileGUI : Listener {
 
     private val openGuis = mutableMapOf<UUID, ProfileSession>()
@@ -30,19 +39,26 @@ class ProfileGUI : Listener {
         val serializer = LegacyComponentSerializer.legacySection()
         val targetName = target.name ?: "Unknown"
 
-        CoroutineScope(Dispatchers.IO).launch {
-            val plugin = Pulse.getPlugin()
-
-            // Fetch all data
-            val playerData = plugin.rankManager.getPlayerData(target.uniqueId)
-            val balance = plugin.economyManager.getBalance(target.uniqueId)
-            val playtime = plugin.playtimeManager.getPlaytime(target.uniqueId)
-            val tagData = plugin.tagManager.getPlayerTagData(target.uniqueId)
-            val rank = playerData?.rank ?: "Default"
-
-            // Build GUI on main thread
-            Bukkit.getGlobalRegionScheduler().run(plugin, { _ ->
-                val inventory = Bukkit.createInventory(null, 54, serializer.deserialize("§5§l$targetName's Profile"))
+        AsyncHelper.loadAsync(
+            entityName = "profile data for $targetName",
+            operation = {
+                val plugin = Pulse.getPlugin()
+                
+                // Fetch all data
+                ProfileData(
+                    playerData = plugin.rankManager.getPlayerData(target.uniqueId),
+                    balance = plugin.economyManager.getBalance(target.uniqueId),
+                    playtime = plugin.playtimeManager.getPlaytime(target.uniqueId),
+                    tagData = plugin.tagManager.getPlayerTagData(target.uniqueId)
+                )
+            },
+            onSuccess = { data ->
+                val plugin = Pulse.getPlugin()
+                val rank = data.playerData?.rank ?: "Default"
+                
+                // Build GUI on main thread
+                Bukkit.getGlobalRegionScheduler().run(plugin, { _ ->
+                    val inventory = GUIHelper.createInventory("§5§l$targetName's Profile", 54)
 
                 // Player head (centered at slot 13)
                 val playerHead = ItemStack(Material.PLAYER_HEAD).apply {
@@ -74,7 +90,7 @@ class ProfileGUI : Listener {
                 val balanceItem = ItemStack(Material.GOLD_INGOT).apply {
                     val meta = itemMeta
                     meta.displayName(serializer.deserialize("§6§lBalance"))
-                    val formattedBalance = plugin.economyManager.formatBalance(balance)
+                    val formattedBalance = plugin.economyManager.formatBalance(data.balance)
                     meta.lore(listOf(
                         serializer.deserialize("§7Balance:"),
                         serializer.deserialize("§a$formattedBalance"),
@@ -89,7 +105,7 @@ class ProfileGUI : Listener {
                 val playtimeItem = ItemStack(Material.CLOCK).apply {
                     val meta = itemMeta
                     meta.displayName(serializer.deserialize("§6§lPlaytime"))
-                    val formattedPlaytime = formatPlaytime(playtime)
+                    val formattedPlaytime = formatPlaytime(data.playtime)
                     meta.lore(listOf(
                         serializer.deserialize("§7Total Playtime:"),
                         serializer.deserialize("§e$formattedPlaytime")
@@ -102,8 +118,8 @@ class ProfileGUI : Listener {
                 val tagsItem = ItemStack(Material.NAME_TAG).apply {
                     val meta = itemMeta
                     meta.displayName(serializer.deserialize("§6§lTags"))
-                    val activeTags = tagData?.activeTags ?: emptySet()
-                    val ownedTags = tagData?.ownedTags ?: emptySet()
+                    val activeTags = data.tagData?.activeTags ?: emptySet()
+                    val ownedTags = data.tagData?.ownedTags ?: emptySet()
                     val loreList = mutableListOf<Component>()
                     loreList.add(serializer.deserialize("§7Active: §e${activeTags.size}"))
                     loreList.add(serializer.deserialize("§7Owned: §e${ownedTags.size}"))
@@ -144,7 +160,7 @@ class ProfileGUI : Listener {
 
                 openGuiSafely(viewer, inventory, ProfileSession(ProfileView.MAIN, target))
             })
-        }
+        })
     }
 
     private fun openGuiSafely(player: Player, inv: Inventory, session: ProfileSession) {

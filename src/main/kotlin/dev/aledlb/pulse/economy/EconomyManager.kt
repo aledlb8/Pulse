@@ -3,9 +3,8 @@ package dev.aledlb.pulse.economy
 import dev.aledlb.pulse.Pulse
 import dev.aledlb.pulse.database.DatabaseManager
 import dev.aledlb.pulse.util.Logger
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import dev.aledlb.pulse.util.SyncHelper
+import dev.aledlb.pulse.util.AsyncHelper
 import kotlinx.coroutines.runBlocking
 import net.milkbowl.vault.economy.Economy
 import org.bukkit.Bukkit
@@ -104,19 +103,12 @@ class EconomyManager(private val databaseManager: DatabaseManager) {
         playerBalances[player.uniqueId] = clampedAmount
 
         // Save to database asynchronously
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                databaseManager.savePlayerBalance(player.uniqueId, clampedAmount)
-
-                // Sync to Redis if enabled
-                val redisManager = Pulse.getPlugin().redisManager
-                if (redisManager.isEnabled()) {
-                    redisManager.syncBalance(player.uniqueId, clampedAmount)
-                }
-            } catch (e: Exception) {
-                Logger.error("Failed to save player balance to database: ${player.name}", e)
-            }
+        AsyncHelper.saveAsync("player balance for ${player.name}") {
+            databaseManager.savePlayerBalance(player.uniqueId, clampedAmount)
         }
+
+        // Sync to Redis
+        SyncHelper.syncBalance(player.uniqueId, clampedAmount)
 
         return true
     }

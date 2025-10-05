@@ -2,14 +2,13 @@ package dev.aledlb.pulse.database
 
 import dev.aledlb.pulse.Pulse
 import dev.aledlb.pulse.util.Logger
+import dev.aledlb.pulse.util.AsyncHelper
+import dev.aledlb.pulse.util.SchedulerHelper
 import redis.clients.jedis.Jedis
 import redis.clients.jedis.JedisPool
 import redis.clients.jedis.JedisPoolConfig
 import redis.clients.jedis.JedisPubSub
 import com.google.gson.Gson
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import java.util.*
 
 /**
@@ -229,10 +228,8 @@ class RedisManager {
                     // The ban is already in the database, just need to kick if online
                     val player = plugin.server.getPlayer(uuid)
                     if (player != null && player.isOnline) {
-                        player.scheduler.run(plugin, { _ ->
-                            val kickMsg = plugin.messagesManager.getMessage("punishment.ban-screen")
-                            player.kick(net.kyori.adventure.text.Component.text(kickMsg))
-                        }, null)
+                        val kickMsg = plugin.messagesManager.getMessage("punishment.ban-screen")
+                        SchedulerHelper.kickPlayer(player, kickMsg)
                     }
                     Logger.debug("Synced ban for ${message.uuid}")
                 }
@@ -247,10 +244,8 @@ class RedisManager {
                     // The mute is already in the database
                     val player = plugin.server.getPlayer(uuid)
                     if (player != null && player.isOnline) {
-                        player.scheduler.run(plugin, { _ ->
-                            val muteMsg = plugin.messagesManager.getMessage("punishment.mute-screen")
-                            player.sendMessage(net.kyori.adventure.text.Component.text(muteMsg))
-                        }, null)
+                        val muteMsg = plugin.messagesManager.getMessage("punishment.mute-screen")
+                        SchedulerHelper.sendMessage(player, muteMsg)
                     }
                     Logger.debug("Synced mute for ${message.uuid}")
                 }
@@ -259,10 +254,8 @@ class RedisManager {
                     // Mute removed from database
                     val player = plugin.server.getPlayer(uuid)
                     if (player != null && player.isOnline) {
-                        player.scheduler.run(plugin, { _ ->
-                            val unmuteMsg = plugin.messagesManager.getMessage("punishment.unmute-screen")
-                            player.sendMessage(net.kyori.adventure.text.Component.text(unmuteMsg))
-                        }, null)
+                        val unmuteMsg = plugin.messagesManager.getMessage("punishment.unmute-screen")
+                        SchedulerHelper.sendMessage(player, unmuteMsg)
                     }
                     Logger.debug("Synced unmute for ${message.uuid}")
                 }
@@ -271,10 +264,8 @@ class RedisManager {
                     // Warn added to database
                     val player = plugin.server.getPlayer(uuid)
                     if (player != null && player.isOnline) {
-                        player.scheduler.run(plugin, { _ ->
-                            val warnMsg = plugin.messagesManager.getMessage("punishment.warn-screen")
-                            player.sendMessage(net.kyori.adventure.text.Component.text(warnMsg))
-                        }, null)
+                        val warnMsg = plugin.messagesManager.getMessage("punishment.warn-screen")
+                        SchedulerHelper.sendMessage(player, warnMsg)
                     }
                     Logger.debug("Synced warn for ${message.uuid}")
                 }
@@ -306,8 +297,8 @@ class RedisManager {
     fun publishSync(type: SyncType, uuid: UUID, data: String) {
         if (!isEnabled || jedisPool == null) return
 
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
+        AsyncHelper.executeAsync(
+            operation = {
                 val message = SyncMessage(
                     type = type,
                     uuid = uuid.toString(),
@@ -318,10 +309,9 @@ class RedisManager {
                 jedisPool?.resource?.use { jedis ->
                     jedis.publish(channel, gson.toJson(message))
                 }
-            } catch (e: Exception) {
-                Logger.error("Failed to publish Redis sync message: ${e.message}", e)
-            }
-        }
+            },
+            errorMessage = "Failed to publish Redis sync message"
+        )
     }
 
     /**

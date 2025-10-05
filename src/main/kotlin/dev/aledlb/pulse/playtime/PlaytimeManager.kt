@@ -3,9 +3,8 @@ package dev.aledlb.pulse.playtime
 import dev.aledlb.pulse.Pulse
 import dev.aledlb.pulse.database.DatabaseManager
 import dev.aledlb.pulse.util.Logger
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import dev.aledlb.pulse.util.SyncHelper
+import dev.aledlb.pulse.util.AsyncHelper
 import kotlinx.coroutines.runBlocking
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
@@ -29,15 +28,16 @@ class PlaytimeManager(private val databaseManager: DatabaseManager) : Listener {
 
     fun initialize() {
         // Load all playtime data from database
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val allPlaytimes = databaseManager.loadAllPlaytime()
+        AsyncHelper.loadAsync(
+            entityName = "playtime data",
+            operation = {
+                databaseManager.loadAllPlaytime()
+            },
+            onSuccess = { allPlaytimes ->
                 playtimeCache.putAll(allPlaytimes)
                 Logger.info("Loaded playtime data for ${allPlaytimes.size} players")
-            } catch (e: Exception) {
-                Logger.error("Failed to load playtime data: ${e.message}", e)
             }
-        }
+        )
 
         // Start auto-save task (every 5 minutes)
         scheduleAutoSave()
@@ -86,15 +86,18 @@ class PlaytimeManager(private val databaseManager: DatabaseManager) : Listener {
 
         // Load playtime from database if not in cache
         if (!playtimeCache.containsKey(uuid)) {
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    val playtime = databaseManager.loadPlaytime(uuid) ?: 0L
+            AsyncHelper.loadAsync(
+                entityName = "playtime for ${player.name}",
+                operation = {
+                    databaseManager.loadPlaytime(uuid) ?: 0L
+                },
+                onSuccess = { playtime ->
                     playtimeCache[uuid] = playtime
-                } catch (e: Exception) {
-                    Logger.error("Failed to load playtime for ${player.name}: ${e.message}", e)
+                },
+                onError = {
                     playtimeCache[uuid] = 0L
                 }
-            }
+            )
         }
     }
 
@@ -112,12 +115,8 @@ class PlaytimeManager(private val databaseManager: DatabaseManager) : Listener {
             playtimeCache[uuid] = newPlaytime
 
             // Save to database
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    databaseManager.savePlaytime(uuid, newPlaytime)
-                } catch (e: Exception) {
-                    Logger.error("Failed to save playtime for ${player.name}: ${e.message}", e)
-                }
+            AsyncHelper.saveAsync("playtime for ${player.name}") {
+                databaseManager.savePlaytime(uuid, newPlaytime)
             }
         }
     }
@@ -151,19 +150,12 @@ class PlaytimeManager(private val databaseManager: DatabaseManager) : Listener {
         playtimeCache[uuid] = playtime
 
         // Save to database
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                databaseManager.savePlaytime(uuid, playtime)
-            } catch (e: Exception) {
-                Logger.error("Failed to save playtime: ${e.message}", e)
-            }
+        AsyncHelper.saveAsync("playtime") {
+            databaseManager.savePlaytime(uuid, playtime)
         }
 
         // Sync to Redis
-        val redisManager = Pulse.getPlugin().redisManager
-        if (redisManager.isEnabled()) {
-            redisManager.syncPlaytime(uuid, playtime)
-        }
+        SyncHelper.syncPlaytime(uuid, playtime)
     }
 
     /**
@@ -232,18 +224,17 @@ class PlaytimeManager(private val databaseManager: DatabaseManager) : Listener {
     fun saveAllOnlinePlayers() {
         val onlinePlayers = Pulse.getPlugin().server.onlinePlayers
 
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
+        AsyncHelper.executeAsync(
+            operation = {
                 for (player in onlinePlayers) {
                     val uuid = player.uniqueId
                     val playtime = getPlaytime(uuid)
                     databaseManager.savePlaytime(uuid, playtime)
                 }
                 Logger.debug("Auto-saved playtime for ${onlinePlayers.size} online players")
-            } catch (e: Exception) {
-                Logger.error("Failed to auto-save playtime: ${e.message}", e)
-            }
-        }
+            },
+            errorMessage = "Failed to auto-save playtime"
+        )
     }
 
     /**
@@ -258,7 +249,7 @@ class PlaytimeManager(private val databaseManager: DatabaseManager) : Listener {
         }
 
         // Save all to database synchronously on shutdown
-        runBlocking(Dispatchers.IO) {
+        runBlocking {
             try {
                 for ((uuid, playtime) in playtimeCache) {
                     databaseManager.savePlaytime(uuid, playtime)

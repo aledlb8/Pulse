@@ -336,6 +336,7 @@ class RankCommand(
         if (!requirePermission(sender, "pulse.rank.reload")) return
 
         permissionManager.reloadPermissions()
+        rankManager.reload()
         sendMessage(sender, messagesManager.getFormattedMessage("rank.reload-success"))
     }
 

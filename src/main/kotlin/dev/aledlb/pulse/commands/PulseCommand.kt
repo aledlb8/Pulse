@@ -42,6 +42,7 @@ class PulseCommand : BaseCommand() {
 
             // Reload managers to apply changes
             plugin.rankManager.reload()
+            plugin.permissionManager.reloadPermissions()
             plugin.shopManager.reload()
             plugin.tagManager.reload()
             plugin.chatManager.reload()

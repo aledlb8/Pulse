@@ -3,9 +3,8 @@ package dev.aledlb.pulse.profile
 import dev.aledlb.pulse.Pulse
 import dev.aledlb.pulse.database.PunishmentRow
 import dev.aledlb.pulse.database.ReportRow
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import dev.aledlb.pulse.util.AsyncHelper
+import dev.aledlb.pulse.util.GUIHelper
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import org.bukkit.Bukkit
@@ -24,6 +23,14 @@ import org.bukkit.inventory.ItemStack
 import java.text.SimpleDateFormat
 import java.util.*
 
+/**
+ * Data class to hold history information
+ */
+private data class HistoryData(
+    val punishments: List<PunishmentRow>,
+    val reports: List<ReportRow>
+)
+
 class PunishmentHistoryGUI : Listener {
 
     private val openGuis = mutableMapOf<UUID, HistorySession>()
@@ -34,63 +41,60 @@ class PunishmentHistoryGUI : Listener {
         val serializer = LegacyComponentSerializer.legacySection()
         val targetName = target.name ?: "Unknown"
 
-        CoroutineScope(Dispatchers.IO).launch {
-            val plugin = Pulse.getPlugin()
-
-            // Fetch punishments and reports
-            val punishments = plugin.databaseManager.getPlayerPunishments(target.uniqueId)
-            val reports = plugin.databaseManager.getPlayerReports(target.uniqueId)
-
-            // Build GUI on main thread
-            Bukkit.getGlobalRegionScheduler().run(plugin, { _ ->
-                val inventory = Bukkit.createInventory(null, 54, serializer.deserialize("§c§l$targetName's History"))
+        AsyncHelper.loadAsync(
+            entityName = "punishment history for $targetName",
+            operation = {
+                val plugin = Pulse.getPlugin()
+                HistoryData(
+                    punishments = plugin.databaseManager.getPlayerPunishments(target.uniqueId),
+                    reports = plugin.databaseManager.getPlayerReports(target.uniqueId)
+                )
+            },
+            onSuccess = { data ->
+                val plugin = Pulse.getPlugin()
+                
+                // Build GUI on main thread
+                Bukkit.getGlobalRegionScheduler().run(plugin, { _ ->
+                    val inventory = GUIHelper.createInventory("§c§l$targetName's History", 54)
 
                 // Summary item (centered at slot 13)
-                val summaryItem = ItemStack(Material.BOOK).apply {
-                    val meta = itemMeta
-                    meta.displayName(serializer.deserialize("§6§lSummary"))
-                    meta.lore(listOf(
-                        serializer.deserialize("§7Player: §e$targetName"),
-                        Component.empty(),
-                        serializer.deserialize("§c§lPunishments"),
-                        serializer.deserialize("§7Total: §f${punishments.size}"),
-                        serializer.deserialize("§7Active Bans: §c${punishments.count { it.type.contains("BAN") && it.active }}"),
-                        serializer.deserialize("§7Active Mutes: §c${punishments.count { it.type == "MUTE" && it.active }}"),
-                        serializer.deserialize("§7Warnings: §e${punishments.count { it.type == "WARN" }}"),
-                        Component.empty(),
-                        serializer.deserialize("§e§lReports"),
-                        serializer.deserialize("§7Total: §f${reports.size}"),
-                        serializer.deserialize("§7Pending: §e${reports.count { it.status == "PENDING" }}")
-                    ))
-                    itemMeta = meta
-                }
+                val summaryItem = GUIHelper.createItem(
+                    Material.BOOK,
+                    "§6§lSummary",
+                    listOf(
+                        "§7Player: §e$targetName",
+                        "",
+                        "§c§lPunishments",
+                        "§7Total: §f${data.punishments.size}",
+                        "§7Active Bans: §c${data.punishments.count { it.type.contains("BAN") && it.active }}",
+                        "§7Active Mutes: §c${data.punishments.count { it.type == "MUTE" && it.active }}",
+                        "§7Warnings: §e${data.punishments.count { it.type == "WARN" }}",
+                        "",
+                        "§e§lReports",
+                        "§7Total: §f${data.reports.size}",
+                        "§7Pending: §e${data.reports.count { it.status == "PENDING" }}"
+                    )
+                )
                 inventory.setItem(13, summaryItem)
 
                 // Section labels
-                val punishmentLabel = ItemStack(Material.RED_CONCRETE).apply {
-                    val meta = itemMeta
-                    meta.displayName(serializer.deserialize("§c§lPunishments"))
-                    val punishmentsToShow = punishments.take(12)
-                    meta.lore(listOf(
-                        serializer.deserialize("§7Showing ${punishmentsToShow.size}/${punishments.size}")
-                    ))
-                    itemMeta = meta
-                }
+                val punishmentsToShow = data.punishments.take(12)
+                val punishmentLabel = GUIHelper.createItem(
+                    Material.RED_CONCRETE,
+                    "§c§lPunishments",
+                    listOf("§7Showing ${punishmentsToShow.size}/${data.punishments.size}")
+                )
                 inventory.setItem(19, punishmentLabel)
 
-                val reportLabel = ItemStack(Material.YELLOW_CONCRETE).apply {
-                    val meta = itemMeta
-                    meta.displayName(serializer.deserialize("§e§lReports"))
-                    val reportsToShow = reports.take(12)
-                    meta.lore(listOf(
-                        serializer.deserialize("§7Showing ${reportsToShow.size}/${reports.size}")
-                    ))
-                    itemMeta = meta
-                }
+                val reportsToShow = data.reports.take(12)
+                val reportLabel = GUIHelper.createItem(
+                    Material.YELLOW_CONCRETE,
+                    "§e§lReports",
+                    listOf("§7Showing ${reportsToShow.size}/${data.reports.size}")
+                )
                 inventory.setItem(25, reportLabel)
 
                 // Punishments column (left side: slots 28, 29, 30, 37, 38, 39, etc.)
-                val punishmentsToShow = punishments.take(12)
                 val punishmentSlots = listOf(
                     28, 29, 30,  // Row 3
                     37, 38, 39,  // Row 4
@@ -104,7 +108,6 @@ class PunishmentHistoryGUI : Listener {
                 }
 
                 // Reports column (right side: slots 32, 33, 34, 41, 42, 43, etc.)
-                val reportsToShow = reports.take(12)
                 val reportSlots = listOf(
                     32, 33, 34,  // Row 3
                     41, 42, 43,  // Row 4
@@ -118,20 +121,15 @@ class PunishmentHistoryGUI : Listener {
                 }
 
                 // Back button
-                val backButton = ItemStack(Material.ARROW).apply {
-                    val meta = itemMeta
-                    meta.displayName(serializer.deserialize("§cBack to Profile"))
-                    meta.lore(listOf(serializer.deserialize("§7Click to go back")))
-                    itemMeta = meta
-                }
-                inventory.setItem(45, backButton)
+                inventory.setItem(45, GUIHelper.createBackButton())
 
                 // Add decorative glass
-                addGlassDecoration(inventory)
+                GUIHelper.fillBorders(inventory)
 
-                openGuiSafely(viewer, inventory, HistorySession(target, punishments, reports))
-            })
-        }
+                openGuiSafely(viewer, inventory, HistorySession(target, data.punishments, data.reports))
+                })
+            }
+        )
     }
 
     private fun createPunishmentItem(punishment: PunishmentRow): ItemStack {

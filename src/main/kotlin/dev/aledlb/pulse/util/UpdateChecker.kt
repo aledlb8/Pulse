@@ -1,10 +1,8 @@
 package dev.aledlb.pulse.util
 
 import dev.aledlb.pulse.Pulse
+import dev.aledlb.pulse.util.AsyncHelper
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import org.bukkit.Bukkit
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
@@ -62,8 +60,8 @@ class UpdateChecker(private val plugin: Pulse) : Listener {
     }
 
     private fun performUpdateCheck() {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
+        AsyncHelper.executeAsync(
+            operation = {
                 val latest = fetchLatestVersion()
                 latestVersion = latest
                 val current = plugin.pluginMeta.version
@@ -82,10 +80,9 @@ class UpdateChecker(private val plugin: Pulse) : Listener {
                 } else if (!isNewerVersion(latest, current)) {
                     Logger.debug("Pulse is up to date (version $current)")
                 }
-            } catch (e: Exception) {
-                Logger.debug("Update check failed: ${e.message}")
-            }
-        }
+            },
+            errorMessage = "Update check failed"
+        )
     }
 
     @EventHandler

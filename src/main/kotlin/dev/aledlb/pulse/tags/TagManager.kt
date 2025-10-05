@@ -5,9 +5,8 @@ import dev.aledlb.pulse.database.DatabaseManager
 import dev.aledlb.pulse.tags.models.PlayerTagData
 import dev.aledlb.pulse.tags.models.Tag
 import dev.aledlb.pulse.util.Logger
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import dev.aledlb.pulse.util.SyncHelper
+import dev.aledlb.pulse.util.AsyncHelper
 import kotlinx.coroutines.runBlocking
 import org.bukkit.Material
 import org.bukkit.entity.Player
@@ -194,12 +193,8 @@ class TagManager(private val databaseManager: DatabaseManager) {
             val newData = PlayerTagData(uuid = uuid, name = name)
 
             // Save new player to database asynchronously
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    databaseManager.savePlayerTagData(uuid, name, emptySet(), emptySet())
-                } catch (e: Exception) {
-                    Logger.error("Failed to save new player tag data to database: $name", e)
-                }
+            AsyncHelper.saveAsync("new player tag data for $name") {
+                databaseManager.savePlayerTagData(uuid, name, emptySet(), emptySet())
             }
 
             newData
@@ -215,24 +210,17 @@ class TagManager(private val databaseManager: DatabaseManager) {
 
         if (success) {
             // Save to database asynchronously
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    databaseManager.savePlayerTagData(
-                        player.uniqueId,
-                        player.name,
-                        playerData.ownedTags,
-                        playerData.activeTags
-                    )
-                } catch (e: Exception) {
-                    Logger.error("Failed to save player tag data to database: ${player.name}", e)
-                }
+            AsyncHelper.saveAsync("player tag data for ${player.name}") {
+                databaseManager.savePlayerTagData(
+                    player.uniqueId,
+                    player.name,
+                    playerData.ownedTags,
+                    playerData.activeTags
+                )
             }
 
             // Sync to Redis
-            val redisManager = Pulse.getPlugin().redisManager
-            if (redisManager.isEnabled()) {
-                redisManager.syncTagUpdate(player.uniqueId, tagId, "give")
-            }
+            SyncHelper.syncTagUpdate(player.uniqueId, tagId, "give")
         }
 
         return success
@@ -244,17 +232,13 @@ class TagManager(private val databaseManager: DatabaseManager) {
 
         if (success) {
             // Save to database asynchronously
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    databaseManager.savePlayerTagData(
-                        player.uniqueId,
-                        player.name,
-                        playerData.ownedTags,
-                        playerData.activeTags
-                    )
-                } catch (e: Exception) {
-                    Logger.error("Failed to save player tag data to database: ${player.name}", e)
-                }
+            AsyncHelper.saveAsync("player tag data for ${player.name}") {
+                databaseManager.savePlayerTagData(
+                    player.uniqueId,
+                    player.name,
+                    playerData.ownedTags,
+                    playerData.activeTags
+                )
             }
 
             // Update formatting if chat manager is available
@@ -263,10 +247,7 @@ class TagManager(private val databaseManager: DatabaseManager) {
             }
 
             // Sync to Redis
-            val redisManager = Pulse.getPlugin().redisManager
-            if (redisManager.isEnabled()) {
-                redisManager.syncTagUpdate(player.uniqueId, tagId, "remove")
-            }
+            SyncHelper.syncTagUpdate(player.uniqueId, tagId, "remove")
         }
 
         return success
@@ -278,17 +259,13 @@ class TagManager(private val databaseManager: DatabaseManager) {
 
         if (success) {
             // Save to database asynchronously
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    databaseManager.savePlayerTagData(
-                        player.uniqueId,
-                        player.name,
-                        playerData.ownedTags,
-                        playerData.activeTags
-                    )
-                } catch (e: Exception) {
-                    Logger.error("Failed to save player tag data to database: ${player.name}", e)
-                }
+            AsyncHelper.saveAsync("player tag data for ${player.name}") {
+                databaseManager.savePlayerTagData(
+                    player.uniqueId,
+                    player.name,
+                    playerData.ownedTags,
+                    playerData.activeTags
+                )
             }
 
             // Update formatting
@@ -297,10 +274,7 @@ class TagManager(private val databaseManager: DatabaseManager) {
             }
 
             // Sync to Redis
-            val redisManager = Pulse.getPlugin().redisManager
-            if (redisManager.isEnabled()) {
-                redisManager.syncTagActivate(player.uniqueId, tagId)
-            }
+            SyncHelper.syncTagActivate(player.uniqueId, tagId)
         }
 
         return success
@@ -312,17 +286,13 @@ class TagManager(private val databaseManager: DatabaseManager) {
 
         if (success) {
             // Save to database asynchronously
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    databaseManager.savePlayerTagData(
-                        player.uniqueId,
-                        player.name,
-                        playerData.ownedTags,
-                        playerData.activeTags
-                    )
-                } catch (e: Exception) {
-                    Logger.error("Failed to save player tag data to database: ${player.name}", e)
-                }
+            AsyncHelper.saveAsync("player tag data for ${player.name}") {
+                databaseManager.savePlayerTagData(
+                    player.uniqueId,
+                    player.name,
+                    playerData.ownedTags,
+                    playerData.activeTags
+                )
             }
 
             // Update formatting
@@ -331,10 +301,7 @@ class TagManager(private val databaseManager: DatabaseManager) {
             }
 
             // Sync to Redis
-            val redisManager = Pulse.getPlugin().redisManager
-            if (redisManager.isEnabled()) {
-                redisManager.syncTagDeactivate(player.uniqueId, tagId)
-            }
+            SyncHelper.syncTagDeactivate(player.uniqueId, tagId)
         }
 
         return success

@@ -1,10 +1,8 @@
 package dev.aledlb.pulse.punishment
 
 import dev.aledlb.pulse.Pulse
+import dev.aledlb.pulse.util.AsyncHelper
 import io.papermc.paper.event.player.AsyncChatEvent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import net.kyori.adventure.text.Component
 import org.bukkit.event.EventHandler
@@ -175,7 +173,7 @@ class PunishmentListener : Listener {
                     }
                     "KICK" -> {
                         // Player already quit, can't kick them, but we can record it
-                        CoroutineScope(Dispatchers.IO).launch {
+                        AsyncHelper.saveAsync("freeze evasion kick record") {
                             Pulse.getPlugin().databaseManager.savePunishment(
                                 event.player.uniqueId,
                                 "KICK",

@@ -2,6 +2,7 @@ package dev.aledlb.pulse.chat
 
 import dev.aledlb.pulse.Pulse
 import dev.aledlb.pulse.util.Logger
+import dev.aledlb.pulse.util.SchedulerHelper
 import org.bukkit.Bukkit
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.MiniMessage
@@ -398,10 +399,11 @@ class ChatManager : Listener {
 
         // Update tab list
         if (tabEnabled) {
-            player.scheduler.runDelayed(Pulse.getPlugin(), { _ ->
+            // Schedule with delay to ensure player is fully loaded
+            Bukkit.getGlobalRegionScheduler().runDelayed(Pulse.getPlugin(), { _ ->
                 updatePlayerTab(player)
                 updateTabHeader(player)
-            }, null, 5L) // Delay to ensure player is fully loaded
+            }, 5L)
         }
     }
 
@@ -434,7 +436,7 @@ class ChatManager : Listener {
         }
 
         // Schedule on player's entity scheduler for Folia compatibility
-        player.scheduler.run(Pulse.getPlugin(), { _ ->
+        SchedulerHelper.runForPlayer(player) {
             try {
                 val rankManager = Pulse.getPlugin().rankManager
                 val tagManager = Pulse.getPlugin().tagManager
@@ -448,7 +450,7 @@ class ChatManager : Listener {
                 // Get or create player's own scoreboard (required for Folia)
                 var scoreboard = player.scoreboard
                 if (scoreboard == Bukkit.getScoreboardManager()?.mainScoreboard) {
-                    scoreboard = Bukkit.getScoreboardManager()?.newScoreboard ?: return@run
+                    scoreboard = Bukkit.getScoreboardManager()?.newScoreboard ?: return@runForPlayer
                     player.scoreboard = scoreboard
                 }
 
@@ -506,7 +508,7 @@ class ChatManager : Listener {
             } catch (e: Exception) {
                 Logger.error("Failed to update nametag for ${player.name}: ${e.message}", e)
             }
-        }, null)
+        }
     }
 
     private fun updatePlayerTab(player: Player) {
