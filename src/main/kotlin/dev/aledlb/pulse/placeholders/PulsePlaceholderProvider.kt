@@ -1,6 +1,5 @@
 package dev.aledlb.pulse.placeholders
 
-import dev.aledlb.pulse.Pulse
 import dev.aledlb.pulse.economy.EconomyManager
 import dev.aledlb.pulse.ranks.PermissionManager
 import dev.aledlb.pulse.ranks.models.RankManager

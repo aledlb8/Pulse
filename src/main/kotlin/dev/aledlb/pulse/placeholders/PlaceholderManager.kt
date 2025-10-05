@@ -11,7 +11,6 @@ class PlaceholderManager {
     private val placeholderPattern = Pattern.compile("%([^%]+)%")
 
     fun initialize() {
-        // Ready for provider registration
     }
 
     /**

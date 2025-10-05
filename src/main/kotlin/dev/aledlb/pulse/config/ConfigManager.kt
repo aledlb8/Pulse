@@ -7,9 +7,6 @@ import org.spongepowered.configurate.yaml.YamlConfigurationLoader
 import java.io.File
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import java.nio.file.Path
-import kotlin.io.path.createDirectories
-import kotlin.io.path.exists
 
 class ConfigManager(private val dataFolder: File) {
     private val configs = mutableMapOf<String, YamlConfigurationLoader>()

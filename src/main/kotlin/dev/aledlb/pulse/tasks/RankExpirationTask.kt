@@ -6,7 +6,6 @@ import dev.aledlb.pulse.ranks.models.RankManager
 import dev.aledlb.pulse.util.Logger
 import org.bukkit.Bukkit
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask
-import java.util.function.Consumer
 
 object RankExpirationTask {
 
