@@ -227,6 +227,12 @@ class TagManager(private val databaseManager: DatabaseManager) {
                     Logger.error("Failed to save player tag data to database: ${player.name}", e)
                 }
             }
+
+            // Sync to Redis
+            val redisManager = Pulse.getPlugin().redisManager
+            if (redisManager.isEnabled()) {
+                redisManager.syncTagUpdate(player.uniqueId, tagId, "give")
+            }
         }
 
         return success
@@ -254,6 +260,12 @@ class TagManager(private val databaseManager: DatabaseManager) {
             // Update formatting if chat manager is available
             if (Pulse.getPlugin().isPluginFullyLoaded()) {
                 Pulse.getPlugin().chatManager.updatePlayerFormats(player)
+            }
+
+            // Sync to Redis
+            val redisManager = Pulse.getPlugin().redisManager
+            if (redisManager.isEnabled()) {
+                redisManager.syncTagUpdate(player.uniqueId, tagId, "remove")
             }
         }
 
@@ -283,6 +295,12 @@ class TagManager(private val databaseManager: DatabaseManager) {
             if (Pulse.getPlugin().isPluginFullyLoaded()) {
                 Pulse.getPlugin().chatManager.updatePlayerFormats(player)
             }
+
+            // Sync to Redis
+            val redisManager = Pulse.getPlugin().redisManager
+            if (redisManager.isEnabled()) {
+                redisManager.syncTagActivate(player.uniqueId, tagId)
+            }
         }
 
         return success
@@ -310,6 +328,12 @@ class TagManager(private val databaseManager: DatabaseManager) {
             // Update formatting
             if (Pulse.getPlugin().isPluginFullyLoaded()) {
                 Pulse.getPlugin().chatManager.updatePlayerFormats(player)
+            }
+
+            // Sync to Redis
+            val redisManager = Pulse.getPlugin().redisManager
+            if (redisManager.isEnabled()) {
+                redisManager.syncTagDeactivate(player.uniqueId, tagId)
             }
         }
 

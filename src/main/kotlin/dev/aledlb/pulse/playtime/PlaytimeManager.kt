@@ -158,6 +158,12 @@ class PlaytimeManager(private val databaseManager: DatabaseManager) : Listener {
                 Logger.error("Failed to save playtime: ${e.message}", e)
             }
         }
+
+        // Sync to Redis
+        val redisManager = Pulse.getPlugin().redisManager
+        if (redisManager.isEnabled()) {
+            redisManager.syncPlaytime(uuid, playtime)
+        }
     }
 
     /**

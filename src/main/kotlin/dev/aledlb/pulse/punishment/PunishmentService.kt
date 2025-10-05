@@ -25,6 +25,12 @@ class PunishmentService {
                 val punishmentId = db.savePunishment(target, "BAN", reason, punisher, punisherName, null, null)
                 db.setActivePunishment(target, "BAN", null, punishmentId)
 
+                // Sync to Redis
+                val redisManager = Pulse.getPlugin().redisManager
+                if (redisManager.isEnabled()) {
+                    redisManager.syncBan(target, punishmentId.toString())
+                }
+
                 // Kick player if online
                 val player = Bukkit.getPlayer(target)
                 player?.scheduler?.run(Pulse.getPlugin(), { _ ->
@@ -58,6 +64,12 @@ class PunishmentService {
                 val punishmentId = db.savePunishment(target, "TEMPBAN", reason, punisher, punisherName, duration, null)
                 db.setActivePunishment(target, "BAN", expires, punishmentId)
 
+                // Sync to Redis
+                val redisManager = Pulse.getPlugin().redisManager
+                if (redisManager.isEnabled()) {
+                    redisManager.syncBan(target, punishmentId.toString())
+                }
+
                 val player = Bukkit.getPlayer(target)
                 player?.scheduler?.run(Pulse.getPlugin(), { _ ->
                     val kickMsg = Pulse.getPlugin().messagesManager.getFormattedMessage(
@@ -90,6 +102,12 @@ class PunishmentService {
                 val db = Pulse.getPlugin().databaseManager
                 val punishmentId = db.savePunishment(target, "IPBAN", reason, punisher, punisherName, null, ip)
                 db.setActivePunishment(target, "BAN", null, punishmentId)
+
+                // Sync to Redis
+                val redisManager = Pulse.getPlugin().redisManager
+                if (redisManager.isEnabled()) {
+                    redisManager.syncBan(target, punishmentId.toString())
+                }
 
                 Bukkit.getGlobalRegionScheduler().run(Pulse.getPlugin(), { _ ->
                     Bukkit.getIPBans().add(ip)
@@ -125,6 +143,12 @@ class PunishmentService {
                 val expires = System.currentTimeMillis() + (duration * 1000)
                 val punishmentId = db.savePunishment(target, "TEMPIPBAN", reason, punisher, punisherName, duration, ip)
                 db.setActivePunishment(target, "BAN", expires, punishmentId)
+
+                // Sync to Redis
+                val redisManager = Pulse.getPlugin().redisManager
+                if (redisManager.isEnabled()) {
+                    redisManager.syncBan(target, punishmentId.toString())
+                }
 
                 Bukkit.getGlobalRegionScheduler().run(Pulse.getPlugin(), { _ ->
                     Bukkit.getIPBans().add(ip)
@@ -164,6 +188,12 @@ class PunishmentService {
                     db.deactivatePunishment(active.punishmentId, removedBy)
                     db.removeActivePunishment(target, "BAN")
 
+                    // Sync to Redis
+                    val redisManager = Pulse.getPlugin().redisManager
+                    if (redisManager.isEnabled()) {
+                        redisManager.syncUnban(target)
+                    }
+
                     // Get punishment details to remove IP ban if needed
                     val punishments = db.getPlayerPunishments(target)
                     val punishment = punishments.find { it.id == active.punishmentId }
@@ -191,6 +221,12 @@ class PunishmentService {
                 val expires = duration?.let { System.currentTimeMillis() + (it * 1000) }
                 val punishmentId = db.savePunishment(target, "MUTE", reason, punisher, punisherName, duration, null)
                 db.setActivePunishment(target, "MUTE", expires, punishmentId)
+
+                // Sync to Redis
+                val redisManager = Pulse.getPlugin().redisManager
+                if (redisManager.isEnabled()) {
+                    redisManager.syncMute(target, punishmentId.toString())
+                }
 
                 val player = Bukkit.getPlayer(target)
                 player?.scheduler?.run(Pulse.getPlugin(), { _ ->
@@ -226,6 +262,12 @@ class PunishmentService {
                 if (active != null) {
                     db.deactivatePunishment(active.punishmentId, removedBy)
                     db.removeActivePunishment(target, "MUTE")
+
+                    // Sync to Redis
+                    val redisManager = Pulse.getPlugin().redisManager
+                    if (redisManager.isEnabled()) {
+                        redisManager.syncUnmute(target)
+                    }
 
                     val player = Bukkit.getPlayer(target)
                     player?.scheduler?.run(Pulse.getPlugin(), { _ ->
@@ -289,10 +331,22 @@ class PunishmentService {
     // Freeze operations
     fun freeze(target: UUID) {
         frozenPlayers[target] = true
+        
+        // Sync to Redis
+        val redisManager = Pulse.getPlugin().redisManager
+        if (redisManager.isEnabled()) {
+            redisManager.syncFreeze(target)
+        }
     }
 
     fun unfreeze(target: UUID) {
         frozenPlayers.remove(target)
+        
+        // Sync to Redis
+        val redisManager = Pulse.getPlugin().redisManager
+        if (redisManager.isEnabled()) {
+            redisManager.syncUnfreeze(target)
+        }
     }
 
     fun isFrozen(target: UUID): Boolean = frozenPlayers.containsKey(target)
@@ -302,7 +356,13 @@ class PunishmentService {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val db = Pulse.getPlugin().databaseManager
-                db.savePunishment(target, "WARN", reason, punisher, punisherName, null, null)
+                val punishmentId = db.savePunishment(target, "WARN", reason, punisher, punisherName, null, null)
+
+                // Sync to Redis
+                val redisManager = Pulse.getPlugin().redisManager
+                if (redisManager.isEnabled()) {
+                    redisManager.syncWarn(target, punishmentId.toString())
+                }
 
                 val player = Bukkit.getPlayer(target)
                 player?.scheduler?.run(Pulse.getPlugin(), { _ ->

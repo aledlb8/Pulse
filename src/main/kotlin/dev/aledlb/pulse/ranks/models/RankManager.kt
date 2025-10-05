@@ -218,6 +218,12 @@ class RankManager(private val databaseManager: DatabaseManager) {
             }
         }
 
+        // Sync to Redis
+        val redisManager = Pulse.getPlugin().redisManager
+        if (redisManager.isEnabled()) {
+            redisManager.syncRankAdd(uuid, rankName, expiration)
+        }
+
         return true
     }
 
@@ -236,6 +242,12 @@ class RankManager(private val databaseManager: DatabaseManager) {
             } catch (e: Exception) {
                 Logger.error("Failed to save player ranks to database: ${player.name}", e)
             }
+        }
+
+        // Sync to Redis
+        val redisManager = Pulse.getPlugin().redisManager
+        if (redisManager.isEnabled()) {
+            redisManager.syncRankAdd(player.uniqueId, rankName, expiration)
         }
 
         return true
@@ -257,6 +269,12 @@ class RankManager(private val databaseManager: DatabaseManager) {
                     Logger.error("Failed to save player ranks to database: ${data.name}", e)
                 }
             }
+
+            // Sync to Redis
+            val redisManager = Pulse.getPlugin().redisManager
+            if (redisManager.isEnabled()) {
+                redisManager.syncRankRemove(uuid, rankName)
+            }
         }
 
         return removed
@@ -277,6 +295,12 @@ class RankManager(private val databaseManager: DatabaseManager) {
                 } catch (e: Exception) {
                     Logger.error("Failed to save player ranks to database: ${player.name}", e)
                 }
+            }
+
+            // Sync to Redis
+            val redisManager = Pulse.getPlugin().redisManager
+            if (redisManager.isEnabled()) {
+                redisManager.syncRankRemove(player.uniqueId, rankName)
             }
         }
 
@@ -339,18 +363,39 @@ class RankManager(private val databaseManager: DatabaseManager) {
     fun addPlayerPermission(uuid: UUID, permission: String): Boolean {
         val data = playerData[uuid] ?: return false
         data.addPermission(permission)
+        
+        // Sync to Redis
+        val redisManager = Pulse.getPlugin().redisManager
+        if (redisManager.isEnabled()) {
+            redisManager.syncPermissionAdd(uuid, permission)
+        }
+        
         return true
     }
 
     fun removePlayerPermission(uuid: UUID, permission: String): Boolean {
         val data = playerData[uuid] ?: return false
         data.removePermission(permission)
+        
+        // Sync to Redis
+        val redisManager = Pulse.getPlugin().redisManager
+        if (redisManager.isEnabled()) {
+            redisManager.syncPermissionRemove(uuid, permission)
+        }
+        
         return true
     }
 
     fun denyPlayerPermission(uuid: UUID, permission: String): Boolean {
         val data = playerData[uuid] ?: return false
         data.denyPermission(permission)
+        
+        // Sync to Redis
+        val redisManager = Pulse.getPlugin().redisManager
+        if (redisManager.isEnabled()) {
+            redisManager.syncPermissionDeny(uuid, permission)
+        }
+        
         return true
     }
 

@@ -104,36 +104,199 @@ class RedisManager {
     }
 
     private fun handleSyncMessage(message: SyncMessage) {
-        when (message.type) {
-            SyncType.BALANCE_UPDATE -> {
-                val uuid = UUID.fromString(message.uuid)
-                val balance = message.data.toDoubleOrNull() ?: return
+        try {
+            val uuid = UUID.fromString(message.uuid)
+            val plugin = Pulse.getPlugin()
 
-                // Update local cache
-                Pulse.getPlugin().economyManager.setBalance(uuid, balance)
-                Logger.debug("Synced balance for ${message.uuid}: $balance")
-            }
-            SyncType.RANK_UPDATE -> {
-                val uuid = UUID.fromString(message.uuid)
-                val rank = message.data
-
-                // Update local cache
-                val playerData = Pulse.getPlugin().rankManager.getPlayerData(uuid)
-                if (playerData != null) {
-                    playerData.rank = rank
-                    Logger.debug("Synced rank for ${message.uuid}: $rank")
+            when (message.type) {
+                SyncType.BALANCE_UPDATE -> {
+                    val balance = message.data.toDoubleOrNull() ?: return
+                    plugin.economyManager.setBalance(uuid, balance)
+                    Logger.debug("Synced balance for ${message.uuid}: $balance")
+                }
+                
+                SyncType.RANK_UPDATE -> {
+                    // Data format: "rankName:expiration" or "rankName"
+                    val parts = message.data.split(":")
+                    val rankName = parts[0]
+                    val expiration = parts.getOrNull(1)?.toLongOrNull()
+                    
+                    plugin.rankManager.addPlayerRank(uuid, rankName, expiration)
+                    
+                    // Update permissions for online player
+                    val player = plugin.server.getPlayer(uuid)
+                    if (player != null && player.isOnline) {
+                        plugin.permissionManager.updatePlayerPermissions(player)
+                        plugin.chatManager.updatePlayerFormats(player)
+                    }
+                    Logger.debug("Synced rank add for ${message.uuid}: $rankName")
+                }
+                
+                SyncType.RANK_REMOVE -> {
+                    val rankName = message.data
+                    plugin.rankManager.removePlayerRank(uuid, rankName)
+                    
+                    // Update permissions for online player
+                    val player = plugin.server.getPlayer(uuid)
+                    if (player != null && player.isOnline) {
+                        plugin.permissionManager.updatePlayerPermissions(player)
+                        plugin.chatManager.updatePlayerFormats(player)
+                    }
+                    Logger.debug("Synced rank remove for ${message.uuid}: $rankName")
+                }
+                
+                SyncType.TAG_UPDATE -> {
+                    // Data format: "tagId:action" where action is "give" or "remove"
+                    val parts = message.data.split(":")
+                    val tagId = parts[0]
+                    val action = parts.getOrNull(1) ?: "give"
+                    
+                    val playerData = plugin.tagManager.getPlayerTagData(uuid)
+                    if (playerData != null) {
+                        if (action == "give") {
+                            playerData.addTag(tagId)
+                        } else {
+                            playerData.removeTag(tagId)
+                        }
+                    }
+                    Logger.debug("Synced tag $action for ${message.uuid}: $tagId")
+                }
+                
+                SyncType.TAG_ACTIVATE -> {
+                    val tagId = message.data
+                    val playerData = plugin.tagManager.getPlayerTagData(uuid)
+                    playerData?.activateTag(tagId)
+                    
+                    // Update formatting for online player
+                    val player = plugin.server.getPlayer(uuid)
+                    if (player != null && player.isOnline) {
+                        plugin.chatManager.updatePlayerFormats(player)
+                    }
+                    Logger.debug("Synced tag activate for ${message.uuid}: $tagId")
+                }
+                
+                SyncType.TAG_DEACTIVATE -> {
+                    val tagId = message.data
+                    val playerData = plugin.tagManager.getPlayerTagData(uuid)
+                    playerData?.deactivateTag(tagId)
+                    
+                    // Update formatting for online player
+                    val player = plugin.server.getPlayer(uuid)
+                    if (player != null && player.isOnline) {
+                        plugin.chatManager.updatePlayerFormats(player)
+                    }
+                    Logger.debug("Synced tag deactivate for ${message.uuid}: $tagId")
+                }
+                
+                SyncType.PERMISSION_ADD -> {
+                    val permission = message.data
+                    plugin.rankManager.addPlayerPermission(uuid, permission)
+                    
+                    // Update permissions for online player
+                    val player = plugin.server.getPlayer(uuid)
+                    if (player != null && player.isOnline) {
+                        plugin.permissionManager.updatePlayerPermissions(player)
+                    }
+                    Logger.debug("Synced permission add for ${message.uuid}: $permission")
+                }
+                
+                SyncType.PERMISSION_REMOVE -> {
+                    val permission = message.data
+                    plugin.rankManager.removePlayerPermission(uuid, permission)
+                    
+                    // Update permissions for online player
+                    val player = plugin.server.getPlayer(uuid)
+                    if (player != null && player.isOnline) {
+                        plugin.permissionManager.updatePlayerPermissions(player)
+                    }
+                    Logger.debug("Synced permission remove for ${message.uuid}: $permission")
+                }
+                
+                SyncType.PERMISSION_DENY -> {
+                    val permission = message.data
+                    plugin.rankManager.denyPlayerPermission(uuid, permission)
+                    
+                    // Update permissions for online player
+                    val player = plugin.server.getPlayer(uuid)
+                    if (player != null && player.isOnline) {
+                        plugin.permissionManager.updatePlayerPermissions(player)
+                    }
+                    Logger.debug("Synced permission deny for ${message.uuid}: $permission")
+                }
+                
+                SyncType.PUNISHMENT_BAN -> {
+                    // Data format: "punishmentId"
+                    // The ban is already in the database, just need to kick if online
+                    val player = plugin.server.getPlayer(uuid)
+                    if (player != null && player.isOnline) {
+                        player.scheduler.run(plugin, { _ ->
+                            val kickMsg = plugin.messagesManager.getMessage("punishment.ban-screen")
+                            player.kick(net.kyori.adventure.text.Component.text(kickMsg))
+                        }, null)
+                    }
+                    Logger.debug("Synced ban for ${message.uuid}")
+                }
+                
+                SyncType.PUNISHMENT_UNBAN -> {
+                    // Ban removed from database, no action needed for offline players
+                    Logger.debug("Synced unban for ${message.uuid}")
+                }
+                
+                SyncType.PUNISHMENT_MUTE -> {
+                    // Data format: "punishmentId"
+                    // The mute is already in the database
+                    val player = plugin.server.getPlayer(uuid)
+                    if (player != null && player.isOnline) {
+                        player.scheduler.run(plugin, { _ ->
+                            val muteMsg = plugin.messagesManager.getMessage("punishment.mute-screen")
+                            player.sendMessage(net.kyori.adventure.text.Component.text(muteMsg))
+                        }, null)
+                    }
+                    Logger.debug("Synced mute for ${message.uuid}")
+                }
+                
+                SyncType.PUNISHMENT_UNMUTE -> {
+                    // Mute removed from database
+                    val player = plugin.server.getPlayer(uuid)
+                    if (player != null && player.isOnline) {
+                        player.scheduler.run(plugin, { _ ->
+                            val unmuteMsg = plugin.messagesManager.getMessage("punishment.unmute-screen")
+                            player.sendMessage(net.kyori.adventure.text.Component.text(unmuteMsg))
+                        }, null)
+                    }
+                    Logger.debug("Synced unmute for ${message.uuid}")
+                }
+                
+                SyncType.PUNISHMENT_WARN -> {
+                    // Warn added to database
+                    val player = plugin.server.getPlayer(uuid)
+                    if (player != null && player.isOnline) {
+                        player.scheduler.run(plugin, { _ ->
+                            val warnMsg = plugin.messagesManager.getMessage("punishment.warn-screen")
+                            player.sendMessage(net.kyori.adventure.text.Component.text(warnMsg))
+                        }, null)
+                    }
+                    Logger.debug("Synced warn for ${message.uuid}")
+                }
+                
+                SyncType.PUNISHMENT_FREEZE -> {
+                    plugin.punishmentManager.service.freeze(uuid)
+                    Logger.debug("Synced freeze for ${message.uuid}")
+                }
+                
+                SyncType.PUNISHMENT_UNFREEZE -> {
+                    plugin.punishmentManager.service.unfreeze(uuid)
+                    Logger.debug("Synced unfreeze for ${message.uuid}")
+                }
+                
+                SyncType.PLAYTIME_UPDATE -> {
+                    val playtime = message.data.toLongOrNull() ?: return
+                    plugin.playtimeManager.setPlaytime(uuid, playtime)
+                    Logger.debug("Synced playtime for ${message.uuid}: $playtime")
                 }
             }
-            SyncType.TAG_UPDATE -> {
-                val uuid = UUID.fromString(message.uuid)
-                // Parse tag data and update
-                Logger.debug("Synced tags for ${message.uuid}")
-            }
-            SyncType.PERMISSION_UPDATE -> {
-                val uuid = UUID.fromString(message.uuid)
-                // Refresh player permissions
-                Logger.debug("Synced permissions for ${message.uuid}")
-            }
+        } catch (e: Exception) {
+            Logger.error("Error handling sync message: ${e.message}", e)
         }
     }
 
@@ -169,24 +332,116 @@ class RedisManager {
     }
 
     /**
-     * Sync player rank across all servers
+     * Sync player rank add across all servers
      */
-    fun syncRank(uuid: UUID, rank: String) {
-        publishSync(SyncType.RANK_UPDATE, uuid, rank)
+    fun syncRankAdd(uuid: UUID, rankName: String, expiration: Long? = null) {
+        val data = if (expiration != null) "$rankName:$expiration" else rankName
+        publishSync(SyncType.RANK_UPDATE, uuid, data)
     }
 
     /**
-     * Sync player tags across all servers
+     * Sync player rank remove across all servers
      */
-    fun syncTags(uuid: UUID, tagsJson: String) {
-        publishSync(SyncType.TAG_UPDATE, uuid, tagsJson)
+    fun syncRankRemove(uuid: UUID, rankName: String) {
+        publishSync(SyncType.RANK_REMOVE, uuid, rankName)
     }
 
     /**
-     * Sync player permissions across all servers
+     * Sync tag give/remove across all servers
      */
-    fun syncPermissions(uuid: UUID, permissionsJson: String) {
-        publishSync(SyncType.PERMISSION_UPDATE, uuid, permissionsJson)
+    fun syncTagUpdate(uuid: UUID, tagId: String, action: String) {
+        publishSync(SyncType.TAG_UPDATE, uuid, "$tagId:$action")
+    }
+
+    /**
+     * Sync tag activation across all servers
+     */
+    fun syncTagActivate(uuid: UUID, tagId: String) {
+        publishSync(SyncType.TAG_ACTIVATE, uuid, tagId)
+    }
+
+    /**
+     * Sync tag deactivation across all servers
+     */
+    fun syncTagDeactivate(uuid: UUID, tagId: String) {
+        publishSync(SyncType.TAG_DEACTIVATE, uuid, tagId)
+    }
+
+    /**
+     * Sync permission add across all servers
+     */
+    fun syncPermissionAdd(uuid: UUID, permission: String) {
+        publishSync(SyncType.PERMISSION_ADD, uuid, permission)
+    }
+
+    /**
+     * Sync permission remove across all servers
+     */
+    fun syncPermissionRemove(uuid: UUID, permission: String) {
+        publishSync(SyncType.PERMISSION_REMOVE, uuid, permission)
+    }
+
+    /**
+     * Sync permission deny across all servers
+     */
+    fun syncPermissionDeny(uuid: UUID, permission: String) {
+        publishSync(SyncType.PERMISSION_DENY, uuid, permission)
+    }
+
+    /**
+     * Sync ban across all servers
+     */
+    fun syncBan(uuid: UUID, punishmentId: String) {
+        publishSync(SyncType.PUNISHMENT_BAN, uuid, punishmentId)
+    }
+
+    /**
+     * Sync unban across all servers
+     */
+    fun syncUnban(uuid: UUID) {
+        publishSync(SyncType.PUNISHMENT_UNBAN, uuid, "")
+    }
+
+    /**
+     * Sync mute across all servers
+     */
+    fun syncMute(uuid: UUID, punishmentId: String) {
+        publishSync(SyncType.PUNISHMENT_MUTE, uuid, punishmentId)
+    }
+
+    /**
+     * Sync unmute across all servers
+     */
+    fun syncUnmute(uuid: UUID) {
+        publishSync(SyncType.PUNISHMENT_UNMUTE, uuid, "")
+    }
+
+    /**
+     * Sync warn across all servers
+     */
+    fun syncWarn(uuid: UUID, punishmentId: String) {
+        publishSync(SyncType.PUNISHMENT_WARN, uuid, punishmentId)
+    }
+
+    /**
+     * Sync freeze across all servers
+     */
+    fun syncFreeze(uuid: UUID) {
+        publishSync(SyncType.PUNISHMENT_FREEZE, uuid, "")
+    }
+
+    /**
+     * Sync unfreeze across all servers
+     */
+    fun syncUnfreeze(uuid: UUID) {
+        publishSync(SyncType.PUNISHMENT_UNFREEZE, uuid, "")
+    }
+
+    /**
+     * Sync playtime across all servers
+     */
+    fun syncPlaytime(uuid: UUID, playtime: Long) {
+        publishSync(SyncType.PLAYTIME_UPDATE, uuid, playtime.toString())
     }
 
     fun isEnabled(): Boolean = isEnabled
@@ -203,8 +458,21 @@ class RedisManager {
 enum class SyncType {
     BALANCE_UPDATE,
     RANK_UPDATE,
+    RANK_REMOVE,
     TAG_UPDATE,
-    PERMISSION_UPDATE
+    TAG_ACTIVATE,
+    TAG_DEACTIVATE,
+    PERMISSION_ADD,
+    PERMISSION_REMOVE,
+    PERMISSION_DENY,
+    PUNISHMENT_BAN,
+    PUNISHMENT_UNBAN,
+    PUNISHMENT_MUTE,
+    PUNISHMENT_UNMUTE,
+    PUNISHMENT_WARN,
+    PUNISHMENT_FREEZE,
+    PUNISHMENT_UNFREEZE,
+    PLAYTIME_UPDATE
 }
 
 data class SyncMessage(
