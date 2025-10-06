@@ -56,7 +56,7 @@ chat:
     enabled: true
 
     # Tab format for player names
-    # Placeholders: {prefix}, {tags}, {player}, {suffix}, {rank}, {world}, {ping}, {ping_color}, {ping_bars}
+    # Placeholders: {prefix}, {tags}, {player}, {suffix}, {rank}, {world}, {ping}, {ping_color}
     # Supports legacy color codes using & (e.g., &7, &a, &l, etc.)
     format: "{prefix}{tags}&f{player}{suffix}"
 
@@ -64,17 +64,20 @@ chat:
     show-ping: true
     # Ping position: "before", "after", or "none"
     ping-position: "after"
-    # Ping format: {ping_color}{ping}ms or {ping_bars}
+    # Ping display style: "number" (shows custom ms text), "bars" (uses Minecraft's default ping bars)
+    ping-display-style: "bars"
+    # Ping format: use {ping_color} and {ping} placeholders
     # Supports MiniMessage format (e.g., <gradient:#00ffff:#0080ff>text</gradient>, <bold>, <italic>, etc.)
+    # Note: Only used when ping-display-style is "number"
     ping-format: " <dark_gray>[</dark_gray>{ping_color}{ping}ms<dark_gray>]</dark_gray>"
-    # Ping colors based on latency (use legacy colors for placeholders)
+    # Ping colors based on latency (use MiniMessage colors for placeholders)
     ping-colors:
-      excellent: "&a"  # < 50ms
-      good: "&2"       # 50-100ms
-      okay: "&e"       # 100-150ms
-      poor: "&6"       # 150-200ms
-      bad: "&c"        # 200-300ms
-      terrible: "&4"   # > 300ms
+      excellent: "<green>"  # < 50ms
+      good: "<dark_green>"       # 50-100ms
+      okay: "<yellow>"       # 100-150ms
+      poor: "<gold>"       # 150-200ms
+      bad: "<red>"        # 200-300ms
+      terrible: "<dark_red>"   # > 300ms
 
     # Tab header and footer
     # Placeholders: {player}, {prefix}, {tags}, {suffix}, {rank}, {world}, {balance}, {online}, {max},

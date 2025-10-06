@@ -41,6 +41,7 @@ class ChatManager : Listener {
     private var showPing = true
     private var pingPosition = "after"
     private var pingFormat = " &8[{ping_color}{ping}ms&8]"
+    private var pingDisplayStyle = "number" // "number" or "bars"
     private val pingColors = mutableMapOf(
         "excellent" to "&a",
         "good" to "&2",
@@ -109,6 +110,7 @@ class ChatManager : Listener {
         // Ping settings
         showPing = tabNode.node("show-ping").getBoolean(true)
         pingPosition = tabNode.node("ping-position").getString("after") ?: "after"
+        pingDisplayStyle = tabNode.node("ping-display-style").getString("number") ?: "number"
         pingFormat = tabNode.node("ping-format").getString(" &8[{ping_color}{ping}ms&8]") ?: " &8[{ping_color}{ping}ms&8]"
 
         val pingColorsNode = tabNode.node("ping-colors")
@@ -526,15 +528,14 @@ class ChatManager : Listener {
         // Get ping
         val ping = player.ping
         val pingColor = getPingColor(ping)
-        val pingBars = getPingBars(ping)
 
         // Format ping display with MiniMessage support
-        val pingDisplay = if (showPing && pingPosition != "none") {
+        // Only add custom ping if NOT in "bars" mode (bars mode uses Minecraft's default)
+        val pingDisplay = if (showPing && pingPosition != "none" && pingDisplayStyle.lowercase() != "bars") {
             val miniMessage = MiniMessage.miniMessage()
             val pingFormatProcessed = pingFormat
                 .replace("{ping}", ping.toString())
                 .replace("{ping_color}", translateColors(pingColor))
-                .replace("{ping_bars}", pingBars)
             miniMessage.deserialize(pingFormatProcessed)
         } else Component.empty()
 
@@ -548,13 +549,12 @@ class ChatManager : Listener {
             .replace("{world}", player.world.name)
             .replace("{ping}", ping.toString())
             .replace("{ping_color}", translateColors(pingColor))
-            .replace("{ping_bars}", pingBars)
 
         // Parse player name with legacy serializer
         val serializer = LegacyComponentSerializer.legacySection()
         var nameComponent: Component = serializer.deserialize(formattedName)
 
-        // Add ping display based on position
+        // Add ping display based on position (only if not using default bars)
         nameComponent = when (pingPosition.lowercase()) {
             "before" -> pingDisplay.append(nameComponent)
             "after" -> nameComponent.append(pingDisplay)
@@ -727,17 +727,6 @@ class ChatManager : Listener {
         }
     }
 
-    private fun getPingBars(ping: Int): String {
-        val bars = when {
-            ping < 50 -> "▌▌▌▌▌"
-            ping < 100 -> "▌▌▌▌"
-            ping < 150 -> "▌▌▌"
-            ping < 200 -> "▌▌"
-            else -> "▌"
-        }
-        val color = getPingColor(ping)
-        return "$color$bars"
-    }
 
     fun updatePlayerFormats(player: Player) {
         if (nametagEnabled) {

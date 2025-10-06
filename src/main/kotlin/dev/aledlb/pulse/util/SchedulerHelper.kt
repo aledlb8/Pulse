@@ -42,7 +42,7 @@ object SchedulerHelper {
      */
     fun sendMessage(player: Player, message: String) {
         runForPlayer(player) {
-            player.sendMessage(Component.text(message))
+            MessageUtil.run { player.sendMiniMessage(message) }
         }
     }
     

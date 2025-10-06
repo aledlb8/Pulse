@@ -1,26 +1,47 @@
 package dev.aledlb.pulse.commands
 
 import dev.aledlb.pulse.Pulse
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import dev.aledlb.pulse.ranks.PermissionManager
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import dev.aledlb.pulse.ranks.models.RankManager
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import net.kyori.adventure.text.Component
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import net.kyori.adventure.text.format.NamedTextColor
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import net.kyori.adventure.text.format.TextDecoration
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import org.bukkit.Bukkit
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import org.bukkit.Material
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import org.bukkit.command.CommandSender
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import org.bukkit.entity.Player
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import org.bukkit.event.EventHandler
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import org.bukkit.event.Listener
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import org.bukkit.event.inventory.ClickType
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import org.bukkit.event.inventory.InventoryClickEvent
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import org.bukkit.event.inventory.InventoryCloseEvent
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import org.bukkit.event.inventory.InventoryDragEvent
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import org.bukkit.event.player.PlayerQuitEvent
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import org.bukkit.inventory.Inventory
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import org.bukkit.inventory.ItemStack
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import java.util.UUID
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import java.util.concurrent.TimeUnit
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 
 class GrantCommand(
     private val rankManager: RankManager,
@@ -428,7 +449,7 @@ class GrantCommand(
             val target = Bukkit.getPlayer(session.target)
             if (target == null) {
                 player.closeInventory()
-                player.sendMessage(messagesManager.getFormattedMessage("general.player-not-online", "player" to "target"))
+                player.sendMiniMessage(messagesManager.getFormattedMessage("general.player-not-online", "player" to "target"))
                 activeGuis.remove(player.uniqueId)
                 return
             }
@@ -495,14 +516,14 @@ class GrantCommand(
                         permissionManager.updatePlayerPermissions(target)
                         permissionManager.updatePlayerDisplayNames()
 
-                        viewer.sendMessage(
+                        viewer.sendMiniMessage(
                             messagesManager.getFormattedMessage(
                                 "rank.remove-success",
                                 "player" to target.name,
                                 "rank" to rankName
                             )
                         )
-                        target.sendMessage(
+                        target.sendMiniMessage(
                             messagesManager.getFormattedMessage(
                                 "rank.remove-notification",
                                 "rank" to rankName
@@ -555,14 +576,14 @@ class GrantCommand(
                     permissionManager.updatePlayerDisplayNames()
 
                     val rank = rankManager.getRank(selectedRank)
-                    viewer.sendMessage(
+                    viewer.sendMiniMessage(
                         messagesManager.getFormattedMessage(
                             "rank.set-success",
                             "player" to target.name,
                             "rank" to rank?.name!!
                         )
                     )
-                    target.sendMessage(
+                    target.sendMiniMessage(
                         messagesManager.getFormattedMessage(
                             "rank.set-notification",
                             "rank" to rank.name

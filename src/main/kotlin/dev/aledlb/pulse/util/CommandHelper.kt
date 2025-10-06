@@ -18,7 +18,7 @@ object CommandHelper {
      */
     fun requirePlayer(sender: CommandSender): Player? {
         if (sender !is Player) {
-            sender.sendMessage(messagesManager.getFormattedMessage("general.player-only"))
+            sendMessage(sender, messagesManager.getFormattedMessage("general.player-only"))
             return null
         }
         return sender
@@ -29,7 +29,7 @@ object CommandHelper {
      */
     fun requirePermission(sender: CommandSender, permission: String): Boolean {
         if (!sender.hasPermission(permission)) {
-            sender.sendMessage(messagesManager.noPermission())
+            sendMessage(sender, messagesManager.noPermission())
             return false
         }
         return true
@@ -63,14 +63,14 @@ object CommandHelper {
      * Send a formatted message to sender
      */
     fun sendMessage(sender: CommandSender, message: String) {
-        sender.sendMessage(message)
+        MessageUtil.run { sender.sendMiniMessage(message) }
     }
     
     /**
      * Send usage message to sender
      */
     fun sendUsage(sender: CommandSender, usage: String) {
-        sender.sendMessage(messagesManager.getFormattedMessage("general.usage", "usage" to usage))
+        sendMessage(sender, messagesManager.getFormattedMessage("general.usage", "usage" to usage))
     }
     
     /**
@@ -117,7 +117,7 @@ object CommandHelper {
      */
     fun parseInt(sender: CommandSender, value: String, paramName: String = "value"): Int? {
         return value.toIntOrNull() ?: run {
-            sender.sendMessage(messagesManager.getFormattedMessage(
+            sendMessage(sender, messagesManager.getFormattedMessage(
                 "general.invalid-number",
                 "value" to value,
                 "param" to paramName
@@ -131,7 +131,7 @@ object CommandHelper {
      */
     fun parseDouble(sender: CommandSender, value: String, paramName: String = "value"): Double? {
         return value.toDoubleOrNull() ?: run {
-            sender.sendMessage(messagesManager.getFormattedMessage(
+            sendMessage(sender, messagesManager.getFormattedMessage(
                 "general.invalid-number",
                 "value" to value,
                 "param" to paramName

@@ -2,6 +2,7 @@ package dev.aledlb.pulse.commands
 
 import dev.aledlb.pulse.Pulse
 import dev.aledlb.pulse.profile.ProfileGUI
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import org.bukkit.Bukkit
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
@@ -13,7 +14,7 @@ class ProfileCommand(private val profileGUI: ProfileGUI) : CommandExecutor, TabC
 
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
         if (sender !is Player) {
-            sender.sendMessage("§cThis command can only be used by players.")
+            sender.sendMiniMessage("<red>This command can only be used by players.")
             return true
         }
 
@@ -25,7 +26,7 @@ class ProfileCommand(private val profileGUI: ProfileGUI) : CommandExecutor, TabC
         } else {
             // View another player's profile
             if (!sender.hasPermission("pulse.profile.others")) {
-                sender.sendMessage(messagesManager.getFormattedMessage("no-permission"))
+                sender.sendMiniMessage(messagesManager.getFormattedMessage("no-permission"))
                 return true
             }
 
@@ -33,7 +34,7 @@ class ProfileCommand(private val profileGUI: ProfileGUI) : CommandExecutor, TabC
         }
 
         if (target.name == null) {
-            sender.sendMessage("§cPlayer '${args[0]}' not found.")
+            sender.sendMiniMessage("<red>Player '${args[0]}' not found.")
             return true
         }
 

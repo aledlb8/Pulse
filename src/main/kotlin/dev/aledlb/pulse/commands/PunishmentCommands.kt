@@ -1,6 +1,7 @@
 package dev.aledlb.pulse.commands
 
 import dev.aledlb.pulse.Pulse
+import dev.aledlb.pulse.util.MessageUtil
 import dev.aledlb.pulse.util.AsyncHelper
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
@@ -365,7 +366,7 @@ class FreezeCommand : BasePunishmentCommand("freeze", "pulse.punishment.freeze",
         }
 
         Pulse.getPlugin().punishmentManager.service.freeze(targetOffline)
-        target.sendMessage(net.kyori.adventure.text.Component.text(
+        target.sendMessage(MessageUtil.deserialize(
             Pulse.getPlugin().messagesManager.getMessage("punishment.freeze-screen")
         ))
         val msg = Pulse.getPlugin().messagesManager.getFormattedMessage(

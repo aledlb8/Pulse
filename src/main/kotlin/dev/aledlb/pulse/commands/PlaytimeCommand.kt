@@ -2,6 +2,7 @@ package dev.aledlb.pulse.commands
 
 import dev.aledlb.pulse.Pulse
 import dev.aledlb.pulse.playtime.PlaytimeManager
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import org.bukkit.Bukkit
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
@@ -18,14 +19,14 @@ class PlaytimeCommand(private val playtimeManager: PlaytimeManager) : CommandExe
             0 -> {
                 // Show own playtime
                 if (sender !is Player) {
-                    sender.sendMessage(messagesManager.getMessage("general.player-only"))
+                    sender.sendMiniMessage(messagesManager.getMessage("general.player-only"))
                     return true
                 }
 
                 val playtime = playtimeManager.getFormattedPlaytime(sender.uniqueId)
                 val playtimeHours = "%.2f".format(playtimeManager.getPlaytimeHours(sender.uniqueId))
 
-                sender.sendMessage(
+                sender.sendMiniMessage(
                     messagesManager.getMessage("playtime.self")
                         .replace("{playtime}", playtime)
                         .replace("{hours}", playtimeHours)
@@ -36,7 +37,7 @@ class PlaytimeCommand(private val playtimeManager: PlaytimeManager) : CommandExe
             1 -> {
                 // Show target player's playtime
                 if (!sender.hasPermission("pulse.playtime.others")) {
-                    sender.sendMessage(messagesManager.getMessage("general.no-permission"))
+                    sender.sendMiniMessage(messagesManager.getMessage("general.no-permission"))
                     return true
                 }
 
@@ -48,7 +49,7 @@ class PlaytimeCommand(private val playtimeManager: PlaytimeManager) : CommandExe
                     val playtime = playtimeManager.getFormattedPlaytime(targetPlayer.uniqueId)
                     val playtimeHours = "%.2f".format(playtimeManager.getPlaytimeHours(targetPlayer.uniqueId))
 
-                    sender.sendMessage(
+                    sender.sendMiniMessage(
                         messagesManager.getMessage("playtime.other")
                             .replace("{player}", targetPlayer.name)
                             .replace("{playtime}", playtime)
@@ -60,7 +61,7 @@ class PlaytimeCommand(private val playtimeManager: PlaytimeManager) : CommandExe
                     val offlinePlayer = Bukkit.getOfflinePlayer(targetName)
 
                     if (!offlinePlayer.hasPlayedBefore() && !offlinePlayer.isOnline) {
-                        sender.sendMessage(
+                        sender.sendMiniMessage(
                             messagesManager.getMessage("general.player-not-found")
                                 .replace("{player}", targetName)
                         )
@@ -70,7 +71,7 @@ class PlaytimeCommand(private val playtimeManager: PlaytimeManager) : CommandExe
                     val playtime = playtimeManager.getFormattedPlaytime(offlinePlayer.uniqueId)
                     val playtimeHours = "%.2f".format(playtimeManager.getPlaytimeHours(offlinePlayer.uniqueId))
 
-                    sender.sendMessage(
+                    sender.sendMiniMessage(
                         messagesManager.getMessage("playtime.other")
                             .replace("{player}", offlinePlayer.name ?: targetName)
                             .replace("{playtime}", playtime)
@@ -81,7 +82,7 @@ class PlaytimeCommand(private val playtimeManager: PlaytimeManager) : CommandExe
             }
 
             else -> {
-                sender.sendMessage(messagesManager.getMessage("playtime.usage"))
+                sender.sendMiniMessage(messagesManager.getMessage("playtime.usage"))
                 return true
             }
         }

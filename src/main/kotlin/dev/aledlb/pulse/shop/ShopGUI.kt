@@ -2,6 +2,7 @@ package dev.aledlb.pulse.shop
 
 import dev.aledlb.pulse.Pulse
 import dev.aledlb.pulse.economy.EconomyManager
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import org.bukkit.Bukkit
@@ -81,7 +82,7 @@ class ShopGUI(
         val categoryObj = shopManager.getCategory(category)
 
         if (items.isEmpty()) {
-            player.sendMessage(messagesManager.getFormattedMessage("shop.category-empty"))
+            player.sendMiniMessage(messagesManager.getFormattedMessage("shop.category-empty"))
             return
         }
 
@@ -331,16 +332,16 @@ class ShopGUI(
 
         when (result) {
             ShopManager.PurchaseResult.SUCCESS -> {
-                player.sendMessage(messagesManager.getFormattedMessage("shop.purchase-success", "item" to item.name))
+                player.sendMiniMessage(messagesManager.getFormattedMessage("shop.purchase-success", "item" to item.name))
                 player.closeInventory()
                 val newBalance = economyManager.formatBalance(economyManager.getBalance(player))
-                player.sendMessage(messagesManager.getFormattedMessage("shop.new-balance", "balance" to newBalance))
+                player.sendMiniMessage(messagesManager.getFormattedMessage("shop.new-balance", "balance" to newBalance))
             }
             ShopManager.PurchaseResult.INSUFFICIENT_FUNDS -> {
                 val playerBalance = economyManager.formatBalance(economyManager.getBalance(player))
                 val itemPrice = economyManager.formatBalance(item.price)
-                player.sendMessage(messagesManager.getFormattedMessage("shop.insufficient-funds"))
-                player.sendMessage(
+                player.sendMiniMessage(messagesManager.getFormattedMessage("shop.insufficient-funds"))
+                player.sendMiniMessage(
                     messagesManager.getFormattedMessage(
                         "shop.insufficient-funds-detail",
                         "price" to itemPrice,
@@ -349,19 +350,19 @@ class ShopGUI(
                 )
             }
             ShopManager.PurchaseResult.ALREADY_OWNED -> {
-                player.sendMessage(messagesManager.getFormattedMessage("shop.already-owned"))
+                player.sendMiniMessage(messagesManager.getFormattedMessage("shop.already-owned"))
             }
             ShopManager.PurchaseResult.NO_PERMISSION -> {
-                player.sendMessage(messagesManager.getFormattedMessage("shop.no-permission"))
+                player.sendMiniMessage(messagesManager.getFormattedMessage("shop.no-permission"))
             }
             ShopManager.PurchaseResult.ITEM_NOT_FOUND -> {
-                player.sendMessage(messagesManager.getFormattedMessage("shop.item-not-found"))
+                player.sendMiniMessage(messagesManager.getFormattedMessage("shop.item-not-found"))
             }
             ShopManager.PurchaseResult.ITEM_DISABLED -> {
-                player.sendMessage(messagesManager.getFormattedMessage("shop.item-disabled"))
+                player.sendMiniMessage(messagesManager.getFormattedMessage("shop.item-disabled"))
             }
             else -> {
-                player.sendMessage(messagesManager.getFormattedMessage("shop.purchase-failed"))
+                player.sendMiniMessage(messagesManager.getFormattedMessage("shop.purchase-failed"))
             }
         }
     }

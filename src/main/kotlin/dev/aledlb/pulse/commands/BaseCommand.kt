@@ -1,6 +1,7 @@
 package dev.aledlb.pulse.commands
 
 import dev.aledlb.pulse.Pulse
+import dev.aledlb.pulse.util.MessageUtil
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
@@ -79,7 +80,7 @@ abstract class BaseCommand : CommandExecutor, TabCompleter {
     }
 
     protected fun sendMessage(sender: CommandSender, message: String) {
-        sender.sendMessage(message)
+        MessageUtil.run { sender.sendMiniMessage(message) }
     }
 
     protected fun sendUsage(sender: CommandSender) {

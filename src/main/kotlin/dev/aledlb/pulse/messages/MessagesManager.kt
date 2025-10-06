@@ -2,11 +2,11 @@ package dev.aledlb.pulse.messages
 
 import dev.aledlb.pulse.Pulse
 import dev.aledlb.pulse.util.Logger
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
+import net.kyori.adventure.text.minimessage.MiniMessage
 
 class MessagesManager {
     private val messages = mutableMapOf<String, String>()
-    private val serializer = LegacyComponentSerializer.legacyAmpersand()
+    private val miniMessage = MiniMessage.miniMessage()
 
     fun initialize() {
         loadMessages()
@@ -56,8 +56,8 @@ class MessagesManager {
             message = message.replace("{$placeholder}", value)
         }
 
-        // Apply color codes using Adventure API
-        return serializer.serialize(serializer.deserialize(message))
+        // Return MiniMessage-formatted string (will be deserialized by sendMessage)
+        return message
     }
 
     // Convenience methods for common messages

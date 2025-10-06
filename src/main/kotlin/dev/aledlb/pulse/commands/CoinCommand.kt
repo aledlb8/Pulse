@@ -1,12 +1,19 @@
 package dev.aledlb.pulse.commands
 
 import dev.aledlb.pulse.Pulse
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import dev.aledlb.pulse.economy.EconomyManager
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import net.kyori.adventure.text.Component
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import net.kyori.adventure.text.format.NamedTextColor
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import org.bukkit.Bukkit
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import org.bukkit.command.CommandSender
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import org.bukkit.entity.Player
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 
 class CoinCommand(private val economyManager: EconomyManager) : BaseCommand() {
 
@@ -115,7 +122,7 @@ class CoinCommand(private val economyManager: EconomyManager) : BaseCommand() {
 
             // Notify the target player if they're online
             if (targetPlayer is Player && targetPlayer.isOnline) {
-                targetPlayer.sendMessage(messagesManager.getFormattedMessage("coin.add-notification", "amount" to formattedAmount))
+                targetPlayer.sendMiniMessage(messagesManager.getFormattedMessage("coin.add-notification", "amount" to formattedAmount))
             }
         } else {
             sendMessage(sender, messagesManager.getFormattedMessage("economy.transaction-failed"))
@@ -157,7 +164,7 @@ class CoinCommand(private val economyManager: EconomyManager) : BaseCommand() {
 
             // Notify the target player if they're online
             if (targetPlayer is Player && targetPlayer.isOnline) {
-                targetPlayer.sendMessage(messagesManager.getFormattedMessage("coin.remove-notification", "amount" to formattedAmount))
+                targetPlayer.sendMiniMessage(messagesManager.getFormattedMessage("coin.remove-notification", "amount" to formattedAmount))
             }
         } else {
             sendMessage(sender, messagesManager.getFormattedMessage("economy.not-enough-coins"))
@@ -197,7 +204,7 @@ class CoinCommand(private val economyManager: EconomyManager) : BaseCommand() {
 
             // Notify the target player if they're online
             if (targetPlayer is Player && targetPlayer.isOnline) {
-                targetPlayer.sendMessage(messagesManager.getFormattedMessage("coin.set-notification", "amount" to formattedAmount))
+                targetPlayer.sendMiniMessage(messagesManager.getFormattedMessage("coin.set-notification", "amount" to formattedAmount))
             }
         } else {
             sendMessage(sender, messagesManager.getFormattedMessage("economy.transaction-failed"))

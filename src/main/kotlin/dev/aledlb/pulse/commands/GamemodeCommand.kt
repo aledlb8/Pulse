@@ -1,10 +1,15 @@
 package dev.aledlb.pulse.commands
 
 import dev.aledlb.pulse.Pulse
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import org.bukkit.Bukkit
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import org.bukkit.GameMode
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import org.bukkit.command.CommandSender
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import org.bukkit.entity.Player
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 
 // Base class for all gamemode commands
 abstract class BaseGamemodeCommand(
@@ -84,7 +89,7 @@ abstract class BaseGamemodeCommand(
                 "gamemode.changed-notification",
                 "mode" to displayName
             )
-            target.sendMessage(targetMsg)
+            target.sendMiniMessage(targetMsg)
         }
     }
 

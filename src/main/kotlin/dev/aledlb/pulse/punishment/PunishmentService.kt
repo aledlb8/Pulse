@@ -3,6 +3,7 @@ package dev.aledlb.pulse.punishment
 import dev.aledlb.pulse.Pulse
 import dev.aledlb.pulse.database.PunishmentRow
 import dev.aledlb.pulse.util.Logger
+import dev.aledlb.pulse.util.MessageUtil
 import dev.aledlb.pulse.util.SyncHelper
 import dev.aledlb.pulse.util.AsyncHelper
 import dev.aledlb.pulse.util.SchedulerHelper
@@ -44,7 +45,7 @@ class PunishmentService {
                         "player" to targetName,
                         "punisher" to punisherName
                     )
-                    Bukkit.getServer().sendMessage(Component.text(broadcastMsg))
+                    Bukkit.getServer().sendMessage(MessageUtil.deserialize(broadcastMsg))
                 }
             },
             errorMessage = "Failed to ban player $targetName"
@@ -80,7 +81,7 @@ class PunishmentService {
                         "punisher" to punisherName,
                         "duration" to formatDuration(duration)
                     )
-                    Bukkit.getServer().sendMessage(Component.text(broadcastMsg))
+                    Bukkit.getServer().sendMessage(MessageUtil.deserialize(broadcastMsg))
                 }
             },
             errorMessage = "Failed to tempban player $targetName"
@@ -117,7 +118,7 @@ class PunishmentService {
                         "player" to targetName,
                         "punisher" to punisherName
                     )
-                    Bukkit.getServer().sendMessage(Component.text(broadcastMsg))
+                    Bukkit.getServer().sendMessage(MessageUtil.deserialize(broadcastMsg))
                 }
             },
             errorMessage = "Failed to IP ban player $targetName"
@@ -157,7 +158,7 @@ class PunishmentService {
                         "punisher" to punisherName,
                         "duration" to formatDuration(duration)
                     )
-                    Bukkit.getServer().sendMessage(Component.text(broadcastMsg))
+                    Bukkit.getServer().sendMessage(MessageUtil.deserialize(broadcastMsg))
                 }
             },
             errorMessage = "Failed to temp IP ban player $targetName"
@@ -225,7 +226,7 @@ class PunishmentService {
                         "player" to targetName,
                         "punisher" to punisherName
                     )
-                    Bukkit.getServer().sendMessage(Component.text(broadcastMsg))
+                    Bukkit.getServer().sendMessage(MessageUtil.deserialize(broadcastMsg))
                 }
             },
             errorMessage = "Failed to mute player $targetName"
@@ -347,7 +348,7 @@ class PunishmentService {
                         "player" to targetName,
                         "punisher" to punisherName
                     )
-                    Bukkit.getServer().sendMessage(Component.text(broadcastMsg))
+                    Bukkit.getServer().sendMessage(MessageUtil.deserialize(broadcastMsg))
                 }
             },
             errorMessage = "Failed to warn player $targetName"
@@ -397,7 +398,7 @@ class PunishmentService {
                         "player" to target.name,
                         "punisher" to punisherName
                     )
-                    Bukkit.getServer().sendMessage(Component.text(broadcastMsg))
+                    Bukkit.getServer().sendMessage(MessageUtil.deserialize(broadcastMsg))
                 }
             },
             errorMessage = "Failed to kick player ${target.name}"

@@ -1,31 +1,41 @@
 package dev.aledlb.pulse.commands
 
 import dev.aledlb.pulse.Pulse
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import dev.aledlb.pulse.util.Logger
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import dev.aledlb.pulse.util.AsyncHelper
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import dev.aledlb.pulse.util.SchedulerHelper
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import org.bukkit.Bukkit
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import org.bukkit.command.Command
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import org.bukkit.command.CommandExecutor
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import org.bukkit.command.CommandSender
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import org.bukkit.command.TabCompleter
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import org.bukkit.entity.Player
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 
 class ReportCommand : CommandExecutor, TabCompleter {
 
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
         if (sender !is Player) {
-            sender.sendMessage("§cThis command can only be used by players.")
+            sender.sendMiniMessage("<red>This command can only be used by players.")
             return true
         }
 
         if (!sender.hasPermission("pulse.report")) {
-            sender.sendMessage("§cYou don't have permission to use this command.")
+            sender.sendMiniMessage("<red>You don't have permission to use this command.")
             return true
         }
 
         if (args.size < 2) {
-            sender.sendMessage("§cUsage: /report <player> <reason>")
+            sender.sendMiniMessage("<red>Usage: /report <player> <reason>")
             return true
         }
 
@@ -40,7 +50,7 @@ class ReportCommand : CommandExecutor, TabCompleter {
             targetOffline = Bukkit.getOfflinePlayerIfCached(targetName)
 
             if (targetOffline == null || !targetOffline.hasPlayedBefore()) {
-                sender.sendMessage("§cPlayer '$targetName' not found.")
+                sender.sendMiniMessage("<red>Player '$targetName' not found.")
                 return true
             }
         }
@@ -48,7 +58,7 @@ class ReportCommand : CommandExecutor, TabCompleter {
         val targetUuid = target?.uniqueId ?: targetOffline!!.uniqueId
         val targetDisplayName = target?.name ?: targetOffline!!.name ?: targetName
         if (targetUuid == sender.uniqueId) {
-            sender.sendMessage("§cYou cannot report yourself.")
+            sender.sendMiniMessage("<red>You cannot report yourself.")
             return true
         }
 
@@ -56,7 +66,7 @@ class ReportCommand : CommandExecutor, TabCompleter {
         val reason = args.drop(1).joinToString(" ")
 
         if (reason.length < 5) {
-            sender.sendMessage("§cReport reason must be at least 5 characters long.")
+            sender.sendMiniMessage("<red>Report reason must be at least 5 characters long.")
             return true
         }
 
@@ -76,9 +86,9 @@ class ReportCommand : CommandExecutor, TabCompleter {
             onSuccess = { reportId ->
                 // Notify player
                 SchedulerHelper.runForPlayer(sender) {
-                    sender.sendMessage("§aYour report has been submitted successfully.")
-                    sender.sendMessage("§7Report ID: §e#$reportId")
-                    sender.sendMessage("§7Staff will review it shortly.")
+                    sender.sendMiniMessage("<green>Your report has been submitted successfully.")
+                    sender.sendMiniMessage("<gray>Report ID: <yellow>#$reportId")
+                    sender.sendMiniMessage("<gray>Staff will review it shortly.")
                 }
 
                 // Notify staff
@@ -86,9 +96,9 @@ class ReportCommand : CommandExecutor, TabCompleter {
                     Bukkit.getOnlinePlayers()
                         .filter { it.hasPermission("pulse.reports.notify") }
                         .forEach { staff ->
-                            staff.sendMessage("§7[§6Reports§7] §e${sender.name} §7reported §c$targetDisplayName")
-                            staff.sendMessage("§7Reason: §f$reason")
-                            staff.sendMessage("§7Report ID: §e#$reportId")
+                            staff.sendMiniMessage("<gray>[<gold>Reports<gray>] <yellow>${sender.name} <gray>reported <red>$targetDisplayName")
+                            staff.sendMiniMessage("<gray>Reason: <white>$reason")
+                            staff.sendMiniMessage("<gray>Report ID: <yellow>#$reportId")
                         }
                 })
 
@@ -96,7 +106,7 @@ class ReportCommand : CommandExecutor, TabCompleter {
             },
             onError = {
                 SchedulerHelper.runForPlayer(sender) {
-                    sender.sendMessage("§cAn error occurred while submitting your report.")
+                    sender.sendMiniMessage("<red>An error occurred while submitting your report.")
                 }
             }
         )

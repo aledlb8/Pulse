@@ -2,6 +2,7 @@ package dev.aledlb.pulse.punishment
 
 import dev.aledlb.pulse.Pulse
 import dev.aledlb.pulse.util.AsyncHelper
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import io.papermc.paper.event.player.AsyncChatEvent
 import kotlinx.coroutines.runBlocking
 import net.kyori.adventure.text.Component
@@ -66,7 +67,7 @@ class PunishmentListener : Listener {
         if (service.isMutedSync(event.player.uniqueId)) {
             event.isCancelled = true
             val muteMsg = Pulse.getPlugin().messagesManager.getMessage("punishment.mute-chat-blocked")
-            event.player.sendMessage(Component.text(muteMsg))
+            event.player.sendMiniMessage(muteMsg)
         }
     }
 
@@ -82,7 +83,7 @@ class PunishmentListener : Listener {
         if (service.isFrozen(event.player.uniqueId)) {
             event.isCancelled = true
             val freezeMsg = Pulse.getPlugin().messagesManager.getMessage("punishment.freeze-movement-blocked")
-            event.player.sendMessage(Component.text(freezeMsg))
+            event.player.sendMiniMessage(freezeMsg)
         }
     }
 

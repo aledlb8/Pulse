@@ -1,20 +1,35 @@
 package dev.aledlb.pulse.util
 
 import dev.aledlb.pulse.Pulse
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import dev.aledlb.pulse.util.AsyncHelper
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import org.bukkit.Bukkit
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import org.bukkit.event.EventHandler
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import org.bukkit.event.Listener
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import org.bukkit.event.player.PlayerJoinEvent
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import java.io.BufferedReader
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import java.io.File
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import java.io.InputStreamReader
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import java.net.HttpURLConnection
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import java.net.URL
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import java.net.URI
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import java.nio.file.Files
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 import java.nio.file.StandardCopyOption
+import dev.aledlb.pulse.util.MessageUtil.sendMiniMessage
 
 class UpdateChecker(private val plugin: Pulse) : Listener {
     @Volatile
@@ -91,8 +106,8 @@ class UpdateChecker(private val plugin: Pulse) : Listener {
         val latest = latestVersion ?: return
         val current = plugin.pluginMeta.version
         if (player.hasPermission("pulse.update.notify") && isNewerVersion(latest, current)) {
-            player.sendMessage("§6[Pulse] §eA new version is available: §a$latest§e (current: §c$current§e)")
-            player.sendMessage("§6[Pulse] §eDownload: §b$resourceUrl")
+            player.sendMiniMessage("<gold>[Pulse] <yellow>A new version is available: <green>$latest<yellow> (current: <red>$current<yellow>)")
+            player.sendMiniMessage("<gold>[Pulse] <yellow>Download: <aqua>$resourceUrl")
         }
     }
 
