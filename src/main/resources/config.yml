@@ -9,7 +9,7 @@ update-checker:
   enabled: true
   # Automatically download and install updates
   # Downloads to plugins/update folder - update applies on server restart
-  auto-update: true
+  auto-update: false
   # How often to check for updates (in hours)
   # Set to 0 to only check on startup
   check-interval: 6

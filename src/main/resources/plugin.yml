@@ -418,7 +418,7 @@ permissions:
     default: false
   pulse.report:
     description: Report players
-    default: false
+    default: true
   pulse.reports.notify:
     description: Receive notifications when players are reported
     default: false

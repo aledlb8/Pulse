@@ -1,5 +1,8 @@
 # Shop Configuration
 
+# Enable or disable the entire shop system
+enabled: false
+
 # Shop categories
 categories:
   items:

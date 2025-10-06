@@ -268,7 +268,7 @@ shop:
   purchase-failed: "<red>Purchase failed! Please try again later."
   category-not-found: "<red>Category <yellow>{category}<red> not found!"
   reload-success: "<green>Shop configuration reloaded successfully!"
-  system-disabled: "<red>Shop is disabled (Economy system requires Vault)"
+  system-disabled: "<red>The shop is currently disabled"
   no-permission-reload: "<red>You don't have permission to reload the shop!"
   no-permission-list: "<red>You don't have permission to list shop items!"
   list-header: "<dark_purple>╔════════════════════════════════╗\n<dark_purple>║         <white>SHOP INFO<dark_purple>            ║\n<dark_purple>╠════════════════════════════════╣"

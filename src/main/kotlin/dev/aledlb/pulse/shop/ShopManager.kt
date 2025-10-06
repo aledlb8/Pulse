@@ -18,6 +18,7 @@ class ShopManager(
 ) {
     private val shopItems = mutableMapOf<String, ShopItem>()
     private val categories = mutableMapOf<String, ShopCategory>()
+    private var shopEnabled = true
 
     fun initialize() {
         if (!economyManager.isEnabled()) {
@@ -26,10 +27,16 @@ class ShopManager(
         }
 
         loadShopConfig()
+
+        if (!shopEnabled) {
+            Logger.warn("Shop system disabled in configuration")
+            return
+        }
+
         Logger.success("Shop system initialized with ${shopItems.size} items")
     }
 
-    fun isEnabled(): Boolean = economyManager.isEnabled()
+    fun isEnabled(): Boolean = economyManager.isEnabled() && shopEnabled
 
     private fun loadShopConfig() {
         val configManager = Pulse.getPlugin().configManager
@@ -37,6 +44,15 @@ class ShopManager(
 
         if (shopConfig == null) {
             Logger.warn("Shop configuration not found")
+            shopEnabled = false
+            return
+        }
+
+        // Check if shop is enabled
+        shopEnabled = shopConfig.node("enabled").getBoolean(true)
+
+        if (!shopEnabled) {
+            Logger.info("Shop system is disabled in config")
             return
         }
 
