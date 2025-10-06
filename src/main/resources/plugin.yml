@@ -158,6 +158,7 @@ commands:
 permissions:
   pulse.*:
     description: All pulse permissions
+    default: op
     children:
       pulse.admin: true
       pulse.rank: true
@@ -181,8 +182,10 @@ permissions:
       pulse.maintenance.bypass: true
   pulse.admin:
     description: Administrator access to pulse
+    default: false
   pulse.rank:
     description: Access to rank commands
+    default: false
     children:
       pulse.rank.create: true
       pulse.rank.delete: true
@@ -194,24 +197,34 @@ permissions:
       pulse.rank.reload: true
   pulse.rank.create:
     description: Create new ranks
+    default: false
   pulse.rank.delete:
     description: Delete existing ranks
+    default: false
   pulse.rank.remove:
     description: Remove player ranks
+    default: false
   pulse.rank.set:
     description: Set player ranks
+    default: false
   pulse.rank.info:
     description: View rank information
+    default: false
   pulse.rank.list:
     description: List all ranks
+    default: false
   pulse.rank.permission:
     description: Manage rank permissions
+    default: false
   pulse.rank.reload:
     description: Reload rank system
+    default: false
   pulse.grant:
     description: Grant ranks to players with GUI
+    default: false
   pulse.permission:
     description: Access to permission commands
+    default: false
     children:
       pulse.permission.add: true
       pulse.permission.remove: true
@@ -220,42 +233,59 @@ permissions:
       pulse.permission.list: true
   pulse.permission.add:
     description: Add permissions to players
+    default: false
   pulse.permission.remove:
     description: Remove permissions from players
+    default: false
   pulse.permission.deny:
     description: Deny permissions for players
+    default: false
   pulse.permission.check:
     description: Check player permissions
+    default: false
   pulse.permission.list:
     description: List player permissions
+    default: false
   pulse.coin:
     description: Access to coin commands
+    default: false
     children:
       pulse.coin.pay: true
   pulse.coin.add:
     description: Add coins to players
+    default: false
   pulse.coin.remove:
     description: Remove coins from players
+    default: false
   pulse.coin.set:
     description: Set player coin balances
+    default: false
   pulse.coin.pay:
     description: Pay other players
+    default: false
   pulse.coin.top:
     description: View balance leaderboard
+    default: false
   pulse.coin.others:
     description: Check other players' balances
+    default: false
   pulse.shop:
     description: Access to shop
+    default: false
     children:
       pulse.shop.use: true
   pulse.shop.use:
     description: Use the shop
+    default: false
   pulse.shop.reload:
     description: Reload shop configuration
+    default: false
   pulse.shop.list:
     description: List shop items
+    default: false
   pulse.tag:
     description: Access to tag commands
+    default: false
     children:
       pulse.tag.others: true
       pulse.tag.give: true
@@ -266,22 +296,31 @@ permissions:
       pulse.tag.reload: true
   pulse.tag.others:
     description: View other players' tags
+    default: false
   pulse.tag.give:
     description: Give tags to players
+    default: false
   pulse.tag.remove:
     description: Remove tags from players
+    default: false
   pulse.tag.create:
     description: Create new tags
+    default: false
   pulse.tag.edit:
     description: Edit existing tags
+    default: false
   pulse.tag.delete:
     description: Delete tags
+    default: false
   pulse.tag.reload:
     description: Reload tag system
+    default: false
   pulse.chat.color:
     description: Use color codes in chat messages
+    default: false
   pulse.gamemode:
     description: Change gamemode
+    default: false
     children:
       pulse.gamemode.creative: true
       pulse.gamemode.survival: true
@@ -290,16 +329,22 @@ permissions:
       pulse.gamemode.others: true
   pulse.gamemode.creative:
     description: Change to creative mode
+    default: false
   pulse.gamemode.survival:
     description: Change to survival mode
+    default: false
   pulse.gamemode.adventure:
     description: Change to adventure mode
+    default: false
   pulse.gamemode.spectator:
     description: Change to spectator mode
+    default: false
   pulse.gamemode.others:
     description: Change others' gamemode
+    default: false
   pulse.punishment:
     description: All punishment permissions
+    default: false
     children:
       pulse.punishment.kick: true
       pulse.punishment.warn: true
@@ -315,52 +360,76 @@ permissions:
       pulse.punishment.tempipban: true
   pulse.punishment.kick:
     description: Kick players
+    default: false
   pulse.punishment.warn:
     description: Warn players
+    default: false
   pulse.punishment.warns:
     description: View player warnings
+    default: false
   pulse.punishment.unwarn:
     description: Remove warnings
+    default: false
   pulse.punishment.mute:
     description: Mute players
+    default: false
   pulse.punishment.unmute:
     description: Unmute players
+    default: false
   pulse.punishment.freeze:
     description: Freeze/unfreeze players
+    default: false
   pulse.punishment.tempban:
     description: Temporarily ban players
+    default: false
   pulse.punishment.ban:
     description: Permanently ban players
+    default: false
   pulse.punishment.unban:
     description: Unban players
+    default: false
   pulse.punishment.ipban:
     description: IP ban players
+    default: false
   pulse.punishment.tempipban:
     description: Temporarily IP ban players
+    default: false
   pulse.playtime:
     description: View own playtime
+    default: false
   pulse.playtime.others:
     description: View other players' playtime
+    default: false
   pulse.update.notify:
     description: Receive update notifications on join
+    default: false
   pulse.profile:
     description: View own profile
+    default: false
   pulse.profile.others:
     description: View other players' profiles
+    default: false
   pulse.profile.staff:
     description: Access staff-only features in profiles
+    default: false
   pulse.report:
     description: Report players
+    default: false
   pulse.reports.notify:
     description: Receive notifications when players are reported
+    default: false
   pulse.motd:
     description: Access to MOTD commands
+    default: false
     children:
       pulse.motd.reload: true
       pulse.motd.maintenance: true
   pulse.motd.reload:
     description: Reload MOTD configuration
+    default: false
   pulse.motd.maintenance:
     description: Toggle maintenance mode
+    default: false
   pulse.maintenance.bypass:
     description: Bypass maintenance mode and join the server
+    default: false
