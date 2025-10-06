@@ -21,10 +21,6 @@ class PlaceholderAPIHook : PlaceholderExpansion() {
 
     override fun persist(): Boolean = true
 
-    override fun canRegister(): Boolean {
-        return plugin.isPluginFullyLoaded()
-    }
-
     override fun onRequest(player: OfflinePlayer?, params: String): String? {
         if (player == null) return null
 
