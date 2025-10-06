@@ -35,29 +35,29 @@ punishment:
   # Kick
   kick-success: "<green>Kicked <gray>{player}<green> for: <gray>{reason}"
   kick-broadcast: "<yellow>{player} has been kicked by {punisher}"
-  kick-screen: "<red><bold>KICKED\n\n<gray>Reason: <white>{reason}\n<gray>By: <white>{punisher}"
+  kick-screen: "&c&lKICKED\n\n&7Reason: &f{reason}\n&7By: &f{punisher}"
 
   # Ban
   ban-success: "<green>Banned <gray>{player}<green> for: <gray>{reason}"
   ban-broadcast: "<red>{player} has been banned by {punisher}"
-  ban-screen: "<red><bold>BANNED\n\n<gray>Reason: <white>{reason}\n<gray>By: <white>{punisher}"
+  ban-screen: "&c&lBANNED\n\n&7Reason: &f{reason}\n&7By: &f{punisher}"
 
   # Tempban
   tempban-success: "<green>Temporarily banned <gray>{player}<green> for <gray>{duration}<green>. Reason: <gray>{reason}"
   tempban-broadcast: "<red>{player} has been temporarily banned by {punisher} for {duration}"
-  tempban-screen: "<red><bold>TEMPORARILY BANNED\n\n<gray>Reason: <white>{reason}\n<gray>Duration: <white>{duration}\n<gray>By: <white>{punisher}"
-  tempban-remaining: "<red><bold>BANNED\n\n<gray>Reason: <white>{reason}\n<gray>Remaining: <white>{duration}\n<gray>By: <white>{punisher}"
+  tempban-screen: "&c&lTEMPORARILY BANNED\n\n&7Reason: &f{reason}\n&7Duration: &f{duration}\n&7By: &f{punisher}"
+  tempban-remaining: "&c&lBANNED\n\n&7Reason: &f{reason}\n&7Remaining: &f{duration}\n&7By: &f{punisher}"
 
   # IP Ban
   ipban-success: "<green>IP banned <gray>{player}<green> for: <gray>{reason}"
   ipban-broadcast: "<red>{player} has been IP banned by {punisher}"
-  ipban-screen: "<red><bold>IP BANNED\n\n<gray>Reason: <white>{reason}\n<gray>By: <white>{punisher}"
+  ipban-screen: "&c&lIP BANNED\n\n&7Reason: &f{reason}\n&7By: &f{punisher}"
   ipban-cannot-determine-ip: "<red>Could not determine player's IP address!"
 
   # Temp IP Ban
   tempipban-success: "<green>Temporarily IP banned <gray>{player}<green> for <gray>{duration}"
   tempipban-broadcast: "<red>{player} has been temporarily IP banned by {punisher} for {duration}"
-  tempipban-screen: "<red><bold>TEMPORARILY IP BANNED\n\n<gray>Reason: <white>{reason}\n<gray>Duration: <white>{duration}\n<gray>By: <white>{punisher}"
+  tempipban-screen: "&c&lTEMPORARILY IP BANNED\n\n&7Reason: &f{reason}\n&7Duration: &f{duration}\n&7By: &f{punisher}"
 
   # Unban
   unban-success: "<green>Unbanned <gray>{player}"
@@ -66,7 +66,7 @@ punishment:
   # Mute
   mute-success: "<green>Muted <gray>{player}<green> {duration}"
   mute-broadcast: "<yellow>{player} has been muted by {punisher}"
-  mute-screen: "<red><bold>MUTED\n\n<gray>Reason: <white>{reason}\n<gray>Duration: <white>{duration}\n<gray>By: <white>{punisher}"
+  mute-screen: "&c&lMUTED\n\n&7Reason: &f{reason}\n&7Duration: &f{duration}\n&7By: &f{punisher}"
   mute-chat-blocked: "<red><bold>MUTED\n<gray>You are currently muted and cannot chat."
 
   # Unmute
