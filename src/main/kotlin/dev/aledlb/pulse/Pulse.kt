@@ -273,8 +273,10 @@ class Pulse : JavaPlugin() {
         val coinCmd = CoinCommand(economyManager)
         bindCommand("coin", coinCmd)
 
-        val shopCmd = ShopCommand(shopManager, shopGUI)
-        bindCommand("shop", shopCmd)
+        if (shopManager.isEnabled()) {
+            val shopCmd = ShopCommand(shopManager, shopGUI)
+            bindCommand("shop", shopCmd)
+        }
 
         val tagCmd = TagCommand()
         bindCommand("tag", tagCmd)
