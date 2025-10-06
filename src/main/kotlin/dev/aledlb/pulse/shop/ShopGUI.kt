@@ -88,23 +88,33 @@ class ShopGUI(
 
         val serializer = LegacyComponentSerializer.legacySection()
 
-        // Show up to 21 items (3 rows of 7, with 1-block border)
-        val maxItemsPerPage = 21
-        val itemsToShow = items.take(maxItemsPerPage)
-        val inventory = Bukkit.createInventory(null, 54, serializer.deserialize("§5§l${categoryObj?.displayName ?: category}"))
+        val invSize = categoryObj?.size ?: 54
+        val inventory = Bukkit.createInventory(null, invSize, serializer.deserialize("§5§l${categoryObj?.displayName ?: category}"))
 
-        // Items in rows 2-4, columns 1-7 (with 1-block border)
-        val slots = mutableListOf<Int>()
-        for (row in 2..4) {
-            for (col in 1..7) {
-                slots.add(row * 9 + col)
-            }
+        // Map slots to item IDs for easy lookup
+        val slotToItemId = mutableMapOf<Int, String>()
+        val itemsWithSlots = items.filter { it.slot != null && it.slot in 0 until invSize }
+        val itemsWithoutSlots = items.filter { it.slot == null || it.slot !in 0 until invSize }
+
+        // Place items with custom slots
+        itemsWithSlots.forEach { item ->
+            inventory.setItem(item.slot!!, item.createItemStack())
+            slotToItemId[item.slot!!] = item.id
         }
 
-        // Add items in grid layout
-        itemsToShow.forEachIndexed { index, item ->
-            val shopItem = item.createItemStack()
-            inventory.setItem(slots[index], shopItem)
+        // Calculate slots for items without custom positions
+        if (itemsWithoutSlots.isNotEmpty()) {
+            val usedSlots = itemsWithSlots.map { it.slot!! }.toMutableSet()
+            usedSlots.add(invSize - 9) // Reserve bottom left for back button
+            usedSlots.add(invSize - 1) // Reserve bottom right for player info
+
+            // Find available slots (excluding bottom row and already used slots)
+            val availableSlots = (9 until invSize - 9).filter { it !in usedSlots }
+            itemsWithoutSlots.take(availableSlots.size).forEachIndexed { index, item ->
+                val slot = availableSlots[index]
+                inventory.setItem(slot, item.createItemStack())
+                slotToItemId[slot] = item.id
+            }
         }
 
         // Back button (bottom-left)
@@ -114,19 +124,23 @@ class ShopGUI(
             meta.lore(listOf(serializer.deserialize("§7Click to go back")))
             itemMeta = meta
         }
-        inventory.setItem(45, backButton)
+        inventory.setItem(invSize - 9, backButton)
 
         // Player info (bottom-right)
         val playerInfo = createPlayerInfoItem(player)
-        inventory.setItem(53, playerInfo)
+        inventory.setItem(invSize - 1, playerInfo)
 
-        // Add decorative glass
-        addGlassDecoration(inventory)
+        // Add fill material or glass decoration
+        if (categoryObj?.fillMaterial != null) {
+            applyFillMaterial(inventory, categoryObj.fillMaterial, categoryObj.fillSlots, invSize)
+        } else {
+            addGlassDecoration(inventory)
+        }
 
         openGuiSafely(
             player,
             inventory,
-            ShopSession(ShopView.CATEGORY, category, items.associateBy { it.id }, slots)
+            ShopSession(ShopView.CATEGORY, category, items.associateBy { it.id }, slotToItemId = slotToItemId)
         )
     }
 
@@ -196,6 +210,29 @@ class ShopGUI(
         }
     }
 
+    private fun applyFillMaterial(inventory: Inventory, fillMaterial: Material, fillSlots: List<Int>?, invSize: Int) {
+        val filler = ItemStack(fillMaterial)
+        val fillerMeta = filler.itemMeta
+        fillerMeta.displayName(Component.text(" "))
+        filler.itemMeta = fillerMeta
+
+        if (fillSlots != null) {
+            // Fill specific slots
+            fillSlots.filter { it in 0 until invSize }.forEach { slot ->
+                if (inventory.getItem(slot) == null) {
+                    inventory.setItem(slot, filler)
+                }
+            }
+        } else {
+            // Fill all empty slots
+            for (i in inventory.contents.indices) {
+                if (inventory.getItem(i) == null) {
+                    inventory.setItem(i, filler)
+                }
+            }
+        }
+    }
+
     /**
      * Calculate centered slot positions with 1 empty slot gap between items
      * @param itemCount Number of items to place
@@ -252,6 +289,7 @@ class ShopGUI(
             when (session.view) {
                 ShopView.MAIN -> handleMainShopClick(player, session, clickedItem, event.slot)
                 ShopView.CATEGORY -> handleCategoryShopClick(player, session, clickedItem, event.slot)
+                ShopView.QUANTITY -> handleQuantitySelectionClick(player, session, clickedItem, event.slot)
             }
         } else {
             // Player inventory: allow normal clicks but block push attempts into GUI
@@ -307,6 +345,8 @@ class ShopGUI(
 
     private fun handleCategoryShopClick(player: Player, session: ShopSession, clickedItem: ItemStack, slot: Int) {
         if (clickedItem.type == Material.GRAY_STAINED_GLASS_PANE) return
+        if (clickedItem.type == Material.BLACK_STAINED_GLASS_PANE) return
+        if (clickedItem.type == Material.PURPLE_STAINED_GLASS_PANE) return
         if (clickedItem.type == Material.PLAYER_HEAD) return
 
         // Back button
@@ -315,25 +355,89 @@ class ShopGUI(
             return
         }
 
-        val slots = session.slots ?: return
-        val itemIndex = slots.indexOf(slot)
-        if (itemIndex < 0) return
+        // Find clicked item using slot-to-item mapping
+        val itemId = session.slotToItemId?.get(slot) ?: return
+        val shopItem = session.items?.get(itemId) ?: return
 
-        val items = session.items ?: return
-        val itemsList = items.values.toList()
-        if (itemIndex >= itemsList.size) return
-
-        val shopItem = itemsList[itemIndex]
-        handlePurchase(player, shopItem)
+        // Check if item has multiple quantities
+        if (shopItem.quantities.size > 1) {
+            openQuantitySelection(player, shopItem, session.category ?: "")
+        } else {
+            handlePurchase(player, shopItem, shopItem.quantities.firstOrNull() ?: 1, keepOpen = true)
+        }
     }
 
-    private fun handlePurchase(player: Player, item: ShopItem) {
-        val result = shopManager.purchaseItem(player, item.id)
+    fun openQuantitySelection(player: Player, item: ShopItem, category: String) {
+        val serializer = LegacyComponentSerializer.legacySection()
+        val inventory = Bukkit.createInventory(null, 27, serializer.deserialize("§5§lSelect Quantity"))
+
+        // Center item display
+        val centerItem = item.createItemStack()
+        inventory.setItem(13, centerItem)
+
+        // Quantity selection slots using green glass panes
+        val slots = mutableListOf<Int>()
+        val availableSlots = listOf(10, 11, 12, 14, 15, 16) // Around center, max 6 quantities
+
+        item.quantities.take(availableSlots.size).forEachIndexed { index, quantity ->
+            val slot = availableSlots[index]
+            val quantityGlass = ItemStack(Material.LIME_STAINED_GLASS_PANE)
+            val meta = quantityGlass.itemMeta
+
+            val totalPrice = item.price * quantity
+            val formattedPrice = economyManager.formatBalance(totalPrice)
+
+            meta?.displayName(serializer.deserialize("§a§lBuy ${quantity}x"))
+            meta?.lore(listOf(
+                Component.empty(),
+                serializer.deserialize("§7Total Price: §e$formattedPrice"),
+                Component.empty(),
+                serializer.deserialize("§aClick to purchase!")
+            ))
+            quantityGlass.itemMeta = meta
+
+            inventory.setItem(slot, quantityGlass)
+            slots.add(slot)
+        }
+
+        // Back button
+        val backButton = ItemStack(Material.ARROW).apply {
+            val meta = itemMeta
+            meta.displayName(serializer.deserialize("§c§lBack"))
+            meta.lore(listOf(serializer.deserialize("§7Return to shop")))
+            itemMeta = meta
+        }
+        inventory.setItem(22, backButton)
+
+        // Fill with black glass
+        val blackGlass = ItemStack(Material.BLACK_STAINED_GLASS_PANE)
+        val glassMeta = blackGlass.itemMeta
+        glassMeta.displayName(Component.text(" "))
+        blackGlass.itemMeta = glassMeta
+
+        for (i in inventory.contents.indices) {
+            if (inventory.getItem(i) == null) {
+                inventory.setItem(i, blackGlass)
+            }
+        }
+
+        openGuiSafely(
+            player,
+            inventory,
+            ShopSession(ShopView.QUANTITY, category, mapOf(item.id to item), slots, item.id)
+        )
+    }
+
+    private fun handlePurchase(player: Player, item: ShopItem, quantity: Int = 1, keepOpen: Boolean = false) {
+        val result = shopManager.purchaseItem(player, item.id, quantity)
 
         when (result) {
             ShopManager.PurchaseResult.SUCCESS -> {
-                player.sendMiniMessage(messagesManager.getFormattedMessage("shop.purchase-success", "item" to item.name))
-                player.closeInventory()
+                val itemNameStripped = item.name.replace("§[0-9a-fk-or]".toRegex(), "")
+                player.sendMiniMessage(messagesManager.getFormattedMessage("shop.purchase-success", "item" to itemNameStripped))
+                if (!keepOpen) {
+                    player.closeInventory()
+                }
                 val newBalance = economyManager.formatBalance(economyManager.getBalance(player))
                 player.sendMiniMessage(messagesManager.getFormattedMessage("shop.new-balance", "balance" to newBalance))
             }
@@ -361,6 +465,18 @@ class ShopGUI(
             ShopManager.PurchaseResult.ITEM_DISABLED -> {
                 player.sendMiniMessage(messagesManager.getFormattedMessage("shop.item-disabled"))
             }
+            ShopManager.PurchaseResult.INVALID_QUANTITY -> {
+                player.sendMiniMessage("<red>Invalid quantity selected!")
+            }
+            ShopManager.PurchaseResult.INVALID_ITEM -> {
+                player.sendMiniMessage("<red>This item is incorrectly configured. Please contact an administrator.")
+            }
+            ShopManager.PurchaseResult.TRANSACTION_FAILED -> {
+                player.sendMiniMessage("<red>Transaction failed. Your balance was not charged.")
+            }
+            ShopManager.PurchaseResult.EXECUTION_FAILED -> {
+                player.sendMiniMessage("<red>Failed to deliver the item. Your coins have been refunded.")
+            }
             else -> {
                 player.sendMiniMessage(messagesManager.getFormattedMessage("shop.purchase-failed"))
             }
@@ -369,15 +485,44 @@ class ShopGUI(
 
     // ---------- Model ----------
 
+    private fun handleQuantitySelectionClick(player: Player, session: ShopSession, clickedItem: ItemStack, slot: Int) {
+        if (clickedItem.type == Material.BLACK_STAINED_GLASS_PANE) return
+
+        // Center item - do nothing
+        if (slot == 13) return
+
+        // Back button
+        if (clickedItem.type == Material.ARROW) {
+            openCategoryShop(player, session.category ?: return)
+            return
+        }
+
+        // Check if it's a quantity glass pane
+        if (clickedItem.type != Material.LIME_STAINED_GLASS_PANE) return
+
+        val slots = session.slots ?: return
+        val quantityIndex = slots.indexOf(slot)
+        if (quantityIndex < 0) return
+
+        val itemId = session.selectedItemId ?: return
+        val item = session.items?.get(itemId) ?: return
+
+        val quantity = item.quantities.getOrNull(quantityIndex) ?: return
+        handlePurchase(player, item, quantity, keepOpen = true)
+    }
+
     data class ShopSession(
         val view: ShopView,
         val category: String? = null,
         val items: Map<String, ShopItem>? = null,
-        val slots: List<Int>? = null
+        val slots: List<Int>? = null,
+        val selectedItemId: String? = null,
+        val slotToItemId: Map<Int, String>? = null
     )
 
     enum class ShopView {
         MAIN,
-        CATEGORY
+        CATEGORY,
+        QUANTITY
     }
 }

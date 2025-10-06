@@ -249,7 +249,12 @@ permissions:
     description: Access to coin commands
     default: false
     children:
+      pulse.coin.add: true
+      pulse.coin.remove: true
+      pulse.coin.set: true
       pulse.coin.pay: true
+      pulse.coin.top: true
+      pulse.coin.others: true
   pulse.coin.add:
     description: Add coins to players
     default: false

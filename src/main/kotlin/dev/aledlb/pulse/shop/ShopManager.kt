@@ -58,10 +58,40 @@ class ShopManager(
                     Material.CHEST
                 }
 
+                val size = categoryNode.node("size").getInt(54).let {
+                    when {
+                        it <= 9 -> 9
+                        it <= 18 -> 18
+                        it <= 27 -> 27
+                        it <= 36 -> 36
+                        it <= 45 -> 45
+                        else -> 54
+                    }
+                }
+
+                val fillMaterialName = categoryNode.node("fill-material").getString()
+                val fillMaterial = fillMaterialName?.let {
+                    try {
+                        Material.valueOf(it)
+                    } catch (e: IllegalArgumentException) {
+                        Logger.warn("Invalid fill material '$it' for category '$categoryKey', using null")
+                        null
+                    }
+                }
+
+                val fillSlots = try {
+                    categoryNode.node("fill-slots").getList(Integer::class.java)?.map { it.toInt() }
+                } catch (e: Exception) {
+                    null
+                }
+
                 categories[categoryKey.toString()] = ShopCategory(
                     id = categoryKey.toString(),
                     displayName = displayName,
-                    icon = iconMaterial
+                    icon = iconMaterial,
+                    size = size,
+                    fillMaterial = fillMaterial,
+                    fillSlots = fillSlots
                 )
                 Logger.debug("Loaded category: $categoryKey")
             } catch (e: Exception) {
@@ -107,6 +137,14 @@ class ShopManager(
                 itemNode.node("give-permission").getString()?.let { data["give-permission"] = it }
                 itemNode.node("amount").getInt(1).let { data["amount"] = it }
 
+                val slot = itemNode.node("slot").getInt(-1).takeIf { it >= 0 }
+                val quantities = try {
+                    val rawList = itemNode.node("quantities").getList(Integer::class.java)?.map { it.toInt() }?.filter { it > 0 }
+                    if (rawList.isNullOrEmpty()) listOf(1) else rawList
+                } catch (e: Exception) {
+                    listOf(1)
+                }
+
                 val shopItem = ShopItem(
                     id = itemKey.toString(),
                     name = name,
@@ -117,7 +155,9 @@ class ShopManager(
                     type = type,
                     data = data,
                     permission = permission,
-                    enabled = enabled
+                    enabled = enabled,
+                    slot = slot,
+                    quantities = quantities
                 )
 
                 shopItems[itemKey.toString()] = shopItem
@@ -142,11 +182,17 @@ class ShopManager(
 
     fun getCategory(id: String): ShopCategory? = categories[id]
 
-    fun purchaseItem(player: Player, itemId: String): PurchaseResult {
+    fun purchaseItem(player: Player, itemId: String, quantity: Int = 1): PurchaseResult {
         val item = shopItems[itemId] ?: return PurchaseResult.ITEM_NOT_FOUND
 
         if (!item.enabled) {
             return PurchaseResult.ITEM_DISABLED
+        }
+
+        // Validate quantity (if no quantities configured, allow quantity 1)
+        val allowedQuantities = if (item.quantities.isEmpty()) listOf(1) else item.quantities
+        if (!allowedQuantities.contains(quantity)) {
+            return PurchaseResult.INVALID_QUANTITY
         }
 
         // Check permission
@@ -185,32 +231,36 @@ class ShopManager(
             }
         }
 
+        // Calculate total price
+        val totalPrice = item.price * quantity
+
         // Check balance
-        if (!economyManager.hasBalance(player, item.price)) {
+        if (!economyManager.hasBalance(player, totalPrice)) {
             return PurchaseResult.INSUFFICIENT_FUNDS
         }
 
         // Process purchase
-        val success = economyManager.removeBalance(player, item.price)
+        val success = economyManager.removeBalance(player, totalPrice)
         if (!success) {
             return PurchaseResult.TRANSACTION_FAILED
         }
 
         // Execute item effect
-        val executeResult = executeItemEffect(player, item)
+        val executeResult = executeItemEffect(player, item, quantity)
         if (!executeResult) {
             // Refund on failure
-            economyManager.addBalance(player, item.price)
+            economyManager.addBalance(player, totalPrice)
+            Logger.warn("Failed to execute item effect for ${item.id} (type: ${item.type}) for player ${player.name}")
             return PurchaseResult.EXECUTION_FAILED
         }
 
         // Log purchase
-        Logger.info("${player.name} purchased ${item.name} for ${economyManager.formatBalance(item.price)}")
+        Logger.info("${player.name} purchased ${item.name} x$quantity for ${economyManager.formatBalance(totalPrice)}")
 
         return PurchaseResult.SUCCESS
     }
 
-    private fun executeItemEffect(player: Player, item: ShopItem): Boolean {
+    private fun executeItemEffect(player: Player, item: ShopItem, quantity: Int = 1): Boolean {
         return when (item.type) {
             ShopItemType.RANK -> {
                 val targetRank = item.data["rank"] as? String ?: return false
@@ -224,7 +274,7 @@ class ShopManager(
             }
 
             ShopItemType.ITEM -> {
-                val amount = item.data["amount"] as? Int ?: 1
+                val amount = (item.data["amount"] as? Int ?: 1) * quantity
                 val itemStack = ItemStack(item.material, amount)
 
                 // Try to add to inventory, drop if full
@@ -242,6 +292,7 @@ class ShopManager(
                 val processedCommand = command
                     .replace("{player}", player.name)
                     .replace("{uuid}", player.uniqueId.toString())
+                    .replace("{quantity}", quantity.toString())
 
                 // Execute command on global region scheduler for Folia compatibility
                 Bukkit.getGlobalRegionScheduler().run(Pulse.getPlugin(), { _ ->
@@ -270,6 +321,7 @@ class ShopManager(
         INSUFFICIENT_FUNDS,
         ALREADY_OWNED,
         INVALID_ITEM,
+        INVALID_QUANTITY,
         TRANSACTION_FAILED,
         EXECUTION_FAILED
     }
@@ -278,5 +330,8 @@ class ShopManager(
 data class ShopCategory(
     val id: String,
     val displayName: String,
-    val icon: Material
+    val icon: Material,
+    val size: Int = 54,
+    val fillMaterial: Material? = null,
+    val fillSlots: List<Int>? = null
 )

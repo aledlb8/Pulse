@@ -15,7 +15,9 @@ data class ShopItem(
     val type: ShopItemType,
     val data: Map<String, Any> = emptyMap(),
     val permission: String? = null,
-    val enabled: Boolean = true
+    val enabled: Boolean = true,
+    val slot: Int? = null,
+    val quantities: List<Int> = listOf(1)
 ) {
     fun createItemStack(): ItemStack {
         val item = ItemStack(material)
