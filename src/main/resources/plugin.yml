@@ -55,7 +55,6 @@ commands:
     description: Open the server shop
     usage: /shop [category]
     permission: pulse.shop
-    aliases: [store, buy]
   tag:
     description: Manage player tags
     usage: /tag <subcommand>
